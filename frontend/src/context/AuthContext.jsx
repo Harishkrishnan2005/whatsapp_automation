@@ -1,0 +1,71 @@
+import { createContext, useContext, useState, useEffect } from 'react';
+import api from '../utils/api';
+
+const AuthContext = createContext();
+
+export const useAuth = () => useContext(AuthContext);
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loginType, setLoginType] = useState(null); // 'admin' or 'staff'
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+    const type = localStorage.getItem('loginType');
+    if (token && token !== 'undefined' && userData) {
+      try {
+        api.defaults.headers.common.Authorization = `Bearer ${token}`;
+        setUser(JSON.parse(userData));
+        setLoginType(type);
+      } catch {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('loginType');
+        delete api.defaults.headers.common.Authorization;
+      }
+    }
+    setLoading(false);
+  }, []);
+
+  const login = async (email, password, type) => {
+    const response = await api.post('/auth/login', { email, password });
+    const { accessToken, token, user: userData } = response.data;
+    const resolvedToken = accessToken || token;
+
+    if (!resolvedToken) {
+      throw new Error('Authentication token missing in login response');
+    }
+    
+    // Validate role matches login type
+    if (type === 'admin' && userData.role !== 'admin') {
+      throw new Error('Invalid credentials for admin login');
+    }
+    if (type === 'staff' && userData.role !== 'staff') {
+      throw new Error('Invalid credentials for staff login');
+    }
+    
+    localStorage.setItem('token', resolvedToken);
+    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('loginType', type);
+    api.defaults.headers.common.Authorization = `Bearer ${resolvedToken}`;
+    setUser(userData);
+    setLoginType(type);
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('loginType');
+    delete api.defaults.headers.common.Authorization;
+    setUser(null);
+    setLoginType(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout, loading, loginType }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};

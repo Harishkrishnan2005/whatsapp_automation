@@ -1,0 +1,19 @@
+export const COLLECTIONS = {
+  BUSINESSES: 'businesses',
+  USERS: 'users',
+  CUSTOMERS: 'customers',
+  PRODUCTS: 'products',
+  CAMPAIGNS: 'campaigns',
+  ORDERS: 'orders',
+  APPOINTMENTS: 'appointments',
+  MESSAGES: 'messages',
+  CHAT_ASSIGNMENTS: 'chat_assignments',
+  CHATBOT_FLOWS: 'chatbot_flows',
+  CHAT_TEMPLATES: 'chat_templates',
+  QUICK_REPLIES: 'quick_replies',
+  NOTES: 'notes',
+  NOTIFICATIONS: 'notifications',
+  SESSIONS: 'sessions',
+};
+
+export default COLLECTIONS;
