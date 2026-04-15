@@ -27,6 +27,36 @@ class AuthController {
     }
   }
 
+  async superAdminLogin(req, res) {
+    try {
+      const { email, password } = req.body;
+      const result = await AuthService.login(email, password, 'super_admin');
+      res.json(result);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+
+  async adminLogin(req, res) {
+    try {
+      const { email, password } = req.body;
+      const result = await AuthService.login(email, password, 'admin');
+      res.json(result);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+
+  async staffLogin(req, res) {
+    try {
+      const { email, password } = req.body;
+      const result = await AuthService.login(email, password, 'staff');
+      res.json(result);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+
   async refresh(req, res) {
     try {
       const { refreshToken } = req.body;

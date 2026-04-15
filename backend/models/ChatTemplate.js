@@ -18,11 +18,18 @@ const chatTemplateSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
   },
+  businessId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Business',
+    required: true,
+    index: true,
+  },
 }, {
   timestamps: true,
   collection: COLLECTIONS.CHAT_TEMPLATES,
 });
 
-chatTemplateSchema.index({ category: 1, createdAt: -1 });
+chatTemplateSchema.index({ businessId: 1, category: 1, createdAt: -1 });
+chatTemplateSchema.index({ businessId: 1, createdAt: -1 });
 
 export default mongoose.model('ChatTemplate', chatTemplateSchema);

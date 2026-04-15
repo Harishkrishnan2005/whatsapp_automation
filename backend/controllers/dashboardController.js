@@ -6,6 +6,7 @@ import Appointment from '../models/Appointment.js';
 import Product from '../models/Product.js';
 import ChatAssignment from '../models/ChatAssignment.js';
 import CustomerStatusService from '../services/customerStatusService.js';
+import buildTenantScope from '../utils/tenantScope.js';
 
 class DashboardController {
   async safeQuery(fn, fallbackValue, label) {
@@ -20,6 +21,7 @@ class DashboardController {
   // Admin Dashboard
   async getAdminDashboard(req, res) {
     try {
+      const tenantScope = buildTenantScope(req.user.businessId);
       const [
         totalCustomers,
         totalMessages,
@@ -36,20 +38,20 @@ class DashboardController {
         conversionRate,
         successRate
       ] = await Promise.all([
-        this.safeQuery(() => Customer.countDocuments(), 0, 'totalCustomers'),
-        this.safeQuery(() => Message.countDocuments(), 0, 'totalMessages'),
-        this.safeQuery(() => Order.countDocuments(), 0, 'totalOrders'),
-        this.safeQuery(() => Campaign.countDocuments(), 0, 'totalCampaigns'),
-        this.safeQuery(() => Appointment.countDocuments(), 0, 'totalAppointments'),
-        this.safeQuery(() => Product.countDocuments({ isActive: true }), 0, 'totalProducts'),
-        this.safeQuery(() => this.getCustomerDetails(), { totalCustomers: 0, existingCustomers: 0, newCustomers: 0 }, 'customerDetails'),
-        this.safeQuery(() => this.getMessageDetails(), { incomingMessages: 0, outgoingMessages: 0 }, 'messageDetails'),
-        this.safeQuery(() => this.getOrderDetails(), { pendingOrders: 0, confirmedOrders: 0, deliveredOrders: 0 }, 'orderDetails'),
-        this.safeQuery(() => Message.find().populate('customerId', 'name phone').sort({ createdAt: -1 }).limit(5).lean(), [], 'recentChats'),
-        this.safeQuery(() => Order.find().populate('customerId', 'name phone').sort({ createdAt: -1 }).limit(5).lean(), [], 'recentOrders'),
-        this.safeQuery(() => this.getCampaignPerformance(), { totalSent: 0, totalConverted: 0, deliveryRate: '0.00', campaignConversionRate: '0.00' }, 'campaignPerformance'),
-        this.safeQuery(() => this.getConversionRate(), '0.00', 'conversionRate'),
-        this.safeQuery(() => this.getSuccessRate(), '0.00', 'successRate')
+        this.safeQuery(() => Customer.countDocuments(tenantScope), 0, 'totalCustomers'),
+        this.safeQuery(() => Message.countDocuments(tenantScope), 0, 'totalMessages'),
+        this.safeQuery(() => Order.countDocuments(tenantScope), 0, 'totalOrders'),
+        this.safeQuery(() => Campaign.countDocuments(tenantScope), 0, 'totalCampaigns'),
+        this.safeQuery(() => Appointment.countDocuments(tenantScope), 0, 'totalAppointments'),
+        this.safeQuery(() => Product.countDocuments({ ...tenantScope, isActive: true }), 0, 'totalProducts'),
+        this.safeQuery(() => this.getCustomerDetails(tenantScope), { totalCustomers: 0, existingCustomers: 0, newCustomers: 0 }, 'customerDetails'),
+        this.safeQuery(() => this.getMessageDetails(tenantScope), { incomingMessages: 0, outgoingMessages: 0 }, 'messageDetails'),
+        this.safeQuery(() => this.getOrderDetails(tenantScope), { pendingOrders: 0, confirmedOrders: 0, deliveredOrders: 0 }, 'orderDetails'),
+        this.safeQuery(() => Message.find(tenantScope).populate('customerId', 'name phone').sort({ createdAt: -1 }).limit(5).lean(), [], 'recentChats'),
+        this.safeQuery(() => Order.find(tenantScope).populate('customerId', 'name phone').sort({ createdAt: -1 }).limit(5).lean(), [], 'recentOrders'),
+        this.safeQuery(() => this.getCampaignPerformance(tenantScope), { totalSent: 0, totalConverted: 0, deliveryRate: '0.00', campaignConversionRate: '0.00' }, 'campaignPerformance'),
+        this.safeQuery(() => this.getConversionRate(tenantScope), '0.00', 'conversionRate'),
+        this.safeQuery(() => this.getSuccessRate(tenantScope), '0.00', 'successRate')
       ]);
 
       res.json({

@@ -23,20 +23,24 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['admin', 'staff'],
+      enum: ['super_admin', 'admin', 'staff'],
       default: 'staff',
     },
     businessId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Business',
-      required: true,
+      required: function () {
+        return this.role !== 'super_admin';
+      },
       index: true,
     },
     businessType: {
       type: String,
       enum: BUSINESS_TYPES,
       default: 'E_COMMERCE',
-      required: true,
+      required: function () {
+        return this.role !== 'super_admin';
+      },
       index: true,
     },
     permissions: {

@@ -6,6 +6,9 @@ const router = express.Router();
 
 router.post('/register-admin', AuthController.registerAdmin);
 router.post('/login', AuthController.login);
+router.post('/superadmin/login', AuthController.superAdminLogin);
+router.post('/admin/login', AuthController.adminLogin);
+router.post('/staff/login', AuthController.staffLogin);
 router.post('/refresh', AuthController.refresh);
 
 // Admin only

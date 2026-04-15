@@ -63,9 +63,15 @@ const Sidebar = ({ open, onClose }) => {
           { path: '/staff/notes', label: 'Customer Notes', icon: FiFileText },
         ];
 
+  const superAdminMenuItems = [
+    { path: '/superadmin/dashboard', label: 'Dashboard', icon: FiGrid },
+    { path: '/superadmin/businesses', label: 'Businesses', icon: FiUsers },
+    { path: '/superadmin/subscriptions', label: 'Subscriptions', icon: FiTrendingUp },
+  ];
+
   const menuItems = [
     ...commonMenuItems,
-    ...(user?.role === 'admin' ? adminMenuItems : staffMenuItems),
+    ...(user?.role === 'super_admin' ? superAdminMenuItems : user?.role === 'admin' ? adminMenuItems : staffMenuItems),
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -91,8 +97,12 @@ const Sidebar = ({ open, onClose }) => {
 
         <div className="hidden border-b border-surface p-5 md:block">
           <div className="space-y-2">
-            <p className="text-xl font-semibold sidebar-logo">Business</p>
-            <p className="text-sm sidebar-section-title">Analytics dashboard</p>
+            <p className="text-xl font-semibold sidebar-logo">
+              {user?.role === 'super_admin' ? 'Platform' : 'Business'}
+            </p>
+            <p className="text-sm sidebar-section-title">
+              {user?.role === 'super_admin' ? 'Management dashboard' : 'Analytics dashboard'}
+            </p>
           </div>
         </div>
 

@@ -18,13 +18,24 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Check if user has admin role
-const isAdmin = (req, res, next) => {
-  if (!req.user || req.user.role !== 'admin') {
-    return res.status(403).json({ message: 'Admin access required' });
-  }
-  next();
+// Role-based access control helper
+const requireRole = (role) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Access token required' });
+    }
+
+    if (req.user.role !== role) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    next();
+  };
 };
+
+const isAdmin = requireRole('admin');
+const isStaff = requireRole('staff');
+const isSuperAdmin = requireRole('super_admin');
 
 // Check if user has specific permission
 const hasPermission = (permission) => {
@@ -46,12 +57,4 @@ const hasPermission = (permission) => {
   };
 };
 
-// Check if user is staff
-const isStaff = (req, res, next) => {
-  if (!req.user || req.user.role !== 'staff') {
-    return res.status(403).json({ message: 'Staff access required' });
-  }
-  next();
-};
-
-export { authenticateToken, isAdmin, hasPermission, isStaff };
+export { authenticateToken, requireRole, isAdmin, hasPermission, isStaff, isSuperAdmin };

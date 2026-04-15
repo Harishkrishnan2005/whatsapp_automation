@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginChoice from './pages/LoginChoice';
 import AdminLogin from './pages/AdminLogin';
 import StaffLogin from './pages/StaffLogin';
+import SuperAdminLogin from './pages/SuperAdminLogin';
 import ProtectedRoute from './components/ProtectedRoute';
 import TopBar from './components/TopBar';
 import Dashboard from './pages/Dashboard';
@@ -21,13 +22,16 @@ import ChatbotManagement from './pages/admin/ChatbotManagement';
 import ChatManagement from './pages/admin/ChatManagement';
 import AppointmentManagement from './pages/admin/AppointmentManagement';
 import AdvancedAnalytics from './pages/admin/AdvancedAnalytics';
-
-// Staff pages
 import StaffChat from './pages/staff/StaffChat';
 import StaffBookings from './pages/staff/StaffBookings';
 import StaffDashboard from './pages/staff/StaffDashboard';
 import StaffOrders from './pages/staff/StaffOrders';
 import StaffNotes from './pages/staff/StaffNotes';
+
+// Super Admin pages
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import Businesses from './pages/superadmin/Businesses';
+import Subscriptions from './pages/superadmin/Subscriptions';
 
 function App() {
   return (
@@ -52,6 +56,7 @@ function AppContent() {
       <div className="app-shell theme-light min-h-screen">
         <Routes>
           <Route path="/" element={<LoginChoice />} />
+          <Route path="/login/superadmin" element={<SuperAdminLogin />} />
           <Route path="/login/admin" element={<AdminLogin />} />
           <Route path="/login/staff" element={<StaffLogin />} />
           <Route path="*" element={<Navigate to="/" />} />
@@ -67,6 +72,9 @@ function AppContent() {
 
 function AppShell() {
   const { user } = useAuth();
+  const businessType = user?.businessType || 'E_COMMERCE';
+  const isEcommerce = businessType === 'E_COMMERCE';
+  const isBooking = businessType === 'BOOKING';
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [theme, setTheme] = useState(() => localStorage.getItem('app-theme') || 'light');
@@ -118,7 +126,7 @@ function AppShell() {
               path="/orders"
               element={
                 <ProtectedRoute requiredRole="admin">
-                  <Orders />
+                  {isEcommerce ? <Orders /> : <Navigate to="/dashboard" />}
                 </ProtectedRoute>
               }
             />
@@ -126,7 +134,7 @@ function AppShell() {
               path="/campaigns"
               element={
                 <ProtectedRoute requiredRole="admin">
-                  <Campaigns />
+                  {isEcommerce ? <Campaigns /> : <Navigate to="/dashboard" />}
                 </ProtectedRoute>
               }
             />
@@ -134,7 +142,7 @@ function AppShell() {
               path="/products"
               element={
                 <ProtectedRoute requiredRole="admin">
-                  <Products />
+                  {isEcommerce ? <Products /> : <Navigate to="/dashboard" />}
                 </ProtectedRoute>
               }
             />
@@ -168,7 +176,7 @@ function AppShell() {
               path="/admin/chat-management"
               element={
                 <ProtectedRoute requiredRole="admin">
-                  <ChatManagement />
+                  {isEcommerce ? <ChatManagement /> : <Navigate to="/dashboard" />}
                 </ProtectedRoute>
               }
             />
@@ -176,7 +184,7 @@ function AppShell() {
               path="/admin/appointments"
               element={
                 <ProtectedRoute requiredRole="admin">
-                  <AppointmentManagement />
+                  {isBooking ? <AppointmentManagement /> : <Navigate to="/dashboard" />}
                 </ProtectedRoute>
               }
             />
@@ -202,7 +210,7 @@ function AppShell() {
               path="/staff/bookings"
               element={
                 <ProtectedRoute requiredRole="staff">
-                  <StaffBookings />
+                  {isBooking ? <StaffBookings /> : <Navigate to="/dashboard" />}
                 </ProtectedRoute>
               }
             />
@@ -210,7 +218,7 @@ function AppShell() {
               path="/staff/orders"
               element={
                 <ProtectedRoute requiredRole="staff">
-                  <StaffOrders />
+                  {isEcommerce ? <StaffOrders /> : <Navigate to="/dashboard" />}
                 </ProtectedRoute>
               }
             />
@@ -219,6 +227,32 @@ function AppShell() {
               element={
                 <ProtectedRoute requiredRole="staff">
                   <StaffNotes />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Super Admin Routes - Protected */}
+            <Route
+              path="/superadmin/dashboard"
+              element={
+                <ProtectedRoute requiredRole="super_admin">
+                  <SuperAdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/superadmin/businesses"
+              element={
+                <ProtectedRoute requiredRole="super_admin">
+                  <Businesses />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/superadmin/subscriptions"
+              element={
+                <ProtectedRoute requiredRole="super_admin">
+                  <Subscriptions />
                 </ProtectedRoute>
               }
             />

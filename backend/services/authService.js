@@ -87,8 +87,13 @@ class AuthService {
     return this.buildUserResponse(admin, business._id);
   }
 
-  async login(email, password) {
-    const user = await User.findOne({ email });
+  async login(email, password, role = null) {
+    const query = { email };
+    if (role) {
+      query.role = role;
+    }
+
+    const user = await User.findOne(query);
     if (!user) {
       throw new Error('Invalid credentials');
     }
@@ -101,7 +106,7 @@ class AuthService {
     let resolvedBusinessId = user.businessId;
     let resolvedBusinessType = user.businessType;
 
-    if (!resolvedBusinessId) {
+    if (!resolvedBusinessId && user.role !== 'super_admin') {
       const fallbackBusiness = await Business.findOne().select('_id businessType').lean();
       if (!fallbackBusiness?._id) {
         throw new Error('No business found for this account');
@@ -243,35 +248,21 @@ class AuthService {
     return await User.findOneAndDelete(filter);
   }
 
-  async seedAdmin() {
-    const businessExists = await Business.findOne().lean();
+  async seedSuperAdmin() {
+    const superAdminEmail = 'superadmin@system.com';
+    const superAdminPassword = process.env.SUPERADMIN_PASSWORD || 'superadmin123';
 
-    let business;
-    if (!businessExists) {
-      business = await Business.create({
-        name: 'Test Business',
-        email: 'admin@test.com',
-        plan: 'Pro',
-        businessType: 'E_COMMERCE',
-      });
-      console.log('Business seeded');
-    } else {
-      business = businessExists;
-    }
-
-    const adminExists = await User.findOne({ email: 'admin@test.com' });
-    if (!adminExists) {
-      const hashedPassword = await bcrypt.hash('admin123', 10);
+    const existingSuperAdmin = await User.findOne({ email: superAdminEmail, role: 'super_admin' });
+    if (!existingSuperAdmin) {
+      const hashedPassword = await bcrypt.hash(superAdminPassword, 10);
       await User.create({
-        email: 'admin@test.com',
+        email: superAdminEmail,
         password: hashedPassword,
-        name: 'Admin User',
-        role: 'admin',
-        businessId: business._id,
-        businessType: business.businessType || 'E_COMMERCE',
-        permissions: ADMIN_PERMISSIONS,
+        name: 'Super Admin',
+        role: 'super_admin',
+        permissions: [],
       });
-      console.log('Admin user seeded');
+      console.log('Super admin user seeded');
     }
   }
 }

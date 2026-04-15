@@ -30,22 +30,34 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password, type) => {
-    const response = await api.post('/auth/login', { email, password });
+    let endpoint = '/auth/login';
+    if (type === 'super_admin') {
+      endpoint = '/auth/superadmin/login';
+    } else if (type === 'admin') {
+      endpoint = '/auth/admin/login';
+    } else if (type === 'staff') {
+      endpoint = '/auth/staff/login';
+    }
+
+    const response = await api.post(endpoint, { email, password });
     const { accessToken, token, user: userData } = response.data;
     const resolvedToken = accessToken || token;
 
     if (!resolvedToken) {
       throw new Error('Authentication token missing in login response');
     }
-    
+
     // Validate role matches login type
+    if (type === 'super_admin' && userData.role !== 'super_admin') {
+      throw new Error('Invalid credentials for super admin login');
+    }
     if (type === 'admin' && userData.role !== 'admin') {
       throw new Error('Invalid credentials for admin login');
     }
     if (type === 'staff' && userData.role !== 'staff') {
       throw new Error('Invalid credentials for staff login');
     }
-    
+
     localStorage.setItem('token', resolvedToken);
     localStorage.setItem('user', JSON.stringify(userData));
     localStorage.setItem('loginType', type);

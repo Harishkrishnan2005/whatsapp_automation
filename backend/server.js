@@ -14,6 +14,9 @@ dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 // Import routes
 import authRoutes from './routes/auth.js';
+import superAdminRoutes from './routes/superadmin.js';
+import adminRoutes from './routes/admin.js';
+import staffRoutes from './routes/staff.js';
 import webhookRoutes from './routes/webhook.js';
 import customerRoutes from './routes/customer.js';
 import orderRoutes from './routes/order.js';
@@ -85,6 +88,9 @@ connectMongo();
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/superadmin', superAdminRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/staff', staffRoutes);
 app.use('/api/webhook', webhookRoutes);
 app.use('/api/customers', authenticateToken, customerRoutes);
 app.use('/api/orders', authenticateToken, orderRoutes);
