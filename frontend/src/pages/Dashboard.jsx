@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FiBox, FiCheckCircle, FiMessageCircle, FiShoppingCart, FiUsers } from 'react-icons/fi';
+import Badge from '../components/ui/Badge';
 import api from '../utils/api';
 
 const formatDateTime = (value) => {
@@ -166,9 +167,9 @@ const Dashboard = () => {
                         <td className="px-4 py-3 text-primary">{order.orderId || order._id}</td>
                         <td className="px-4 py-3 text-secondary">{getCustomerName(order.customerId)}</td>
                         <td className="px-4 py-3">
-                          <span className={`status-pill ${getStatusClass(getOrderStatus(order))}`}>
+<Badge variant={getStatusClass(getOrderStatus(order)) || 'pending'}>
                             {getOrderStatus(order)}
-                          </span>
+                          </Badge>
                         </td>
                         <td className="px-4 py-3 text-secondary">{formatDateTime(order.createdAt)}</td>
                       </tr>

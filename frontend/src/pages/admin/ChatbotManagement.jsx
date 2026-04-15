@@ -7,6 +7,7 @@ const initialForm = {
   step: '',
   nextStep: '',
   action: 'NONE',
+  isActive: true,
 };
 
 const ChatbotManagement = () => {
@@ -71,8 +72,25 @@ const ChatbotManagement = () => {
       step: flow.step,
       nextStep: flow.nextStep,
       action: flow.action,
+      isActive: flow.isActive ?? true,
     });
     setMessage('');
+  };
+
+  const toggleFlowStatus = async (flow) => {
+    try {
+      await api.put(`/chatbot/${flow._id}`, {
+        trigger: flow.trigger,
+        reply: flow.reply,
+        step: flow.step,
+        nextStep: flow.nextStep,
+        action: flow.action,
+        isActive: !flow.isActive,
+      });
+      fetchFlows();
+    } catch (error) {
+      console.error('Unable to update flow status', error);
+    }
   };
 
   const deleteFlow = async (id) => {
@@ -168,6 +186,17 @@ const ChatbotManagement = () => {
                 <option value="CREATE_SUPPORT">CREATE_SUPPORT</option>
               </select>
             </div>
+            <div>
+              <label className="block text-cyan-200 font-medium mb-2">Status</label>
+              <select
+                value={form.isActive ? 'active' : 'inactive'}
+                onChange={(e) => setForm({ ...form, isActive: e.target.value === 'active' })}
+                className="w-full border border-white/10 bg-slate-900/40 backdrop-blur-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
             <div className="flex gap-3 pt-4">
               <button
                 type="submit"
@@ -203,6 +232,7 @@ const ChatbotManagement = () => {
                     <th className="text-left py-3 text-cyan-200 font-semibold">Reply</th>
                     <th className="text-left py-3 text-cyan-200 font-semibold">Step → Next</th>
                     <th className="text-left py-3 text-cyan-200 font-semibold">Action</th>
+                    <th className="text-left py-3 text-cyan-200 font-semibold">Status</th>
                     <th className="text-left py-3 text-cyan-200 font-semibold">Actions</th>
                   </tr>
                 </thead>
@@ -218,11 +248,28 @@ const ChatbotManagement = () => {
                         </span>
                       </td>
                       <td className="py-3">
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                            flow.isActive
+                              ? 'bg-emerald-500/15 border border-emerald-400/20 text-emerald-100'
+                              : 'bg-rose-500/15 border border-rose-400/20 text-rose-100'
+                          }`}
+                        >
+                          {flow.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="py-3">
                         <button
                           onClick={() => startEdit(flow)}
                           className="text-cyan-200 hover:text-white mr-3 font-medium transition-colors"
                         >
                           Edit
+                        </button>
+                        <button
+                          onClick={() => toggleFlowStatus(flow)}
+                          className="text-amber-300 hover:text-amber-100 mr-3 font-medium transition-colors"
+                        >
+                          {flow.isActive ? 'Disable' : 'Enable'}
                         </button>
                         <button
                           onClick={() => deleteFlow(flow._id)}

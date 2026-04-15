@@ -46,6 +46,27 @@ function App() {
 
 function AppContent() {
   const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <div className="app-shell theme-light min-h-screen">
+        <Routes>
+          <Route path="/" element={<LoginChoice />} />
+          <Route path="/login/admin" element={<AdminLogin />} />
+          <Route path="/login/staff" element={<StaffLogin />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </div>
+    );
+  }
+
+  return (
+    <AppShell />
+  );
+}
+
+function AppShell() {
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [theme, setTheme] = useState(() => localStorage.getItem('app-theme') || 'light');
@@ -53,17 +74,6 @@ function AppContent() {
   useEffect(() => {
     localStorage.setItem('app-theme', theme);
   }, [theme]);
-
-  if (!user) {
-    return (
-      <Routes>
-        <Route path="/" element={<LoginChoice />} />
-        <Route path="/login/admin" element={<AdminLogin />} />
-        <Route path="/login/staff" element={<StaffLogin />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    );
-  }
 
   return (
     <div className={`app-shell theme-${theme} flex h-screen flex-col`}>

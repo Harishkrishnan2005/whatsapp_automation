@@ -1,10 +1,23 @@
 import ChatbotFlow from '../models/ChatbotFlow.js';
-import seedChatbotFlows from '../utils/seedChatbotFlows.js';
 
 class ChatbotController {
+  getPayload(body = {}) {
+    return {
+      trigger: body.trigger,
+      reply: body.reply,
+      step: body.step,
+      nextStep: body.nextStep,
+      action: body.action,
+      isActive: body.isActive ?? true,
+    };
+  }
+
   async createFlow(req, res) {
     try {
-      const flow = await ChatbotFlow.create({ ...req.body, businessId: req.user.businessId });
+      const flow = await ChatbotFlow.create({
+        ...this.getPayload(req.body),
+        businessId: req.user.businessId,
+      });
       res.status(201).json(flow);
     } catch (error) {
       res.status(400).json({ message: error.message });
@@ -14,14 +27,7 @@ class ChatbotController {
   async getFlows(req, res) {
     try {
       const businessId = req.user.businessId;
-      let flows = await ChatbotFlow.find({ businessId }).sort({ createdAt: -1 });
-
-      // Auto-bootstrap flows for this tenant so chatbot responses are editable in Chatbot page
-      if (!flows.length) {
-        await seedChatbotFlows(businessId);
-        flows = await ChatbotFlow.find({ businessId }).sort({ createdAt: -1 });
-      }
-
+      const flows = await ChatbotFlow.find({ businessId }).sort({ createdAt: -1 });
       res.json(flows);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -30,7 +36,11 @@ class ChatbotController {
 
   async updateFlow(req, res) {
     try {
-      const flow = await ChatbotFlow.findOneAndUpdate({ _id: req.params.id, businessId: req.user.businessId }, req.body, { new: true });
+      const flow = await ChatbotFlow.findOneAndUpdate(
+        { _id: req.params.id, businessId: req.user.businessId },
+        this.getPayload(req.body),
+        { new: true, runValidators: true }
+      );
       if (!flow) return res.status(404).json({ message: 'Flow not found' });
       res.json(flow);
     } catch (error) {

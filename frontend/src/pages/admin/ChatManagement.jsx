@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FiMessageCircle } from 'react-icons/fi';
+import useInterval from '../../hooks/useInterval';
 import api from '../../utils/api';
 
 const ChatManagement = () => {
@@ -22,24 +23,20 @@ const ChatManagement = () => {
     fetchStaffMembers();
   }, [page, searchQuery]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchChats();
-      if (selectedCustomer) {
-        fetchMessages();
-        markConversationAsRead(selectedCustomer._id);
-      }
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [selectedCustomer, page, searchQuery, messageRefresh, messagesPage]);
-
-  useEffect(() => {
+  useInterval(() => {
+    fetchChats();
     if (selectedCustomer) {
       fetchMessages();
       markConversationAsRead(selectedCustomer._id);
     }
-  }, [selectedCustomer, messageRefresh, messagesPage]);
+  }, 10000);
+
+  useEffect(() => {
+    if (selectedCustomer?._id) {
+      fetchMessages();
+      markConversationAsRead(selectedCustomer._id);
+    }
+  }, [selectedCustomer?._id, messageRefresh, messagesPage]);
 
   const fetchChats = async () => {
     setLoading(true);
@@ -311,7 +308,7 @@ const ChatManagement = () => {
               ) : (
                 messages.map((msg, index) => (
                   <div
-                    key={msg._id || index}
+                    key={`${msg._id}-${msg.createdAt}-${index}`}
                     className={`mb-3 flex ${msg.type === 'incoming' ? 'justify-start' : 'justify-end'}`}
                   >
                     <div className="max-w-[70%]">

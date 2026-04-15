@@ -428,6 +428,98 @@ body::before {
   scrollbar-width: none;
 }
 
+/* Selection contrast */
+::selection {
+  background: var(--accent);
+  color: white;
+}
+
+*::selection {
+  background: var(--accent);
+  color: white;
+}
+
+/* Table styles for high contrast */
+table {
+  color: var(--text-primary);
+}
+
+thead th {
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--surface-muted);
+}
+
+tbody td {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+tr:nth-child(even) {
+  background: var(--surface-muted);
+}
+
+tr:hover {
+  background: rgba(var(--accent-rgb), 0.08);
+}
+
+/* Form selects fix */
+select {
+  background: var(--surface-bg);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+select option {
+  background: var(--surface-bg);
+  color: var(--text-primary);
+}
+
+select option:hover {
+  background: var(--surface-muted);
+}
+
+/* Typography hierarchy */
+h1, h2, h3 {
+  font-weight: 700;
+}
+
+.text-primary {
+  color: var(--text-primary) !important;
+  font-weight: 500;
+}
+
+/* Deprecated - use Badge.jsx */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-pill.delivered {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+}
+
+.status-pill.processed {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+}
+
+.status-pill.cancelled {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+}
+
+.status-pill.pending {
+  background: rgba(249, 115, 22, 0.12);
+  color: #f97316;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   width: 0;
   height: 0;

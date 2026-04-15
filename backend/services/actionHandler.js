@@ -26,8 +26,8 @@ class ActionHandler {
       trigger,
       isActive: true,
     }).lean();
-
-    return this.interpolate(flow?.reply || fallback, vars);
+    const configuredReply = String(flow?.reply || '').trim();
+    return this.interpolate(configuredReply || 'No flow configured. Please contact admin.', vars);
   }
 
   getCouponDiscountRate(couponCode) {
@@ -183,32 +183,45 @@ class ActionHandler {
         name: new RegExp(escapeRegex(candidate), 'i'),
       })
         .sort({ name: 1 })
-        .limit(8)
         .lean();
 
-      if (suggestions.length > 0) {
+      if (suggestions.length === 0) {
         return {
-          text: 'I found these matching products. Please click Buy Now or type the exact product name to continue.',
-          type: 'product',
+          text: `Product "${candidate}" not found. Reply "1" or "view products" to see the available product list.`,
+          type: 'text',
           matched: false,
-          products: suggestions.map((product) => ({
-            id: product._id,
-            name: product.name,
-            price: Number(product.offerPrice ?? product.price ?? product.mrp ?? 0),
-            offerPrice: Number(product.offerPrice ?? product.price ?? product.mrp ?? 0),
-            mrp: Number(product.mrp ?? 0),
-            offerPercentage: Number(product.offerPercentage ?? 0),
-            category: product.category,
-            image: product.image,
-            redirectUrl: product.redirectUrl,
-          })),
+        };
+      }
+
+      if (suggestions.length === 1) {
+        const match = suggestions[0];
+        return {
+          text: `Selected "${match.name}". Please share your delivery address.`,
+          type: 'text',
+          matched: true,
+          contextDelta: {
+            productId: match._id,
+            productName: match.name,
+            productPrice: Number(match.offerPrice ?? match.price ?? match.mrp ?? 0),
+          },
         };
       }
 
       return {
-        text: 'Invalid product. Please enter an exact product name from the list.',
-        type: 'text',
+        text: 'Multiple matches found. Please choose from this list or type the exact product name:',
+        type: 'product',
         matched: false,
+        products: suggestions.slice(0, 8).map((product) => ({
+          id: product._id,
+          name: product.name,
+          price: Number(product.offerPrice ?? product.price ?? product.mrp ?? 0),
+          offerPrice: Number(product.offerPrice ?? product.price ?? product.mrp ?? 0),
+          mrp: Number(product.mrp ?? 0),
+          offerPercentage: Number(product.offerPercentage ?? 0),
+          category: product.category,
+          image: product.image,
+          redirectUrl: product.redirectUrl,
+        })),
       };
     }
 

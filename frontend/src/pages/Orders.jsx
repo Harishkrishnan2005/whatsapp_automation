@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import Select from '../components/ui/Select';
+import Badge from '../components/ui/Badge';
 import api from '../utils/api';
 
 const ORDER_STATUSES = ['Pending', 'Confirmed', 'Cancelled', 'Delivered', 'Return Requested', 'Returned'];
@@ -110,47 +112,44 @@ const Orders = () => {
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
-        <select
+<Select
           value={filters.orderStatus}
           onChange={(e) => {
             setClientPage(1);
             setFilters((prev) => ({ ...prev, orderStatus: e.target.value }));
           }}
-          className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white outline-none"
         >
           <option value="">All Order Statuses</option>
           {ORDER_STATUSES.map((status) => (
-            <option key={status} value={status} className="bg-slate-900">{status}</option>
+            <Select.Option value={status}>{status}</Select.Option>
           ))}
-        </select>
+        </Select>
 
-        <select
+        <Select
           value={filters.paymentStatus}
           onChange={(e) => {
             setClientPage(1);
             setFilters((prev) => ({ ...prev, paymentStatus: e.target.value }));
           }}
-          className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white outline-none"
         >
           <option value="">All Payment Statuses</option>
           {PAYMENT_STATUSES.map((status) => (
-            <option key={status} value={status} className="bg-slate-900">{status}</option>
+            <Select.Option value={status}>{status}</Select.Option>
           ))}
-        </select>
+        </Select>
 
-        <select
+        <Select
           value={filters.paymentType}
           onChange={(e) => {
             setClientPage(1);
             setFilters((prev) => ({ ...prev, paymentType: e.target.value }));
           }}
-          className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white outline-none"
         >
           <option value="">All Payment Types</option>
           {PAYMENT_TYPES.map((type) => (
-            <option key={type} value={type} className="bg-slate-900">{type}</option>
+            <Select.Option value={type}>{type}</Select.Option>
           ))}
-        </select>
+        </Select>
       </div>
 
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -198,76 +197,44 @@ const Orders = () => {
                   <td className="p-4 text-sm text-white/70">{order.product}</td>
                   <td className="p-4 text-sm text-white/70">Rs {Number(order.amount || order.finalPrice || order.price || 0).toFixed(2)}</td>
                   <td className="p-4 text-sm">
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${paymentType === 'ONLINE' ? 'bg-indigo-600/30 text-indigo-200 border border-indigo-400/30' : 'bg-amber-600/30 text-amber-200 border border-amber-400/30'}`}>
+                    <Badge variant={paymentType === 'ONLINE' ? 'info' : 'warning'}>
                       {paymentType}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="p-4 text-sm">
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      paymentStatus === 'Paid'
-                        ? 'bg-emerald-600/30 text-emerald-200 border border-emerald-400/30'
-                        : paymentStatus === 'Refunded'
-                          ? 'bg-purple-600/30 text-purple-200 border border-purple-400/30'
-                          : paymentStatus === 'Failed'
-                            ? 'bg-rose-600/30 text-rose-200 border border-rose-400/30'
-                            : 'bg-amber-600/30 text-amber-200 border border-amber-400/30'
-                    }`}>
+                    <Badge variant={paymentStatus.toLowerCase().replace(' ', '-') || 'pending'}>
                       {paymentStatus}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="p-4 text-sm">
-                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      orderStatus === 'Confirmed' || orderStatus === 'Delivered'
-                        ? 'bg-emerald-600/30 text-emerald-200 border border-emerald-400/30'
-                        : orderStatus === 'Cancelled'
-                          ? 'bg-rose-600/30 text-rose-200 border border-rose-400/30'
-                          : orderStatus === 'Return Requested'
-                            ? 'bg-orange-600/30 text-orange-200 border border-orange-400/30'
-                            : orderStatus === 'Returned'
-                              ? 'bg-purple-600/30 text-purple-200 border border-purple-400/30'
-                              : 'bg-amber-600/30 text-amber-200 border border-amber-400/30'
-                    }`}>
+                    <Badge variant={orderStatus.toLowerCase().replace(/ /g, '-').replace('return-requested', 'warning') || 'pending'}>
                       {orderStatus}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="p-4 text-xs font-mono text-white/70">
                     {order.orderId || order._id || '-'}
                   </td>
                   <td className="p-4 text-sm">
-                    <select
-                      value={order.assignedTo?._id || ''}
-                      onChange={(e) => assignOrder(order._id, e.target.value)}
-                      className="rounded border border-white/20 bg-white/10 text-white px-3 py-1 text-xs focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                    >
-                      <option value="" className="bg-slate-900">Unassigned</option>
+                    <Select value={order.assignedTo?._id || ''} onChange={(e) => assignOrder(order._id, e.target.value)} size="sm">
+                      <option value="">Unassigned</option>
                       {staffMembers.map((staff) => (
-                        <option key={staff._id} value={staff._id} className="bg-slate-900">
-                          {staff.name}
-                        </option>
+                        <Select.Option value={staff._id}>{staff.name}</Select.Option>
                       ))}
-                    </select>
+                    </Select>
                   </td>
                   <td className="p-4 text-sm">
                     <div className="flex flex-col gap-2">
-                      <select
-                        value={paymentStatus}
-                        onChange={(e) => updatePaymentStatus(order._id, e.target.value)}
-                        className="rounded border border-white/20 bg-white/10 text-white px-3 py-1 text-xs focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                      >
+                      <Select value={paymentStatus} onChange={(e) => updatePaymentStatus(order._id, e.target.value)} size="sm">
                         {PAYMENT_STATUSES.map((status) => (
-                          <option key={status} value={status} className="bg-slate-900">{status}</option>
+                          <Select.Option value={status}>{status}</Select.Option>
                         ))}
-                      </select>
+                      </Select>
 
-                      <select
-                        value={orderStatus}
-                        onChange={(e) => updateStatus(order._id, e.target.value)}
-                        className="rounded border border-white/20 bg-white/10 text-white px-3 py-1 text-xs focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                      >
+                      <Select value={orderStatus} onChange={(e) => updateStatus(order._id, e.target.value)} size="sm">
                         {ORDER_STATUSES.map((status) => (
-                          <option key={status} value={status} className="bg-slate-900">{status}</option>
+                          <Select.Option value={status}>{status}</Select.Option>
                         ))}
-                      </select>
+                      </Select>
 
                     </div>
                   </td>
