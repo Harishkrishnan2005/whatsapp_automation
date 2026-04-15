@@ -20,31 +20,48 @@ const Sidebar = ({ open, onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const businessType = user?.businessType || 'E_COMMERCE';
 
   const commonMenuItems = [
     { path: '/dashboard', label: 'Dashboard', icon: FiGrid },
   ];
 
-  const adminMenuItems = [
-    { path: '/chat', label: 'Chat Simulator', icon: FiMessageCircle },
-    { path: '/customers', label: 'Customers', icon: FiUsers },
-    { path: '/orders', label: 'Orders', icon: FiShoppingCart },
-    { path: '/campaigns', label: 'Campaigns', icon: FiSend },
-    { path: '/products', label: 'Products', icon: FiPackage },
-    { path: '/analytics', label: 'Analytics', icon: FiBarChart2 },
-    { path: '/admin/staff', label: 'Staff', icon: FiUserCheck },
-    { path: '/admin/chatbot', label: 'Chatbot', icon: FiMessageCircle },
-    { path: '/admin/chat-management', label: 'Chat Management', icon: FiClipboard },
-    { path: '/admin/appointments', label: 'Appointments', icon: FiCalendar },
-    { path: '/admin/advanced-analytics', label: 'Advanced Analytics', icon: FiTrendingUp },
-  ];
+  const adminMenuItems =
+    businessType === 'BOOKING'
+      ? [
+          { path: '/chat', label: 'Chat Simulator', icon: FiMessageCircle },
+          { path: '/customers', label: 'Customers', icon: FiUsers },
+          { path: '/admin/appointments', label: 'Appointments', icon: FiCalendar },
+          { path: '/admin/chatbot', label: 'Chatbot', icon: FiMessageCircle },
+          { path: '/analytics', label: 'Analytics', icon: FiBarChart2 },
+          { path: '/admin/staff', label: 'Staff', icon: FiUserCheck },
+          { path: '/admin/advanced-analytics', label: 'Advanced Analytics', icon: FiTrendingUp },
+        ]
+      : [
+          { path: '/chat', label: 'Chat Simulator', icon: FiMessageCircle },
+          { path: '/customers', label: 'Customers', icon: FiUsers },
+          { path: '/orders', label: 'Orders', icon: FiShoppingCart },
+          { path: '/campaigns', label: 'Campaigns', icon: FiSend },
+          { path: '/products', label: 'Products', icon: FiPackage },
+          { path: '/admin/chat-management', label: 'Chat Management', icon: FiClipboard },
+          { path: '/analytics', label: 'Analytics', icon: FiBarChart2 },
+          { path: '/admin/chatbot', label: 'Chatbot', icon: FiMessageCircle },
+          { path: '/admin/staff', label: 'Staff', icon: FiUserCheck },
+          { path: '/admin/advanced-analytics', label: 'Advanced Analytics', icon: FiTrendingUp },
+        ];
 
-  const staffMenuItems = [
-    { path: '/staff/chat', label: 'My Chats', icon: FiMessageCircle },
-    { path: '/staff/orders', label: 'My Orders', icon: FiShoppingCart },
-    { path: '/staff/bookings', label: 'My Bookings', icon: FiCalendar },
-    { path: '/staff/notes', label: 'Customer Notes', icon: FiFileText },
-  ];
+  const staffMenuItems =
+    businessType === 'BOOKING'
+      ? [
+          { path: '/staff/chat', label: 'My Chats', icon: FiMessageCircle },
+          { path: '/staff/bookings', label: 'My Appointments', icon: FiCalendar },
+          { path: '/staff/notes', label: 'Customer Notes', icon: FiFileText },
+        ]
+      : [
+          { path: '/staff/chat', label: 'My Chats', icon: FiMessageCircle },
+          { path: '/staff/orders', label: 'My Orders', icon: FiShoppingCart },
+          { path: '/staff/notes', label: 'Customer Notes', icon: FiFileText },
+        ];
 
   const menuItems = [
     ...commonMenuItems,

@@ -4,6 +4,7 @@ import { authenticateToken, isAdmin } from '../middlewares/authorization.js';
 
 const router = express.Router();
 
+router.post('/register-admin', AuthController.registerAdmin);
 router.post('/login', AuthController.login);
 router.post('/refresh', AuthController.refresh);
 

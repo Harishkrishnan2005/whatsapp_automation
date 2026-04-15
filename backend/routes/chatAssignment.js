@@ -1,31 +1,34 @@
 import express from 'express';
 import ChatAssignmentController from '../controllers/chatAssignmentController.js';
 import { authenticateToken, isAdmin } from '../middlewares/authorization.js';
+import { checkBusinessType } from '../middlewares/businessType.js';
 
 const router = express.Router();
+router.use(authenticateToken);
+router.use(checkBusinessType('E_COMMERCE'));
 
 // Get all active chats - admin only
-router.get('/', authenticateToken, isAdmin, ChatAssignmentController.getAllActiveChats);
+router.get('/', isAdmin, ChatAssignmentController.getAllActiveChats);
 
 // Get all active chats - admin only
-router.get('/all', authenticateToken, isAdmin, ChatAssignmentController.getAllActiveChats);
+router.get('/all', isAdmin, ChatAssignmentController.getAllActiveChats);
 
 // Get chat history by customer
-router.get('/history/:customerId', authenticateToken, ChatAssignmentController.getChatHistory);
+router.get('/history/:customerId', ChatAssignmentController.getChatHistory);
 
 // Transfer chat - admin only
-router.put('/:id/transfer', authenticateToken, isAdmin, ChatAssignmentController.transferChat);
+router.put('/:id/transfer', isAdmin, ChatAssignmentController.transferChat);
 
 // Close chat
-router.put('/:id/close', authenticateToken, ChatAssignmentController.closeChat);
+router.put('/:id/close', ChatAssignmentController.closeChat);
 
 // Admin take over - admin only
-router.put('/:id/takeover', authenticateToken, isAdmin, ChatAssignmentController.takeOverChat);
+router.put('/:id/takeover', isAdmin, ChatAssignmentController.takeOverChat);
 
 // Get assigned chats for staff
-router.get('/:staffId', authenticateToken, ChatAssignmentController.getAssignedChats);
+router.get('/:staffId', ChatAssignmentController.getAssignedChats);
 
 // Assign chat - admin only
-router.post('/', authenticateToken, isAdmin, ChatAssignmentController.assignChat);
+router.post('/', isAdmin, ChatAssignmentController.assignChat);
 
 export default router;

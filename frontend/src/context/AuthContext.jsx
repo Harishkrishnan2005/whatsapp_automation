@@ -54,6 +54,17 @@ export const AuthProvider = ({ children }) => {
     setLoginType(type);
   };
 
+  const registerAdmin = async ({ name, email, password, businessName, businessType }) => {
+    const response = await api.post('/auth/register-admin', {
+      name,
+      email,
+      password,
+      businessName,
+      businessType,
+    });
+    return response.data;
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -64,7 +75,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, loginType }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, loginType, registerAdmin }}>
       {children}
     </AuthContext.Provider>
   );

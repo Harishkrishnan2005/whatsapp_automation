@@ -1,10 +1,12 @@
 import express from 'express';
 import OrderController from '../controllers/orderController.js';
 import { authenticateToken, isAdmin } from '../middlewares/authorization.js';
+import { checkBusinessType } from '../middlewares/businessType.js';
 
 const router = express.Router();
 
 router.use(authenticateToken);
+router.use(checkBusinessType('E_COMMERCE'));
 
 router.get('/', OrderController.getOrders);
 router.post('/', OrderController.createOrder);

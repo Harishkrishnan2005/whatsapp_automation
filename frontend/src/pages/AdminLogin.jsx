@@ -4,16 +4,22 @@ import { FiBriefcase } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 
 const AdminLogin = () => {
+  const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('admin@test.com');
   const [password, setPassword] = useState('admin123');
+  const [name, setName] = useState('');
+  const [businessName, setBusinessName] = useState('');
+  const [businessType, setBusinessType] = useState('E_COMMERCE');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, registerAdmin } = useAuth();
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
 
     try {
@@ -21,6 +27,29 @@ const AdminLogin = () => {
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      await registerAdmin({
+        name,
+        email,
+        password,
+        businessName,
+        businessType,
+      });
+      setSuccess('Admin registered successfully. Please login.');
+      setMode('login');
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -37,13 +66,77 @@ const AdminLogin = () => {
           <p className="mt-3 text-sm text-slate-300">Access the admin portal with the new unified UI.</p>
         </div>
 
+        <div className="mt-6 grid grid-cols-2 rounded-xl border border-white/10 bg-slate-900/40 p-1">
+          <button
+            type="button"
+            className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${mode === 'login' ? 'bg-cyan-500/20 text-cyan-200' : 'text-slate-300'}`}
+            onClick={() => setMode('login')}
+          >
+            Login
+          </button>
+          <button
+            type="button"
+            className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${mode === 'register' ? 'bg-cyan-500/20 text-cyan-200' : 'text-slate-300'}`}
+            onClick={() => setMode('register')}
+          >
+            Register
+          </button>
+        </div>
+
         {error && (
           <div className="mt-6 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-100">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+        {success && (
+          <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+            {success}
+          </div>
+        )}
+
+        <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="mt-8 space-y-5">
+          {mode === 'register' && (
+            <>
+              <div>
+                <label className="block text-sm font-semibold text-slate-200 mb-2">Admin Name</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none transition focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20"
+                  placeholder="Admin Name"
+                  disabled={loading}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-200 mb-2">Business Name</label>
+                <input
+                  type="text"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none transition focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20"
+                  placeholder="My Business"
+                  disabled={loading}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-200 mb-2">Business Type</label>
+                <select
+                  value={businessType}
+                  onChange={(e) => setBusinessType(e.target.value)}
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-white outline-none transition focus:border-cyan-400/50 focus:ring-2 focus:ring-cyan-400/20"
+                  disabled={loading}
+                >
+                  <option value="E_COMMERCE">E-Commerce</option>
+                  <option value="BOOKING">Booking</option>
+                </select>
+              </div>
+            </>
+          )}
+
           <div>
             <label className="block text-sm font-semibold text-slate-200 mb-2">Email</label>
             <input
@@ -73,12 +166,12 @@ const AdminLogin = () => {
             disabled={loading}
             className="btn-primary w-full justify-center disabled:opacity-60"
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create Admin'}
           </button>
         </form>
 
         <div className="mt-8 rounded-3xl border border-white/10 bg-slate-900/40 p-5 text-center text-sm text-slate-300">
-          <p>Use the admin portal to manage the full business flow.</p>
+          <p>Use the admin portal to manage business-specific modules securely.</p>
           <p className="mt-3 font-mono text-xs text-slate-400">admin@test.com / admin123</p>
         </div>
 

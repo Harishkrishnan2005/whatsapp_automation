@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import COLLECTIONS from '../config/mongoCollections.js';
+import { BUSINESS_TYPES } from './User.js';
 
 const businessSchema = new mongoose.Schema({
   name: {
@@ -18,6 +19,12 @@ const businessSchema = new mongoose.Schema({
     type: String,
     enum: ['Free', 'Pro'],
     default: 'Free',
+  },
+  businessType: {
+    type: String,
+    enum: BUSINESS_TYPES,
+    default: 'E_COMMERCE',
+    required: true,
   },
 }, {
   timestamps: true,

@@ -4,6 +4,16 @@ import User from '../models/User.js';
 import Business from '../models/Business.js';
 import buildTenantScope from '../utils/tenantScope.js';
 
+const ADMIN_PERMISSIONS = [
+  'manage_customers',
+  'manage_orders',
+  'manage_campaigns',
+  'manage_staff',
+  'manage_chatbot',
+  'view_analytics',
+  'manage_appointments',
+];
+
 class AuthService {
   async generateEmployeeId(dateOfJoining) {
     const joiningDate = dateOfJoining ? new Date(dateOfJoining) : new Date();
@@ -20,6 +30,63 @@ class AuthService {
     return `EMPID-${year}-${sequence}`;
   }
 
+  buildUserResponse(user, businessId = user.businessId) {
+    return {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+      name: user.name,
+      permissions: user.permissions,
+      businessId,
+      businessType: user.businessType,
+    };
+  }
+
+  buildAccessTokenPayload(user, businessId = user.businessId) {
+    return {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+      businessId,
+      businessType: user.businessType,
+    };
+  }
+
+  async registerAdmin(payload) {
+    const {
+      name,
+      email,
+      password,
+      businessName,
+      businessType = 'E_COMMERCE',
+    } = payload;
+
+    const exists = await User.findOne({ email });
+    if (exists) {
+      throw new Error('User already exists');
+    }
+
+    const business = await Business.create({
+      name: businessName || `${name}'s Business`,
+      email,
+      plan: 'Pro',
+      businessType,
+    });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const admin = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: 'admin',
+      permissions: ADMIN_PERMISSIONS,
+      businessId: business._id,
+      businessType,
+    });
+
+    return this.buildUserResponse(admin, business._id);
+  }
+
   async login(email, password) {
     const user = await User.findOne({ email });
     if (!user) {
@@ -32,17 +99,25 @@ class AuthService {
     }
 
     let resolvedBusinessId = user.businessId;
+    let resolvedBusinessType = user.businessType;
+
     if (!resolvedBusinessId) {
-      const fallbackBusiness = await Business.findOne().select('_id').lean();
+      const fallbackBusiness = await Business.findOne().select('_id businessType').lean();
       if (!fallbackBusiness?._id) {
         throw new Error('No business found for this account');
       }
       resolvedBusinessId = fallbackBusiness._id;
-      await User.findByIdAndUpdate(user._id, { businessId: resolvedBusinessId });
+      resolvedBusinessType = fallbackBusiness.businessType || resolvedBusinessType || 'E_COMMERCE';
+      await User.findByIdAndUpdate(user._id, {
+        businessId: resolvedBusinessId,
+        businessType: resolvedBusinessType,
+      });
+      user.businessId = resolvedBusinessId;
+      user.businessType = resolvedBusinessType;
     }
 
     const accessToken = jwt.sign(
-      { id: user._id, email: user.email, role: user.role, businessId: resolvedBusinessId },
+      this.buildAccessTokenPayload(user, resolvedBusinessId),
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -56,14 +131,7 @@ class AuthService {
     return {
       accessToken,
       refreshToken,
-      user: {
-        id: user._id,
-        email: user.email,
-        role: user.role,
-        name: user.name,
-        permissions: user.permissions,
-        businessId: resolvedBusinessId,
-      },
+      user: this.buildUserResponse(user, resolvedBusinessId),
     };
   }
 
@@ -80,7 +148,7 @@ class AuthService {
       }
 
       const accessToken = jwt.sign(
-        { id: user._id, email: user.email, role: user.role, businessId: user.businessId },
+        this.buildAccessTokenPayload(user),
         process.env.JWT_SECRET,
         { expiresIn: '7d' }
       );
@@ -91,7 +159,7 @@ class AuthService {
     }
   }
 
-  async createStaff(staffPayload, businessId) {
+  async createStaff(staffPayload, businessId, businessType) {
     const {
       email,
       password,
@@ -113,12 +181,15 @@ class AuthService {
     }
 
     let resolvedBusinessId = businessId;
+    let resolvedBusinessType = businessType;
+
     if (!resolvedBusinessId) {
-      const fallbackBusiness = await Business.findOne().select('_id').lean();
+      const fallbackBusiness = await Business.findOne().select('_id businessType').lean();
       if (!fallbackBusiness?._id) {
         throw new Error('No business found to assign staff');
       }
       resolvedBusinessId = fallbackBusiness._id;
+      resolvedBusinessType = fallbackBusiness.businessType || 'E_COMMERCE';
     }
 
     const employeeId = await this.generateEmployeeId(dateOfJoining);
@@ -139,6 +210,7 @@ class AuthService {
       permissions,
       isActive,
       businessId: resolvedBusinessId,
+      businessType: resolvedBusinessType || 'E_COMMERCE',
     });
 
     return {
@@ -147,6 +219,7 @@ class AuthService {
       name: staff.name,
       role: staff.role,
       employeeId: staff.employeeId,
+      businessType: staff.businessType,
     };
   }
 
@@ -159,15 +232,11 @@ class AuthService {
     if (businessId) {
       filter.businessId = businessId;
     }
-    return await User.findOneAndUpdate(
-      filter,
-      { permissions },
-      { new: true }
-    ).select('-password');
+    return await User.findOneAndUpdate(filter, { permissions }, { new: true }).select('-password');
   }
 
   async deleteStaff(staffId, businessId) {
-    const filter = { _id: staffId };
+    const filter = { _id: staffId, role: 'staff' };
     if (businessId) {
       filter.businessId = businessId;
     }
@@ -175,13 +244,15 @@ class AuthService {
   }
 
   async seedAdmin() {
-    const businessExists = await Business.findOne({ email: 'admin@test.com' });
+    const businessExists = await Business.findOne().lean();
+
     let business;
     if (!businessExists) {
       business = await Business.create({
         name: 'Test Business',
         email: 'admin@test.com',
         plan: 'Pro',
+        businessType: 'E_COMMERCE',
       });
       console.log('Business seeded');
     } else {
@@ -197,15 +268,8 @@ class AuthService {
         name: 'Admin User',
         role: 'admin',
         businessId: business._id,
-        permissions: [
-          'manage_customers',
-          'manage_orders',
-          'manage_campaigns',
-          'manage_staff',
-          'manage_chatbot',
-          'view_analytics',
-          'manage_appointments',
-        ],
+        businessType: business.businessType || 'E_COMMERCE',
+        permissions: ADMIN_PERMISSIONS,
       });
       console.log('Admin user seeded');
     }

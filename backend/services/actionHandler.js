@@ -3,6 +3,7 @@ import Appointment from '../models/Appointment.js';
 import Customer from '../models/Customer.js';
 import Order from '../models/Order.js';
 import ChatbotFlow from '../models/ChatbotFlow.js';
+import Business from '../models/Business.js';
 import OrderService from './orderService.js';
 import mongoose from 'mongoose';
 
@@ -11,6 +12,37 @@ const objectIdRegex = /[a-fA-F0-9]{24}/;
 const userOrderIdRegex = /ORD-[A-Z0-9-]+/i;
 
 class ActionHandler {
+  static ECOMMERCE_ONLY_ACTIONS = new Set([
+    'SHOW_PRODUCTS',
+    'SAVE_PRODUCT',
+    'CREATE_ORDER',
+    'PROCESS_PAYMENT',
+    'CANCEL_ORDER',
+    'RETURN_ORDER',
+  ]);
+
+  static BOOKING_ONLY_ACTIONS = new Set([
+    'BOOK_APPOINTMENT',
+  ]);
+
+  async getBusinessType(businessId) {
+    if (!businessId) return 'E_COMMERCE';
+    const business = await Business.findById(businessId).select('businessType').lean();
+    return business?.businessType || 'E_COMMERCE';
+  }
+
+  isActionAllowedForBusinessType(action, businessType) {
+    if (businessType === 'BOOKING' && ActionHandler.ECOMMERCE_ONLY_ACTIONS.has(action)) {
+      return false;
+    }
+
+    if (businessType === 'E_COMMERCE' && ActionHandler.BOOKING_ONLY_ACTIONS.has(action)) {
+      return false;
+    }
+
+    return true;
+  }
+
   interpolate(text, vars = {}) {
     let output = String(text || '');
     for (const [key, value] of Object.entries(vars)) {
@@ -758,6 +790,14 @@ class ActionHandler {
   }
 
   async executeAction(action, payload) {
+    const businessType = await this.getBusinessType(payload?.businessId);
+    if (!this.isActionAllowedForBusinessType(action, businessType)) {
+      return {
+        text: 'This feature is not available for your business type',
+        type: 'text',
+      };
+    }
+
     switch (action) {
       case 'SHOW_PRODUCTS':
         return this.showProducts(payload);

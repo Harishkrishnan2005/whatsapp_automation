@@ -1,22 +1,25 @@
 import express from 'express';
 import AppointmentController from '../controllers/appointmentController.js';
 import { authenticateToken, isAdmin } from '../middlewares/authorization.js';
+import { checkBusinessType } from '../middlewares/businessType.js';
 
 const router = express.Router();
+router.use(authenticateToken);
+router.use(checkBusinessType('BOOKING'));
 
 // Create appointment
-router.post('/', authenticateToken, AppointmentController.createAppointment);
+router.post('/', AppointmentController.createAppointment);
 
 // Get appointments (paginated) - admin sees all, staff sees assigned
-router.get('/', authenticateToken, AppointmentController.getAppointments);
+router.get('/', AppointmentController.getAppointments);
 
 // Get customer appointments
-router.get('/customer/:customerId', authenticateToken, AppointmentController.getCustomerAppointments);
+router.get('/customer/:customerId', AppointmentController.getCustomerAppointments);
 
 // Update appointment status - admin can update any, staff only assigned
-router.put('/:id/status', authenticateToken, AppointmentController.updateAppointmentStatus);
+router.put('/:id/status', AppointmentController.updateAppointmentStatus);
 
 // Assign appointment to staff - admin only
-router.put('/:id/assign', authenticateToken, isAdmin, AppointmentController.assignAppointment);
+router.put('/:id/assign', isAdmin, AppointmentController.assignAppointment);
 
 export default router;

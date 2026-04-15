@@ -1,8 +1,11 @@
 import express from 'express';
 import ChatController from '../controllers/chatController.js';
 import { authenticateToken } from '../middlewares/authorization.js';
+import { checkBusinessType } from '../middlewares/businessType.js';
 
 const router = express.Router();
+router.use(authenticateToken);
+router.use(checkBusinessType('E_COMMERCE'));
 
 // GET all chats (customers) with last message
 router.get('/', ChatController.getAllChats);
@@ -17,7 +20,7 @@ router.get('/:customerId', ChatController.getCustomerDetails);
 router.get('/:customerId/messages', ChatController.getMessages);
 
 // POST send message from admin/staff
-router.post('/messages', authenticateToken, ChatController.sendMessage);
+router.post('/messages', ChatController.sendMessage);
 
 // PUT mark messages as read
 router.put('/:customerId/read', ChatController.markMessagesAsRead);
