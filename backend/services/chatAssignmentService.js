@@ -13,7 +13,7 @@ class ChatAssignmentService {
       status: { $ne: 'closed' },
     });
 
-    await Customer.findByIdAndUpdate(customerId, { assignedTo: staffId });
+    await Customer.findOneAndUpdate({ _id: customerId, ...tenantScope }, { assignedTo: staffId });
 
     if (existing) {
       existing.assignedTo = staffId;
@@ -25,6 +25,7 @@ class ChatAssignmentService {
         type: 'assignment',
         message: `Chat reassigned to you for customer ${customerId}`,
         relatedId: customerId,
+        businessId,
       });
       return existing;
     }
@@ -41,6 +42,7 @@ class ChatAssignmentService {
       type: 'assignment',
       message: `Chat assigned to you for customer ${customerId}`,
       relatedId: customerId,
+      businessId,
     });
 
     return assignment;
@@ -75,7 +77,7 @@ class ChatAssignmentService {
 
   // Transfer chat to different staff
   async transferChat(assignmentId, newStaffId, businessId) {
-    return await ChatAssignment.findByIdAndUpdate(
+    return await ChatAssignment.findOneAndUpdate(
       { _id: assignmentId, ...buildTenantScope(businessId) },
       { assignedTo: newStaffId },
       { new: true }
@@ -84,7 +86,7 @@ class ChatAssignmentService {
 
   // Close chat
   async closeChat(assignmentId, notes = '', businessId) {
-    return await ChatAssignment.findByIdAndUpdate(
+    return await ChatAssignment.findOneAndUpdate(
       { _id: assignmentId, ...buildTenantScope(businessId) },
       { status: 'closed', notes },
       { new: true }
@@ -93,7 +95,7 @@ class ChatAssignmentService {
 
   // Admin take over chat
   async takeOverChat(assignmentId, adminId, businessId) {
-    return await ChatAssignment.findByIdAndUpdate(
+    return await ChatAssignment.findOneAndUpdate(
       { _id: assignmentId, ...buildTenantScope(businessId) },
       { assignedTo: adminId, status: 'in_progress' },
       { new: true }

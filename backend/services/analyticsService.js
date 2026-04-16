@@ -6,13 +6,15 @@ import Campaign from '../models/Campaign.js';
 import Product from '../models/Product.js';
 import ChatAssignment from '../models/ChatAssignment.js';
 import CustomerStatusService from './customerStatusService.js';
+import buildTenantScope from '../utils/tenantScope.js';
 
 class AnalyticsService {
-  async getCustomerStatusTotals() {
-    const customers = await Customer.find().select('_id');
+  async getCustomerStatusTotals(businessId) {
+    const tenantScope = buildTenantScope(businessId);
+    const customers = await Customer.find(tenantScope).select('_id');
     const totalCustomers = customers.length;
     const customerIds = customers.map((customer) => customer._id);
-    const activityMap = await CustomerStatusService.getActivityCountMap(customerIds);
+    const activityMap = await CustomerStatusService.getActivityCountMap(customerIds, businessId);
 
     let existingCustomers = 0;
     for (const customerId of customerIds) {
@@ -30,11 +32,12 @@ class AnalyticsService {
     };
   }
 
-  async getAnalytics() {
-    const { totalCustomers, existingCustomers } = await this.getCustomerStatusTotals();
-    const totalMessages = await Message.countDocuments();
-    const totalOrders = await Order.countDocuments();
-    const totalProducts = await Product.countDocuments({ isActive: true });
+  async getAnalytics(businessId) {
+    const tenantScope = buildTenantScope(businessId);
+    const { totalCustomers, existingCustomers } = await this.getCustomerStatusTotals(businessId);
+    const totalMessages = await Message.countDocuments(tenantScope);
+    const totalOrders = await Order.countDocuments(tenantScope);
+    const totalProducts = await Product.countDocuments({ ...tenantScope, isActive: true });
     const conversionRate = totalCustomers > 0 ? (existingCustomers / totalCustomers) * 100 : 0;
 
     return {
@@ -47,16 +50,17 @@ class AnalyticsService {
   }
 
   // Advanced analytics
-  async getAdvancedAnalytics() {
-    const { totalCustomers, newCustomers, existingCustomers } = await this.getCustomerStatusTotals();
+  async getAdvancedAnalytics(businessId) {
+    const tenantScope = buildTenantScope(businessId);
+    const { totalCustomers, newCustomers, existingCustomers } = await this.getCustomerStatusTotals(businessId);
 
-    const totalMessages = await Message.countDocuments();
-    const incomingMessages = await Message.countDocuments({ type: 'incoming' });
-    const outgoingMessages = await Message.countDocuments({ type: 'outgoing' });
+    const totalMessages = await Message.countDocuments(tenantScope);
+    const incomingMessages = await Message.countDocuments({ ...tenantScope, type: 'incoming' });
+    const outgoingMessages = await Message.countDocuments({ ...tenantScope, type: 'outgoing' });
 
-    const totalOrders = await Order.countDocuments();
-    const pendingOrders = await Order.countDocuments({ status: 'Pending' });
-    const confirmedOrders = await Order.countDocuments({ status: 'Confirmed' });
+    const totalOrders = await Order.countDocuments(tenantScope);
+    const pendingOrders = await Order.countDocuments({ ...tenantScope, status: 'Pending' });
+    const confirmedOrders = await Order.countDocuments({ ...tenantScope, status: 'Confirmed' });
 
     // Revenue (mock calculation)
     const estimatedRevenue = totalOrders * 50; // Assuming avg order value is $50
@@ -85,12 +89,15 @@ class AnalyticsService {
   }
 
   // Campaign performance
-  async getCampaignPerformance() {
-    const campaigns = await Campaign.find();
+  async getCampaignPerformance(businessId) {
+    const tenantScope = buildTenantScope(businessId);
+    const campaigns = await Campaign.find(tenantScope);
     const performance = [];
+    const totalCustomers = await Customer.countDocuments(tenantScope);
 
     for (const campaign of campaigns) {
       const messagesSent = await Message.countDocuments({
+        ...tenantScope,
         message: campaign.message,
         type: 'outgoing',
       });
@@ -98,7 +105,7 @@ class AnalyticsService {
         campaignId: campaign._id,
         message: campaign.message,
         messagesSent,
-        successRate: ((messagesSent / Math.max(1, await Customer.countDocuments())) * 100).toFixed(2),
+        successRate: ((messagesSent / Math.max(1, totalCustomers)) * 100).toFixed(2),
         sentAt: campaign.sentAt,
       });
     }
@@ -107,14 +114,15 @@ class AnalyticsService {
   }
 
   // Customer engagement
-  async getCustomerEngagement() {
-    const customers = await Customer.find();
+  async getCustomerEngagement(businessId) {
+    const tenantScope = buildTenantScope(businessId);
+    const customers = await Customer.find(tenantScope);
     const engagement = [];
 
     for (const customer of customers) {
-      const messageCount = await Message.countDocuments({ customerId: customer._id });
-      const orderCount = await Order.countDocuments({ customerId: customer._id });
-      const appointmentCount = await Appointment.countDocuments({ customerId: customer._id });
+      const messageCount = await Message.countDocuments({ customerId: customer._id, ...tenantScope });
+      const orderCount = await Order.countDocuments({ customerId: customer._id, ...tenantScope });
+      const appointmentCount = await Appointment.countDocuments({ customerId: customer._id, ...tenantScope });
       const status = CustomerStatusService.getStatusByActivityCount(orderCount + appointmentCount);
 
       engagement.push({
@@ -131,49 +139,50 @@ class AnalyticsService {
   }
 
   // Comprehensive dashboard analytics
-  async getDashboardAnalytics() {
+  async getDashboardAnalytics(businessId) {
     try {
+      const tenantScope = buildTenantScope(businessId);
       // Get customer stats
-      const { totalCustomers, newCustomers, existingCustomers } = await this.getCustomerStatusTotals();
+      const { totalCustomers, newCustomers, existingCustomers } = await this.getCustomerStatusTotals(businessId);
 
       // Get message stats
-      const totalMessages = await Message.countDocuments();
-      const incomingMessages = await Message.countDocuments({ type: 'incoming' });
-      const outgoingMessages = await Message.countDocuments({ type: 'outgoing' });
+      const totalMessages = await Message.countDocuments(tenantScope);
+      const incomingMessages = await Message.countDocuments({ ...tenantScope, type: 'incoming' });
+      const outgoingMessages = await Message.countDocuments({ ...tenantScope, type: 'outgoing' });
 
       // Get appointment stats
-      const totalAppointments = await Appointment.countDocuments();
-      const pendingAppointments = await Appointment.countDocuments({ status: 'Pending' });
-      const confirmedAppointments = await Appointment.countDocuments({ status: 'Confirmed' });
+      const totalAppointments = await Appointment.countDocuments(tenantScope);
+      const pendingAppointments = await Appointment.countDocuments({ ...tenantScope, status: 'Pending' });
+      const confirmedAppointments = await Appointment.countDocuments({ ...tenantScope, status: 'Confirmed' });
 
       // Get order stats
-      const totalOrders = await Order.countDocuments();
+      const totalOrders = await Order.countDocuments(tenantScope);
       
       // Calculate product ordered conversion rate (success/failure)
-      const successfulOrders = await Order.countDocuments({ paymentStatus: 'Received' });
-      const failedOrders = await Order.countDocuments({ paymentStatus: { $in: ['Pending', 'Refund'] } });
+      const successfulOrders = await Order.countDocuments({ ...tenantScope, paymentStatus: 'Received' });
+      const failedOrders = await Order.countDocuments({ ...tenantScope, paymentStatus: { $in: ['Pending', 'Refund'] } });
       const orderSuccessRate = totalOrders > 0 ? ((successfulOrders / totalOrders) * 100).toFixed(2) : 0;
       const orderFailureRate = totalOrders > 0 ? ((failedOrders / totalOrders) * 100).toFixed(2) : 0;
 
       // Calculate actual revenue (sum of finalPrice of successful orders)
       const revenueData = await Order.aggregate([
-        { $match: { paymentStatus: 'Received' } },
+        { $match: { ...tenantScope, paymentStatus: 'Received' } },
         { $group: { _id: null, totalRevenue: { $sum: '$finalPrice' } } }
       ]);
       const totalRevenue = revenueData.length > 0 ? revenueData[0].totalRevenue : 0;
 
       // Get staff chat assignments
-      const totalChatAssignments = await ChatAssignment.countDocuments({ status: { $ne: 'closed' } });
-      const assignedChats = await ChatAssignment.countDocuments({ status: 'assigned' });
-      const inProgressChats = await ChatAssignment.countDocuments({ status: 'in_progress' });
+      const totalChatAssignments = await ChatAssignment.countDocuments({ ...tenantScope, status: { $ne: 'closed' } });
+      const assignedChats = await ChatAssignment.countDocuments({ ...tenantScope, status: 'assigned' });
+      const inProgressChats = await ChatAssignment.countDocuments({ ...tenantScope, status: 'in_progress' });
 
       // Get appointment assignments (where assignedTo is not null)
-      const staffAssignedAppointments = await Appointment.countDocuments({ assignedTo: { $exists: true, $ne: null } });
+      const staffAssignedAppointments = await Appointment.countDocuments({ ...tenantScope, assignedTo: { $exists: true, $ne: null } });
 
       // Get campaign stats
-      const totalCampaigns = await Campaign.countDocuments();
-      const allCampaigns = await Campaign.countDocuments({ audience: 'all' });
-      const existingCustomerCampaigns = await Campaign.countDocuments({ audience: 'existing' });
+      const totalCampaigns = await Campaign.countDocuments(tenantScope);
+      const allCampaigns = await Campaign.countDocuments({ ...tenantScope, audience: 'all' });
+      const existingCustomerCampaigns = await Campaign.countDocuments({ ...tenantScope, audience: 'existing' });
 
       // Calculate overall conversion rate
       const overallConversionRate = totalCustomers > 0 ? ((existingCustomers / totalCustomers) * 100).toFixed(2) : 0;

@@ -5,7 +5,7 @@ class CampaignController {
     try {
       const { message, audience, type, productIds, productOffers } = req.body;
       const campaign = await CampaignService.createCampaign(
-        req.user.businessId,
+        req.businessId,
         message,
         audience,
         type || 'TEXT',
@@ -25,7 +25,7 @@ class CampaignController {
         return res.status(400).json({ message: 'At least one product must be selected' });
       }
       const campaign = await CampaignService.createCampaign(
-        req.user.businessId,
+        req.businessId,
         message,
         audience,
         'PRODUCT',
@@ -40,13 +40,12 @@ class CampaignController {
 
   async getCampaigns(req, res) {
     try {
-      const scopeBusinessId = req.user?.role === 'admin' ? undefined : req.user.businessId;
       const filters = {
         from: req.query.from || '',
         to: req.query.to || '',
         search: req.query.search || '',
       };
-      const campaigns = await CampaignService.getCampaigns(scopeBusinessId, filters);
+      const campaigns = await CampaignService.getCampaigns(req.businessId, filters);
       res.json(campaigns);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -56,7 +55,7 @@ class CampaignController {
   async getCampaignAnalytics(req, res) {
     try {
       const { id } = req.params;
-      const analytics = await CampaignService.getCampaignAnalytics(req.user.businessId, id);
+      const analytics = await CampaignService.getCampaignAnalytics(req.businessId, id);
       res.json(analytics);
     } catch (error) {
       res.status(500).json({ message: error.message });

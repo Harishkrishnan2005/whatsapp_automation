@@ -78,6 +78,7 @@ const TopBar = ({ onToggleSidebar, onRefreshGlobal, theme = 'dark', onToggleThem
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const pageTitle = usePageTitle();
+  const isSuperAdmin = user?.role === 'super_admin';
 
   const dateRange = useAnalyticsStore((state) => state.dateRange);
   const globalSearchQuery = useAnalyticsStore((state) => state.searchQuery);
@@ -109,6 +110,11 @@ const TopBar = ({ onToggleSidebar, onRefreshGlobal, theme = 'dark', onToggleThem
   }, [debouncedSearch, setSearchQuery]);
 
   const fetchNotifications = useCallback(async () => {
+    if (isSuperAdmin) {
+      setNotifications([]);
+      return;
+    }
+
     try {
       const response = await api.get('/notifications');
       const rows = Array.isArray(response.data) ? response.data : [];
@@ -116,7 +122,7 @@ const TopBar = ({ onToggleSidebar, onRefreshGlobal, theme = 'dark', onToggleThem
     } catch {
       setNotifications(MOCK_NOTIFICATIONS);
     }
-  }, []);
+  }, [isSuperAdmin]);
 
   useEffect(() => {
     fetchNotifications();
@@ -145,6 +151,12 @@ const TopBar = ({ onToggleSidebar, onRefreshGlobal, theme = 'dark', onToggleThem
   }, []);
 
   useEffect(() => {
+    if (isSuperAdmin) {
+      setSearchResult(DEFAULT_SEARCH_RESULT);
+      setSearching(false);
+      return;
+    }
+
     if (!debouncedSearch.trim()) {
       setSearchResult(DEFAULT_SEARCH_RESULT);
       setSearching(false);
@@ -168,7 +180,7 @@ const TopBar = ({ onToggleSidebar, onRefreshGlobal, theme = 'dark', onToggleThem
     return () => {
       active = false;
     };
-  }, [debouncedSearch]);
+  }, [debouncedSearch, isSuperAdmin]);
 
   useEffect(() => {
     const closeMenus = (event) => {

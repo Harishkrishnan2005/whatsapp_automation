@@ -6,7 +6,6 @@ class OrderController {
     try {
       const page = parseInt(req.query.page, 10) || 1;
       const limit = parseInt(req.query.limit, 10) || 10;
-      const scopeBusinessId = req.user?.role === 'admin' ? undefined : req.user.businessId;
       const filters = {
         orderStatus: req.query.orderStatus || '',
         paymentStatus: req.query.paymentStatus || '',
@@ -20,7 +19,7 @@ class OrderController {
         options.assignedTo = req.user.id;
       }
 
-      const result = await OrderService.getOrders(scopeBusinessId, page, limit, filters, options);
+      const result = await OrderService.getOrders(req.businessId, page, limit, filters, options);
       res.json(result);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -53,7 +52,7 @@ class OrderController {
         redirectUrl,
         paymentType,
         address,
-        businessId: req.user.businessId,
+        businessId: req.businessId,
       });
 
       res.status(201).json(result);
@@ -67,7 +66,7 @@ class OrderController {
       const { orderId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
 
       const updated = await OrderService.verifyPayment({
-        businessId: req.user.businessId,
+        businessId: req.businessId,
         orderId,
         razorpayOrderId,
         razorpayPaymentId,
@@ -88,7 +87,7 @@ class OrderController {
       const { id } = req.params;
       const { orderStatus, status } = req.body;
       const nextStatus = orderStatus || status;
-      const scopeBusinessId = req.user?.role === 'admin' ? undefined : req.user.businessId;
+      const scopeBusinessId = req.businessId;
 
       if (req.user?.role === 'staff') {
         const existingOrder = await OrderService.getOrderById(scopeBusinessId, id);
@@ -116,7 +115,7 @@ class OrderController {
     try {
       const { id } = req.params;
       const { paymentStatus } = req.body;
-      const scopeBusinessId = req.user?.role === 'admin' ? undefined : req.user.businessId;
+      const scopeBusinessId = req.businessId;
 
       if (req.user?.role === 'staff') {
         const existingOrder = await OrderService.getOrderById(scopeBusinessId, id);
@@ -148,7 +147,7 @@ class OrderController {
         return res.status(400).json({ message: 'assignedTo is required' });
       }
 
-      const order = await OrderService.assignOrder(req.user.businessId, id, assignedTo);
+      const order = await OrderService.assignOrder(req.businessId, id, assignedTo);
       if (!order) {
         return res.status(404).json({ message: 'Order not found' });
       }
@@ -165,7 +164,7 @@ class OrderController {
       const { reason = '' } = req.body;
 
       const order = await OrderService.cancelOrder({
-        businessId: req.user.businessId,
+        businessId: req.businessId,
         orderId: id,
         reason,
       });
@@ -182,7 +181,7 @@ class OrderController {
       const { reason = '' } = req.body;
 
       const order = await OrderService.requestReturn({
-        businessId: req.user.businessId,
+        businessId: req.businessId,
         orderId: id,
         reason,
       });
@@ -199,7 +198,7 @@ class OrderController {
       const { refundOnline = true } = req.body;
 
       const order = await OrderService.approveReturn({
-        businessId: req.user.businessId,
+        businessId: req.businessId,
         orderId: id,
         refundOnline,
       });

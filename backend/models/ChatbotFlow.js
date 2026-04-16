@@ -41,6 +41,43 @@ const chatbotFlowSchema = new mongoose.Schema({
     ],
     default: 'NONE',
   },
+  nodes: [
+    {
+      id: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+      type: {
+        type: String,
+        trim: true,
+        default: 'message',
+      },
+      data: {
+        type: mongoose.Schema.Types.Mixed,
+        default: {},
+      },
+    },
+  ],
+  edges: [
+    {
+      source: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+      target: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+      label: {
+        type: String,
+        trim: true,
+        default: '',
+      },
+    },
+  ],
   isActive: {
     type: Boolean,
     default: true,

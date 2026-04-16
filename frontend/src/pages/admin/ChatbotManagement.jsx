@@ -48,6 +48,10 @@ const ChatbotManagement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.trigger.trim() || !form.reply.trim() || !form.step.trim() || !form.nextStep.trim()) {
+      setMessage('Please fill all required fields');
+      return;
+    }
     try {
       if (editing) {
         await api.put(`/chatbot/${editing._id}`, form);
@@ -60,7 +64,8 @@ const ChatbotManagement = () => {
       fetchFlows();
     } catch (error) {
       console.error('Unable to save flow', error);
-      setMessage('Unable to save flow. Please try again.');
+      const errorMessage = error?.response?.data?.message || 'Unable to save flow. Please try again.';
+      setMessage(errorMessage);
     }
   };
 

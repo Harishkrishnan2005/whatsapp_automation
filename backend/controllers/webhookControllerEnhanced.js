@@ -170,10 +170,22 @@ class WebhookController {
       // ==================
       let botResult;
       try {
+        console.log('[WebhookEnhanced] Incoming webhook message:', {
+          phone: normalizedPhone,
+          message: incomingText,
+          businessId: String(resolvedBusinessId),
+        });
+
         botResult = await ChatbotEngine.chatbotEngine({
           phone: normalizedPhone,
           message: incomingText,
           businessId: resolvedBusinessId,
+        });
+
+        console.log('[WebhookEnhanced] Engine response:', {
+          businessId: String(resolvedBusinessId),
+          type: botResult?.type || 'text',
+          response: botResult?.response || botResult?.text || '',
         });
       } catch (error) {
         console.error('[Webhook] Chatbot engine error:', {

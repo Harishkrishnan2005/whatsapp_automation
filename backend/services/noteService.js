@@ -18,8 +18,8 @@ class NoteService {
       .sort({ createdAt: -1 });
   }
 
-  async deleteNote(id) {
-    return await Note.findByIdAndDelete(id);
+  async deleteNote(id, businessId) {
+    return await Note.findOneAndDelete({ _id: id, ...buildTenantScope(businessId) });
   }
 }
 

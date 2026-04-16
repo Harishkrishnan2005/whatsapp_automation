@@ -26,7 +26,10 @@ class CustomerService {
     }
 
     const customers = await Customer.find(query).skip(skip).limit(limit).sort({ createdAt: -1 }).lean();
-    const statusMap = await CustomerStatusService.syncStatusesForCustomers(customers.map((customer) => customer._id));
+    const statusMap = await CustomerStatusService.syncStatusesForCustomers(
+      customers.map((customer) => customer._id),
+      businessId
+    );
 
     const customerIds = customers.map((customer) => customer._id);
     const orderRows = await Order.find(
@@ -97,13 +100,13 @@ class CustomerService {
   }
 
   async getCustomerById(businessId, id) {
-    await CustomerStatusService.syncStatusForCustomer(id);
-    return await Customer.findOne({ _id: id, businessId });
+    await CustomerStatusService.syncStatusForCustomer(id, businessId);
+    return await Customer.findOne({ _id: id, ...buildTenantScope(businessId) });
   }
 
   async updateCustomerStatus(businessId, id) {
-    await CustomerStatusService.syncStatusForCustomer(id);
-    return await Customer.findOne({ _id: id, businessId });
+    await CustomerStatusService.syncStatusForCustomer(id, businessId);
+    return await Customer.findOne({ _id: id, ...buildTenantScope(businessId) });
   }
 }
 

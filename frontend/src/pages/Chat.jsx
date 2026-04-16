@@ -1,10 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
 import ProductCarousel from '../components/ProductCarousel';
-import { useAuth } from '../context/AuthContext';
 
 const Chat = () => {
-  const { user } = useAuth();
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
@@ -19,10 +17,9 @@ const Chat = () => {
   const sendWebhookMessage = async (outgoingText) => {
     if (!phone || !outgoingText) return;
     try {
-      const response = await api.post('/webhook', {
+      const response = await api.post('/chatbot/send', {
         phone,
         message: outgoingText,
-        businessId: user?.businessId,
       });
       const botPayload = { type: 'bot', ...response.data };
       setChatHistory((prev) => [...prev, { type: 'user', text: outgoingText }, botPayload]);
@@ -34,7 +31,16 @@ const Chat = () => {
       return response.data;
     } catch (error) {
       console.error('Error sending message:', error);
-      console.error('Webhook API error payload:', error?.response?.data);
+      console.error('Chatbot API error payload:', error?.response?.data);
+      setChatHistory((prev) => [
+        ...prev,
+        { type: 'user', text: outgoingText },
+        {
+          type: 'bot',
+          response: error?.response?.data?.message || 'Unable to process message right now.',
+          text: error?.response?.data?.message || 'Unable to process message right now.',
+        },
+      ]);
       return null;
     }
   };
@@ -70,7 +76,6 @@ const Chat = () => {
         handler: async function onPaymentSuccess(razorpayResponse) {
           try {
             await api.post('/webhook/payment/verify', {
-              businessId: user?.businessId,
               orderId: paymentPayload.internalOrderId,
               razorpayOrderId: razorpayResponse.razorpay_order_id,
               razorpayPaymentId: razorpayResponse.razorpay_payment_id,

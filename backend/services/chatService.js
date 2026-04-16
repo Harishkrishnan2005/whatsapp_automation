@@ -100,7 +100,7 @@ class ChatService {
       });
 
       // Update customer's last activity
-      await Customer.findOneAndUpdate({ _id: customerId }, { updatedAt: new Date() });
+      await Customer.findOneAndUpdate({ _id: customerId, ...tenantScope }, { updatedAt: new Date() });
 
       return newMessage;
     } catch (error) {

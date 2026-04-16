@@ -14,6 +14,7 @@ export const COLLECTIONS = {
   NOTES: 'notes',
   NOTIFICATIONS: 'notifications',
   SESSIONS: 'sessions',
+  CHAT_SESSIONS: 'chat_sessions',
 };
 
 export default COLLECTIONS;

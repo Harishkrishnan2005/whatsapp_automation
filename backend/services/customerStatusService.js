@@ -2,13 +2,14 @@ import mongoose from 'mongoose';
 import Customer from '../models/Customer.js';
 import Order from '../models/Order.js';
 import Appointment from '../models/Appointment.js';
+import buildTenantScope from '../utils/tenantScope.js';
 
 class CustomerStatusService {
   getStatusByActivityCount(activityCount) {
     return activityCount > 1 ? 'existing' : 'new';
   }
 
-  async getActivityCountMap(customerIds) {
+  async getActivityCountMap(customerIds, businessId) {
     if (!customerIds?.length) {
       return new Map();
     }
@@ -23,13 +24,14 @@ class CustomerStatusService {
 
     const objectIds = normalizedIds.map((id) => new mongoose.Types.ObjectId(id));
 
+    const tenantScope = buildTenantScope(businessId);
     const [orderCounts, appointmentCounts] = await Promise.all([
       Order.aggregate([
-        { $match: { customerId: { $in: objectIds } } },
+        { $match: { customerId: { $in: objectIds }, ...tenantScope } },
         { $group: { _id: '$customerId', count: { $sum: 1 } } },
       ]),
       Appointment.aggregate([
-        { $match: { customerId: { $in: objectIds } } },
+        { $match: { customerId: { $in: objectIds }, ...tenantScope } },
         { $group: { _id: '$customerId', count: { $sum: 1 } } },
       ]),
     ]);
@@ -49,12 +51,13 @@ class CustomerStatusService {
     return map;
   }
 
-  async syncStatusesForCustomers(customerIds) {
+  async syncStatusesForCustomers(customerIds, businessId) {
     if (!customerIds?.length) {
       return new Map();
     }
 
-    const activityMap = await this.getActivityCountMap(customerIds);
+    const activityMap = await this.getActivityCountMap(customerIds, businessId);
+    const tenantScope = buildTenantScope(businessId);
     const statusMap = new Map();
     const bulkOps = [];
 
@@ -69,7 +72,7 @@ class CustomerStatusService {
 
       bulkOps.push({
         updateOne: {
-          filter: { _id: objectId, status: { $ne: status } },
+          filter: { _id: objectId, ...tenantScope, status: { $ne: status } },
           update: { $set: { status } },
         },
       });
@@ -82,8 +85,8 @@ class CustomerStatusService {
     return statusMap;
   }
 
-  async syncStatusForCustomer(customerId) {
-    const statusMap = await this.syncStatusesForCustomers([customerId]);
+  async syncStatusForCustomer(customerId, businessId) {
+    const statusMap = await this.syncStatusesForCustomers([customerId], businessId);
     return statusMap.get(customerId.toString()) || 'new';
   }
 }

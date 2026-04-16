@@ -21,7 +21,7 @@ class DashboardController {
   // Admin Dashboard
   async getAdminDashboard(req, res) {
     try {
-      const tenantScope = buildTenantScope(req.user.businessId);
+      const tenantScope = buildTenantScope(req.businessId);
       const [
         totalCustomers,
         totalMessages,
@@ -44,13 +44,13 @@ class DashboardController {
         this.safeQuery(() => Campaign.countDocuments(tenantScope), 0, 'totalCampaigns'),
         this.safeQuery(() => Appointment.countDocuments(tenantScope), 0, 'totalAppointments'),
         this.safeQuery(() => Product.countDocuments({ ...tenantScope, isActive: true }), 0, 'totalProducts'),
-        this.safeQuery(() => this.getCustomerDetails(tenantScope), { totalCustomers: 0, existingCustomers: 0, newCustomers: 0 }, 'customerDetails'),
+        this.safeQuery(() => this.getCustomerDetails(tenantScope, req.businessId), { totalCustomers: 0, existingCustomers: 0, newCustomers: 0 }, 'customerDetails'),
         this.safeQuery(() => this.getMessageDetails(tenantScope), { incomingMessages: 0, outgoingMessages: 0 }, 'messageDetails'),
         this.safeQuery(() => this.getOrderDetails(tenantScope), { pendingOrders: 0, confirmedOrders: 0, deliveredOrders: 0 }, 'orderDetails'),
         this.safeQuery(() => Message.find(tenantScope).populate('customerId', 'name phone').sort({ createdAt: -1 }).limit(5).lean(), [], 'recentChats'),
         this.safeQuery(() => Order.find(tenantScope).populate('customerId', 'name phone').sort({ createdAt: -1 }).limit(5).lean(), [], 'recentOrders'),
         this.safeQuery(() => this.getCampaignPerformance(tenantScope), { totalSent: 0, totalConverted: 0, deliveryRate: '0.00', campaignConversionRate: '0.00' }, 'campaignPerformance'),
-        this.safeQuery(() => this.getConversionRate(tenantScope), '0.00', 'conversionRate'),
+        this.safeQuery(() => this.getConversionRate(tenantScope, req.businessId), '0.00', 'conversionRate'),
         this.safeQuery(() => this.getSuccessRate(tenantScope), '0.00', 'successRate')
       ]);
 
@@ -80,6 +80,7 @@ class DashboardController {
   async getStaffDashboard(req, res) {
     try {
       const userId = req.user.id;
+      const tenantScope = buildTenantScope(req.businessId);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
@@ -91,16 +92,17 @@ class DashboardController {
         recentChats,
         recentBookings
       ] = await Promise.all([
-        ChatAssignment.countDocuments({ assignedTo: userId }),
+        ChatAssignment.countDocuments({ assignedTo: userId, ...tenantScope }),
         Appointment.countDocuments({
+          ...tenantScope,
           assignedTo: userId,
           date: { $gte: today, $lt: tomorrow }
         }),
-        ChatAssignment.find({ assignedTo: userId })
+        ChatAssignment.find({ assignedTo: userId, ...tenantScope })
           .populate('customerId', 'name')
           .sort({ updatedAt: -1 })
           .limit(5),
-        Appointment.find({ assignedTo: userId })
+        Appointment.find({ assignedTo: userId, ...tenantScope })
           .populate('customerId', 'name')
           .sort({ createdAt: -1 })
           .limit(5)
@@ -118,11 +120,12 @@ class DashboardController {
     }
   }
 
-  async getCampaignPerformance() {
-    const campaigns = await Campaign.find().select('sentCount totalCustomers').lean();
+  async getCampaignPerformance(tenantScope) {
+    const campaigns = await Campaign.find(tenantScope).select('sentCount totalCustomers').lean();
     const totalSent = campaigns.reduce((sum, campaign) => sum + (campaign.sentCount || 0), 0);
     const totalTargetCustomers = campaigns.reduce((sum, campaign) => sum + (campaign.totalCustomers || 0), 0);
     const totalConverted = await Order.countDocuments({
+      ...tenantScope,
       campaignId: { $ne: null },
       status: 'Confirmed',
     });
@@ -138,21 +141,21 @@ class DashboardController {
     return { totalSent, totalConverted, deliveryRate, campaignConversionRate };
   }
 
-  async getConversionRate() {
-    const { totalCustomers, existingCustomers } = await this.getCustomerDetails();
+  async getConversionRate(tenantScope, businessId) {
+    const { totalCustomers, existingCustomers } = await this.getCustomerDetails(tenantScope, businessId);
     return totalCustomers > 0 ? ((existingCustomers / totalCustomers) * 100).toFixed(2) : '0.00';
   }
 
-  async getSuccessRate() {
-    const campaignPerformance = await this.getCampaignPerformance();
+  async getSuccessRate(tenantScope) {
+    const campaignPerformance = await this.getCampaignPerformance(tenantScope);
     return campaignPerformance.campaignConversionRate;
   }
 
-  async getCustomerDetails() {
-    const customers = await Customer.find().select('_id');
+  async getCustomerDetails(tenantScope, businessId) {
+    const customers = await Customer.find(tenantScope).select('_id');
     const totalCustomers = customers.length;
     const customerIds = customers.map((customer) => customer._id);
-    const activityMap = await CustomerStatusService.getActivityCountMap(customerIds);
+    const activityMap = await CustomerStatusService.getActivityCountMap(customerIds, businessId);
 
     let existingCustomers = 0;
     for (const customerId of customerIds) {
@@ -168,10 +171,10 @@ class DashboardController {
     };
   }
 
-  async getMessageDetails() {
+  async getMessageDetails(tenantScope) {
     const [incomingMessages, outgoingMessages] = await Promise.all([
-      Message.countDocuments({ type: 'incoming' }),
-      Message.countDocuments({ type: 'outgoing' }),
+      Message.countDocuments({ ...tenantScope, type: 'incoming' }),
+      Message.countDocuments({ ...tenantScope, type: 'outgoing' }),
     ]);
 
     return {
@@ -180,11 +183,12 @@ class DashboardController {
     };
   }
 
-  async getOrderDetails() {
+  async getOrderDetails(tenantScope) {
     const [pendingOrders, confirmedOrders, deliveredOrders] = await Promise.all([
-      Order.countDocuments({ status: 'Pending' }),
-      Order.countDocuments({ status: 'Confirmed' }),
+      Order.countDocuments({ ...tenantScope, status: 'Pending' }),
+      Order.countDocuments({ ...tenantScope, status: 'Confirmed' }),
       Order.countDocuments({
+        ...tenantScope,
         $or: [{ orderStatus: 'Delivered' }, { status: 'Delivered' }],
       }),
     ]);

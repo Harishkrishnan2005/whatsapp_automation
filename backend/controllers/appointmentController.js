@@ -9,7 +9,7 @@ class AppointmentController {
         date,
         timeSlot,
         assignedTo,
-        req.user.businessId
+        req.businessId
       );
       res.status(201).json(appointment);
     } catch (error) {
@@ -26,7 +26,7 @@ class AppointmentController {
         to: req.query.to || '',
         search: req.query.search || '',
       };
-      const result = await AppointmentService.getAppointments(req.user, page, limit, filters);
+      const result = await AppointmentService.getAppointments(req.user, req.businessId, page, limit, filters);
       res.json(result);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -36,7 +36,7 @@ class AppointmentController {
   async getCustomerAppointments(req, res) {
     try {
       const { customerId } = req.params;
-      const appointments = await AppointmentService.getCustomerAppointments(customerId);
+      const appointments = await AppointmentService.getCustomerAppointments(customerId, req.businessId);
       res.json(appointments);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -47,7 +47,7 @@ class AppointmentController {
     try {
       const { id } = req.params;
       const { status } = req.body;
-      const appointment = await AppointmentService.updateAppointmentStatus(id, status, req.user);
+      const appointment = await AppointmentService.updateAppointmentStatus(id, status, req.user, req.businessId);
       res.json(appointment);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -58,7 +58,7 @@ class AppointmentController {
     try {
       const { id } = req.params;
       const { assignedTo } = req.body;
-      const appointment = await AppointmentService.assignAppointment(id, assignedTo);
+      const appointment = await AppointmentService.assignAppointment(id, assignedTo, req.businessId);
       res.json(appointment);
     } catch (error) {
       res.status(500).json({ message: error.message });

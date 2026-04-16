@@ -1,124 +1,190 @@
+import mongoose from 'mongoose';
 import ChatbotFlow from '../models/ChatbotFlow.js';
-import SessionService from './sessionService.js';
-import ActionHandler from './actionHandler.js';
+import ChatSession from '../models/ChatSession.js';
 
-const NO_FLOW_CONFIGURED_TEXT = 'No flow configured. Please contact admin.';
-
-const normalizeMessage = (message) => String(message || '').toLowerCase().trim();
-const normalizeTrigger = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+const normalize = (text) => String(text || '').toLowerCase().trim();
+const defaultReply = 'Sorry, I did not understand that. Please try again.';
+const splitTriggers = (value) =>
+  String(value || '')
+    .split(/[,\n]/)
+    .map((item) => normalize(item))
+    .filter(Boolean);
 
 class ChatbotEngine {
-  async getSystemReply(businessId, trigger) {
-    if (!businessId || !trigger) return '';
+  async buildLegacyReply({ flow, session, message }) {
+    const normalizedMessage = normalize(message);
+    const triggerMatch = splitTriggers(flow.trigger || '');
 
-    const flow = await ChatbotFlow.findOne({
-      businessId,
-      step: 'system',
-      trigger: normalizeTrigger(trigger),
-      isActive: true,
-    }).lean();
+    if (!triggerMatch.includes(normalizedMessage)) {
+      return {
+        response: defaultReply,
+        text: defaultReply,
+        type: 'text',
+        products: [],
+      };
+    }
 
-    return String(flow?.reply || '').trim();
+    const nextStep = String(flow.nextStep || session.currentNode || 'start').trim();
+    session.currentNode = nextStep;
+    await session.save();
+
+    const reply = String(flow.reply || defaultReply).trim();
+    return {
+      response: reply,
+      text: reply,
+      type: 'text',
+      products: [],
+    };
   }
 
-  async chatbotEngine({ phone, message, businessId }) {
+  async chatbotEngine({ message, phone, businessId }) {
     try {
-      const normalizedMessage = normalizeMessage(message);
-      const trigger = normalizeTrigger(normalizedMessage);
+      if (!businessId) {
+        throw new Error('businessId is required');
+      }
 
-      if (!phone || !businessId || !trigger) {
+      if (!phone || !message) {
         return {
-          response: NO_FLOW_CONFIGURED_TEXT,
-          text: NO_FLOW_CONFIGURED_TEXT,
-          products: [],
+          response: 'Something went wrong',
+          text: 'Something went wrong',
           type: 'text',
+          products: [],
         };
       }
 
-      let session = await SessionService.getOrCreateSession(phone, businessId);
-      if (SessionService.isSessionExpired(session)) {
-        session = await SessionService.handleExpiryReset(session);
+      const resolvedBusinessId = mongoose.Types.ObjectId.isValid(String(businessId))
+        ? new mongoose.Types.ObjectId(String(businessId))
+        : null;
+
+      if (!resolvedBusinessId) {
+        throw new Error('Invalid businessId');
       }
 
-      const flow = await ChatbotFlow.findOne({
-        businessId,
-        trigger,
-        step: session.step,
-        isActive: true,
-      }).lean();
+      console.log('Incoming message:', message);
+      console.log('BusinessId:', String(resolvedBusinessId));
 
-      if (!flow) {
-        await SessionService.updateSession(session, { lastMessage: message });
-        return {
-          response: NO_FLOW_CONFIGURED_TEXT,
-          text: NO_FLOW_CONFIGURED_TEXT,
-          products: [],
-          type: 'text',
-        };
-      }
+      const normalizedPhone = String(phone).trim();
+      const normalizedMessage = normalize(message);
 
-      let actionResult = null;
-      if (flow.action && flow.action !== 'NONE') {
-        actionResult = await ActionHandler.executeAction(flow.action, {
-          session,
-          businessId,
-          phone,
-          message,
-          flow,
+      let session = await ChatSession.findOne({
+        phone: normalizedPhone,
+        businessId: resolvedBusinessId,
+      });
+
+      if (!session) {
+        session = await ChatSession.create({
+          phone: normalizedPhone,
+          businessId: resolvedBusinessId,
+          currentNode: 'start',
         });
       }
 
-      const nextStep = String(flow.nextStep || session.step || 'start').trim();
-      const updatedContext = {
-        ...(session.context || {}),
-        ...(actionResult?.contextDelta || {}),
-      };
+      console.log('Session step:', session?.currentNode);
 
-      await SessionService.updateSession(session, {
-        step: nextStep,
-        context: updatedContext,
-        lastMessage: message,
-      });
+      const graphFlow = await ChatbotFlow.findOne({
+        businessId: resolvedBusinessId,
+        isActive: true,
+        'nodes.0': { $exists: true },
+      })
+        .sort({ updatedAt: -1, createdAt: -1 })
+        .lean();
 
-      session = await SessionService.getOrCreateSession(phone, businessId);
+      if (graphFlow) {
+        console.log('Flow found:', `graph:${graphFlow._id}`);
 
-      let replyText = String(actionResult?.text || flow.reply || '').trim();
-      if (!replyText) {
-        replyText = NO_FLOW_CONFIGURED_TEXT;
+        const currentNode = graphFlow.nodes.find((node) => node.id === session.currentNode)
+          || graphFlow.nodes.find((node) => node.type === 'start')
+          || graphFlow.nodes[0];
+
+        const matchedEdge = graphFlow.edges.find((edge) =>
+          String(edge.source) === String(currentNode?.id) &&
+          splitTriggers(edge.label || '').some((label) => normalizedMessage === label || normalizedMessage.includes(label))
+        );
+
+        console.log('Matched graph edge:', matchedEdge || null);
+
+        const nextNode = matchedEdge
+          ? graphFlow.nodes.find((node) => node.id === matchedEdge.target)
+          : graphFlow.nodes.find((node) => node.type === 'fallback');
+
+        if (!nextNode) {
+          return {
+            response: defaultReply,
+            text: defaultReply,
+            type: 'text',
+            products: [],
+          };
+        }
+
+        session.currentNode = nextNode.id;
+        await session.save();
+
+        const reply = String(nextNode.data?.message || defaultReply).trim();
+        return {
+          response: reply,
+          text: reply,
+          type: nextNode.data?.type || 'text',
+          products: [],
+        };
       }
 
-      replyText = SessionService.interpolateTemplate(replyText, session);
+      const legacyStepFlows = await ChatbotFlow.find({
+        businessId: resolvedBusinessId,
+        isActive: true,
+        step: session.currentNode,
+      })
+        .sort({ updatedAt: -1, createdAt: -1 })
+        .lean()
+      const legacyStartFlows = session.currentNode === 'start'
+        ? []
+        : await ChatbotFlow.find({
+          businessId: resolvedBusinessId,
+          isActive: true,
+          step: 'start',
+        })
+          .sort({ updatedAt: -1, createdAt: -1 })
+          .lean();
 
-      return {
-        response: replyText,
-        text: replyText,
-        products: actionResult?.products || [],
-        type: actionResult?.type || (actionResult?.products?.length ? 'product' : 'text'),
-        ...(actionResult?.payment ? { payment: actionResult.payment } : {}),
-      };
-    } catch (error) {
-      console.error('[ChatbotEngine] chatbotEngine error:', {
-        phone,
-        businessId,
-        error: error.message,
-        stack: error.stack,
+      const flow = [...legacyStepFlows, ...legacyStartFlows].find((candidate) =>
+        splitTriggers(candidate.trigger).includes(normalizedMessage)
+      );
+
+      if (!flow) {
+        const activeFlowCount = await ChatbotFlow.countDocuments({
+          businessId: resolvedBusinessId,
+          isActive: true,
+        });
+
+        console.log('Flow found:', null);
+        console.log('Active flow count:', activeFlowCount);
+
+        return {
+          response: activeFlowCount > 0 ? defaultReply : 'No chatbot configured.',
+          text: activeFlowCount > 0 ? defaultReply : 'No chatbot configured.',
+          type: 'text',
+          products: [],
+        };
+      }
+
+      console.log('Flow found:', {
+        id: String(flow._id),
+        step: flow.step,
+        trigger: flow.trigger,
       });
-
-      const configuredSystemError = await this.getSystemReply(businessId, 'system_error');
-      const response = configuredSystemError || NO_FLOW_CONFIGURED_TEXT;
-
+      return await this.buildLegacyReply({
+        flow,
+        session,
+        message,
+      });
+    } catch (err) {
+      console.error('[ChatbotEngine] Error:', err);
       return {
-        response,
-        text: response,
-        products: [],
+        response: 'Something went wrong',
+        text: 'Something went wrong',
         type: 'text',
+        products: [],
       };
     }
-  }
-
-  async getSessionInfo(phone, businessId) {
-    const session = await SessionService.getOrCreateSession(phone, businessId);
-    return SessionService.getSessionMetadata(session);
   }
 }
 

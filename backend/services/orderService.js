@@ -198,7 +198,7 @@ class OrderService {
 
         let linkResponse = null;
         try {
-          const customer = await Customer.findById(customerId).lean();
+          const customer = await Customer.findOne({ _id: customerId, ...buildTenantScope(businessId) }).lean();
           linkResponse = await PaymentService.createPaymentLink({
             amount: order.amount,
             customer: {
@@ -230,7 +230,7 @@ class OrderService {
       }
     }
 
-    await CustomerStatusService.syncStatusForCustomer(order.customerId);
+    await CustomerStatusService.syncStatusForCustomer(order.customerId, businessId);
 
     return {
       order,

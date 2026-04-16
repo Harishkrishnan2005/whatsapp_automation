@@ -5,8 +5,7 @@ class ChatController {
   async getAllChats(req, res) {
     try {
       const { page = 1, limit = 20 } = req.query;
-      const scopeBusinessId = req.user?.role === 'admin' ? undefined : req.user.businessId;
-      const result = await ChatService.getAllChats(scopeBusinessId, parseInt(page), parseInt(limit));
+      const result = await ChatService.getAllChats(req.businessId, parseInt(page), parseInt(limit));
       res.json(result);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -17,8 +16,7 @@ class ChatController {
   async getCustomerDetails(req, res) {
     try {
       const { customerId } = req.params;
-      const scopeBusinessId = req.user?.role === 'admin' ? undefined : req.user.businessId;
-      const customer = await ChatService.getCustomerDetails(scopeBusinessId, customerId);
+      const customer = await ChatService.getCustomerDetails(req.businessId, customerId);
       res.json(customer);
     } catch (error) {
       res.status(404).json({ message: error.message });
@@ -30,8 +28,7 @@ class ChatController {
     try {
       const { customerId } = req.params;
       const { page = 1, limit = 50 } = req.query;
-      const scopeBusinessId = req.user?.role === 'admin' ? undefined : req.user.businessId;
-      const result = await ChatService.getMessages(scopeBusinessId, customerId, parseInt(page), parseInt(limit));
+      const result = await ChatService.getMessages(req.businessId, customerId, parseInt(page), parseInt(limit));
       res.json(result);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -42,13 +39,12 @@ class ChatController {
   async sendMessage(req, res) {
     try {
       const { customerId, message } = req.body;
-      const scopeBusinessId = req.user?.role === 'admin' ? undefined : req.user.businessId;
 
       if (!customerId || !message) {
         return res.status(400).json({ message: 'customerId and message are required' });
       }
 
-      const newMessage = await ChatService.sendMessage(scopeBusinessId, customerId, message, 'staff');
+      const newMessage = await ChatService.sendMessage(req.businessId, customerId, message, 'staff');
       res.status(201).json(newMessage);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -59,8 +55,7 @@ class ChatController {
   async markMessagesAsRead(req, res) {
     try {
       const { customerId } = req.params;
-      const scopeBusinessId = req.user?.role === 'admin' ? undefined : req.user.businessId;
-      await ChatService.markMessagesAsRead(scopeBusinessId, customerId);
+      await ChatService.markMessagesAsRead(req.businessId, customerId);
       res.json({ message: 'Messages marked as read' });
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -76,8 +71,7 @@ class ChatController {
         return res.status(400).json({ message: 'Search query is required' });
       }
 
-      const scopeBusinessId = req.user?.role === 'admin' ? undefined : req.user.businessId;
-      const results = await ChatService.searchCustomers(scopeBusinessId, q);
+      const results = await ChatService.searchCustomers(req.businessId, q);
       res.json(results);
     } catch (error) {
       res.status(500).json({ message: error.message });

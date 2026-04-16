@@ -8,17 +8,16 @@ class AppointmentService {
   // Create appointment
   async createAppointment(customerId, date, timeSlot, assignedTo = null, businessId) {
     const appointment = await Appointment.create({ customerId, date, timeSlot, assignedTo, businessId });
-    await CustomerStatusService.syncStatusForCustomer(customerId);
+    await CustomerStatusService.syncStatusForCustomer(customerId, businessId);
     return appointment;
   }
 
   // Get all appointments (admin) or assigned appointments (staff)
-  async getAppointments(user, page = 1, limit = 10, filters = {}) {
+  async getAppointments(user, businessId, page = 1, limit = 10, filters = {}) {
     const safePage = Math.max(1, Number(page) || 1);
     const safeLimit = Math.min(200, Math.max(1, Number(limit) || 10));
     const skip = (safePage - 1) * safeLimit;
-    const scopeBusinessId = user.role === 'admin' ? undefined : user.businessId;
-    let query = { ...buildTenantScope(scopeBusinessId) };
+    let query = { ...buildTenantScope(businessId) };
     const createdAt = buildCreatedAtFilter(filters);
     const searchRegex = buildSearchRegex(filters.search);
 
@@ -59,24 +58,25 @@ class AppointmentService {
   }
 
   // Get customer appointments
-  async getCustomerAppointments(customerId) {
-    return await Appointment.find({ customerId }).populate('customerId', 'name phone');
+  async getCustomerAppointments(customerId, businessId) {
+    return await Appointment.find({ customerId, ...buildTenantScope(businessId) }).populate('customerId', 'name phone');
   }
 
   // Update appointment status
-  async updateAppointmentStatus(appointmentId, status, user) {
-    const appointment = await Appointment.findById(appointmentId);
+  async updateAppointmentStatus(appointmentId, status, user, businessId) {
+    const tenantScope = buildTenantScope(businessId);
+    const appointment = await Appointment.findOne({ _id: appointmentId, ...tenantScope });
     if (!appointment) {
       throw new Error('Appointment not found');
     }
 
     // Staff can only update their assigned appointments
-    if (user.role === 'staff' && appointment.assignedTo.toString() !== user.id) {
+    if (user.role === 'staff' && String(appointment.assignedTo) !== String(user.id)) {
       throw new Error('Unauthorized to update this appointment');
     }
 
-    const updatedAppointment = await Appointment.findByIdAndUpdate(
-      appointmentId,
+    const updatedAppointment = await Appointment.findOneAndUpdate(
+      { _id: appointmentId, ...tenantScope },
       { status },
       { new: true }
     ).populate('customerId', 'name phone').populate('assignedTo', 'name');
@@ -87,15 +87,16 @@ class AppointmentService {
       type: 'appointment_update',
       message: `Your appointment status: ${status}`,
       relatedId: appointmentId,
+      businessId,
     });
 
     return updatedAppointment;
   }
 
   // Assign appointment to staff
-  async assignAppointment(appointmentId, assignedTo) {
-    return await Appointment.findByIdAndUpdate(
-      appointmentId,
+  async assignAppointment(appointmentId, assignedTo, businessId) {
+    return await Appointment.findOneAndUpdate(
+      { _id: appointmentId, ...buildTenantScope(businessId) },
       { assignedTo },
       { new: true }
     ).populate('customerId', 'name phone').populate('assignedTo', 'name');

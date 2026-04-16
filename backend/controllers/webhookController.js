@@ -1,4 +1,4 @@
-import ChatbotEngine from '../services/chatbotEngine.js';
+import chatbotEngine from '../services/chatbotEngine.js';
 import SessionService from '../services/sessionService.js';
 import Business from '../models/Business.js';
 import Customer from '../models/Customer.js';
@@ -131,10 +131,22 @@ class WebhookController {
       // ==================
       // STEP 5: Process through chatbot engine
       // ==================
-      const botResult = await ChatbotEngine.chatbotEngine({
+      console.log('[WebhookController] Incoming webhook message:', {
+        phone: normalizedPhone,
+        message: incomingText,
+        businessId: String(resolvedBusinessId),
+      });
+
+      const botResult = await chatbotEngine.chatbotEngine({
         phone: normalizedPhone,
         message: incomingText,
         businessId: resolvedBusinessId,
+      });
+
+      console.log('[WebhookController] Engine response:', {
+        businessId: String(resolvedBusinessId),
+        type: botResult?.type || 'text',
+        response: botResult?.response || botResult?.text || '',
       });
 
       // ==================

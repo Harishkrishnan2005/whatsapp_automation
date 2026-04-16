@@ -3,7 +3,7 @@ import AnalyticsService from '../services/analyticsService.js';
 class AnalyticsController {
   async getAnalytics(req, res) {
     try {
-      const analytics = await AnalyticsService.getAnalytics();
+      const analytics = await AnalyticsService.getAnalytics(req.businessId);
       res.json(analytics);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -12,7 +12,7 @@ class AnalyticsController {
 
   async getAdvancedAnalytics(req, res) {
     try {
-      const analytics = await AnalyticsService.getAdvancedAnalytics();
+      const analytics = await AnalyticsService.getAdvancedAnalytics(req.businessId);
       res.json(analytics);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -21,7 +21,7 @@ class AnalyticsController {
 
   async getDashboardAnalytics(req, res) {
     try {
-      const analytics = await AnalyticsService.getDashboardAnalytics();
+      const analytics = await AnalyticsService.getDashboardAnalytics(req.businessId);
       res.json(analytics);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -30,7 +30,7 @@ class AnalyticsController {
 
   async getCampaignPerformance(req, res) {
     try {
-      const performance = await AnalyticsService.getCampaignPerformance();
+      const performance = await AnalyticsService.getCampaignPerformance(req.businessId);
       res.json(performance);
     } catch (error) {
       res.status(500).json({ message: error.message });
@@ -39,7 +39,7 @@ class AnalyticsController {
 
   async getCustomerEngagement(req, res) {
     try {
-      const engagement = await AnalyticsService.getCustomerEngagement();
+      const engagement = await AnalyticsService.getCustomerEngagement(req.businessId);
       res.json(engagement);
     } catch (error) {
       res.status(500).json({ message: error.message });
