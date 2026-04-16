@@ -69,10 +69,12 @@ const Sidebar = ({ open, onClose }) => {
     { path: '/superadmin/subscriptions', label: 'Subscriptions', icon: FiTrendingUp },
   ];
 
-  const menuItems = [
-    ...commonMenuItems,
-    ...(user?.role === 'super_admin' ? superAdminMenuItems : user?.role === 'admin' ? adminMenuItems : staffMenuItems),
-  ];
+  const menuItems = user?.role === 'super_admin'
+    ? superAdminMenuItems
+    : [
+        ...commonMenuItems,
+        ...(user?.role === 'admin' ? adminMenuItems : staffMenuItems),
+      ];
 
   const isActive = (path) => location.pathname === path;
 

@@ -3,10 +3,15 @@ import CustomerService from '../services/customerService.js';
 class CustomerController {
   async getCustomers(req, res) {
     try {
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 10;
+      const page = parseInt(req.query.page, 10) || 1;
+      const limit = parseInt(req.query.limit, 10) || 10;
       const scopeBusinessId = req.user?.role === 'admin' ? undefined : req.user.businessId;
-      const result = await CustomerService.getCustomers(scopeBusinessId, page, limit);
+      const filters = {
+        from: req.query.from || '',
+        to: req.query.to || '',
+        search: req.query.search || '',
+      };
+      const result = await CustomerService.getCustomers(scopeBusinessId, page, limit, filters);
       res.json(result);
     } catch (error) {
       res.status(500).json({ message: error.message });

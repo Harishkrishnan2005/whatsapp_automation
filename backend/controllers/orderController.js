@@ -11,6 +11,9 @@ class OrderController {
         orderStatus: req.query.orderStatus || '',
         paymentStatus: req.query.paymentStatus || '',
         paymentType: req.query.paymentType || '',
+        from: req.query.from || '',
+        to: req.query.to || '',
+        search: req.query.search || '',
       };
       const options = {};
       if (req.user?.role === 'staff') {

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import LoginChoice from './pages/LoginChoice';
 import AdminLogin from './pages/AdminLogin';
 import StaffLogin from './pages/StaffLogin';
 import SuperAdminLogin from './pages/SuperAdminLogin';
@@ -55,11 +54,14 @@ function AppContent() {
     return (
       <div className="app-shell theme-light min-h-screen">
         <Routes>
-          <Route path="/" element={<LoginChoice />} />
-          <Route path="/login/superadmin" element={<SuperAdminLogin />} />
-          <Route path="/login/admin" element={<AdminLogin />} />
-          <Route path="/login/staff" element={<StaffLogin />} />
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="/" element={<Navigate to="/admin/login" />} />
+          <Route path="/superadmin/login" element={<SuperAdminLogin />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/staff/login" element={<StaffLogin />} />
+          <Route path="/login/superadmin" element={<Navigate to="/superadmin/login" />} />
+          <Route path="/login/admin" element={<Navigate to="/admin/login" />} />
+          <Route path="/login/staff" element={<Navigate to="/staff/login" />} />
+          <Route path="*" element={<Navigate to="/admin/login" />} />
         </Routes>
       </div>
     );
@@ -72,6 +74,7 @@ function AppContent() {
 
 function AppShell() {
   const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'super_admin';
   const businessType = user?.businessType || 'E_COMMERCE';
   const isEcommerce = businessType === 'E_COMMERCE';
   const isBooking = businessType === 'BOOKING';
@@ -95,14 +98,14 @@ function AppShell() {
         <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <div key={refreshKey} className="flex-1 min-h-0 overflow-y-auto md:ml-64 pb-20 md:pb-0">
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" />} />
+            <Route path="/" element={<Navigate to={isSuperAdmin ? '/superadmin/dashboard' : '/dashboard'} />} />
             
             {/* Common Routes - Protected */}
             <Route
               path="/dashboard"
               element={
                 <ProtectedRoute requiredRole={user.role}>
-                  {user.role === 'admin' ? <Dashboard /> : <StaffDashboard />}
+                  {isSuperAdmin ? <Navigate to="/superadmin/dashboard" /> : user.role === 'admin' ? <Dashboard /> : <StaffDashboard />}
                 </ProtectedRoute>
               }
             />
@@ -257,7 +260,7 @@ function AppShell() {
               }
             />
 
-            <Route path="*" element={<Navigate to="/dashboard" />} />
+            <Route path="*" element={<Navigate to={isSuperAdmin ? '/superadmin/dashboard' : '/dashboard'} />} />
           </Routes>
         </div>
       </div>

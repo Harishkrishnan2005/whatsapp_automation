@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../../utils/api';
+import useAnalyticsStore from '../../store/analyticsStore';
+import { getDateRangePayload } from '../../utils/dateRange';
 
 const ORDER_STATUSES = ['Pending', 'Confirmed', 'Cancelled', 'Delivered', 'Return Requested', 'Returned'];
 const PAYMENT_STATUSES = ['Pending', 'Paid', 'Failed', 'Refunded'];
@@ -10,11 +12,22 @@ const StaffOrders = () => {
   const [total, setTotal] = useState(0);
   const [limit] = useState(10);
   const [loading, setLoading] = useState(false);
+  const dateRange = useAnalyticsStore((state) => state.dateRange);
+  const searchQuery = useAnalyticsStore((state) => state.searchQuery);
 
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/orders?page=${page}&limit=${limit}`);
+      const { from, to } = getDateRangePayload(dateRange);
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+      });
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+      if (searchQuery) params.set('search', searchQuery);
+
+      const response = await api.get(`/orders?${params.toString()}`);
       setOrders(response.data.orders || []);
       setTotal(response.data.total || 0);
     } catch (error) {
@@ -26,7 +39,11 @@ const StaffOrders = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [page]);
+  }, [page, dateRange, searchQuery]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [dateRange, searchQuery]);
 
   const updateStatus = async (id, orderStatus) => {
     try {

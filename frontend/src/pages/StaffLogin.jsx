@@ -88,7 +88,7 @@ const StaffLogin = () => {
             Are you an admin?{' '}
             <button
               type="button"
-              onClick={() => navigate('/login/admin')}
+              onClick={() => navigate('/admin/login')}
               className="font-semibold text-emerald-300 hover:text-emerald-200"
             >
               Switch to Admin Login
@@ -97,10 +97,10 @@ const StaffLogin = () => {
           <p className="mt-2">
             <button
               type="button"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/superadmin/login')}
               className="font-semibold text-emerald-300 hover:text-emerald-200"
             >
-              Back to selection
+              Go to Super Admin Login
             </button>
           </p>
         </div>

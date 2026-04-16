@@ -1,11 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import api from '../../utils/api';
+import useAnalyticsStore from '../../store/analyticsStore';
+import { getDateRangePayload } from '../../utils/dateRange';
 
 const AppointmentManagement = () => {
   const [appointments, setAppointments] = useState([]);
   const [staffUsers, setStaffUsers] = useState([]);
   const [clientPage, setClientPage] = useState(1);
   const clientLimit = 10;
+  const dateRange = useAnalyticsStore((state) => state.dateRange);
+  const searchQuery = useAnalyticsStore((state) => state.searchQuery);
 
   const clientTotalPages = Math.max(1, Math.ceil(appointments.length / clientLimit));
   const visibleAppointments = useMemo(() => {
@@ -29,11 +33,21 @@ const AppointmentManagement = () => {
   useEffect(() => {
     fetchAppointments();
     fetchStaffUsers();
-  }, []);
+  }, [dateRange, searchQuery]);
+
+  useEffect(() => {
+    setClientPage(1);
+  }, [dateRange, searchQuery]);
 
   const fetchAppointments = async () => {
     try {
-      const response = await api.get('/appointments?page=1&limit=200');
+      const { from, to } = getDateRangePayload(dateRange);
+      const params = new URLSearchParams({ page: '1', limit: '200' });
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+      if (searchQuery) params.set('search', searchQuery);
+
+      const response = await api.get(`/appointments?${params.toString()}`);
       setAppointments(response.data.appointments || []);
     } catch (error) {
       console.error('Error fetching appointments:', error);

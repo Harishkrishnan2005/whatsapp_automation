@@ -42,7 +42,6 @@ const buildFunnel = (analytics) => {
 
 const useAnalyticsData = () => {
   const dateRange = useAnalyticsStore((state) => state.dateRange);
-  const liveMode = useAnalyticsStore((state) => state.liveMode);
   const refreshToken = useAnalyticsStore((state) => state.refreshToken);
   const setAnalyticsData = useAnalyticsStore((state) => state.setAnalyticsData);
 
@@ -78,7 +77,7 @@ const useAnalyticsData = () => {
       fetchData();
     },
     30000,
-    liveMode
+    true
   );
 
   const derived = useMemo(() => {

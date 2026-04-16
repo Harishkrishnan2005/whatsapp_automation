@@ -180,7 +180,7 @@ const AdminLogin = () => {
             Not an admin?{' '}
             <button
               type="button"
-              onClick={() => navigate('/login/staff')}
+              onClick={() => navigate('/staff/login')}
               className="font-semibold text-cyan-300 hover:text-cyan-200"
             >
               Switch to Staff Login
@@ -189,10 +189,10 @@ const AdminLogin = () => {
           <p className="mt-2">
             <button
               type="button"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/superadmin/login')}
               className="font-semibold text-cyan-300 hover:text-cyan-200"
             >
-              Back to selection
+              Go to Super Admin Login
             </button>
           </p>
         </div>

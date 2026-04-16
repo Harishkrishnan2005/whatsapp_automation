@@ -1,16 +1,30 @@
 import Product from '../models/Product.js';
 import buildTenantScope from '../utils/tenantScope.js';
+import { buildCreatedAtFilter, buildSearchRegex } from '../utils/queryFilters.js';
 
 class ProductService {
   async createProduct(data) {
     return await Product.create(data);
   }
 
-  async getProducts(businessId, page = 1, limit = 12) {
+  async getProducts(businessId, page = 1, limit = 12, filters = {}) {
     const skip = (page - 1) * limit;
     const tenantScope = buildTenantScope(businessId);
-    const products = await Product.find({ isActive: true, ...tenantScope }).skip(skip).limit(limit).sort({ createdAt: -1 });
-    const total = await Product.countDocuments({ isActive: true, ...tenantScope });
+    const query = { isActive: true, ...tenantScope };
+    const createdAt = buildCreatedAtFilter(filters);
+    const searchRegex = buildSearchRegex(filters.search);
+
+    if (createdAt) query.createdAt = createdAt;
+    if (searchRegex) {
+      query.$or = [
+        { name: searchRegex },
+        { category: searchRegex },
+        { unitType: searchRegex },
+      ];
+    }
+
+    const products = await Product.find(query).skip(skip).limit(limit).sort({ createdAt: -1 });
+    const total = await Product.countDocuments(query);
     return { products, total, page, limit };
   }
 

@@ -8,7 +8,7 @@ const DEFAULT_DATE_RANGE = {
 
 const useAnalyticsStore = create((set) => ({
   dateRange: DEFAULT_DATE_RANGE,
-  liveMode: true,
+  searchQuery: '',
   analyticsData: null,
   refreshToken: 0,
   setDatePreset: (preset) =>
@@ -26,7 +26,7 @@ const useAnalyticsStore = create((set) => ({
         to: to || null,
       },
     }),
-  setLiveMode: (liveMode) => set({ liveMode }),
+  setSearchQuery: (searchQuery) => set({ searchQuery }),
   setAnalyticsData: (analyticsData) => set({ analyticsData }),
   triggerRefresh: () => set((state) => ({ refreshToken: state.refreshToken + 1 })),
 }));

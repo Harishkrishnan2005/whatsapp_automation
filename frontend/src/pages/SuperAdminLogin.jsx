@@ -86,10 +86,10 @@ const SuperAdminLogin = () => {
         <div className="mt-6 text-center text-sm text-slate-400">
           <button
             type="button"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/admin/login')}
             className="font-semibold text-violet-300 hover:text-violet-200"
           >
-            Back to portal selection
+            Go to Admin Login
           </button>
         </div>
       </div>

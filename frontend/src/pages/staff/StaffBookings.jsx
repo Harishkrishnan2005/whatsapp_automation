@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../utils/api';
+import useAnalyticsStore from '../../store/analyticsStore';
+import { getDateRangePayload } from '../../utils/dateRange';
 
 const StaffBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -7,14 +9,29 @@ const StaffBookings = () => {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [notes, setNotes] = useState([]);
   const [newNote, setNewNote] = useState('');
+  const dateRange = useAnalyticsStore((state) => state.dateRange);
+  const searchQuery = useAnalyticsStore((state) => state.searchQuery);
 
   useEffect(() => {
     fetchBookings();
-  }, [page]);
+  }, [page, dateRange, searchQuery]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [dateRange, searchQuery]);
 
   const fetchBookings = async () => {
     try {
-      const response = await api.get(`/appointments?page=${page}&limit=10`);
+      const { from, to } = getDateRangePayload(dateRange);
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: '10',
+      });
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+      if (searchQuery) params.set('search', searchQuery);
+
+      const response = await api.get(`/appointments?${params.toString()}`);
       setBookings(response.data.appointments);
     } catch (error) {
       console.error('Error fetching bookings:', error);

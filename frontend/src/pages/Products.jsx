@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../utils/api';
+import useAnalyticsStore from '../store/analyticsStore';
+import { getDateRangePayload } from '../utils/dateRange';
 
 const initialForm = {
   name: '',
@@ -26,11 +28,22 @@ const Products = () => {
   const [message, setMessage] = useState('');
   const [selectedImageName, setSelectedImageName] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const dateRange = useAnalyticsStore((state) => state.dateRange);
+  const searchQuery = useAnalyticsStore((state) => state.searchQuery);
 
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/products?page=1&limit=${SERVER_FETCH_LIMIT}`);
+      const { from, to } = getDateRangePayload(dateRange);
+      const params = new URLSearchParams({
+        page: '1',
+        limit: String(SERVER_FETCH_LIMIT),
+      });
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+      if (searchQuery) params.set('search', searchQuery);
+
+      const response = await api.get(`/products?${params.toString()}`);
       setProducts(response.data.products);
       setTotal(response.data.total);
     } catch (error) {
@@ -42,7 +55,11 @@ const Products = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [dateRange, searchQuery]);
+
+  useEffect(() => {
+    setClientPage(1);
+  }, [dateRange, searchQuery]);
 
   const resetForm = () => {
     setForm(initialForm);

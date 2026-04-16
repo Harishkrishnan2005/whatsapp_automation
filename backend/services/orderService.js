@@ -7,6 +7,7 @@ import User from '../models/User.js';
 import CustomerStatusService from './customerStatusService.js';
 import PaymentService from './paymentService.js';
 import buildTenantScope from '../utils/tenantScope.js';
+import { buildCreatedAtFilter, buildSearchRegex } from '../utils/queryFilters.js';
 
 const normalizePaymentType = (paymentType) => {
   if (String(paymentType || '').toUpperCase() === 'ONLINE' || String(paymentType || '').toUpperCase() === 'UPI') {
@@ -42,6 +43,12 @@ class OrderService {
     const safeLimit = Math.min(200, Math.max(1, Number(limit) || 10));
     const skip = (safePage - 1) * safeLimit;
     const query = { ...buildTenantScope(businessId) };
+    const createdAt = buildCreatedAtFilter(filters);
+    const searchRegex = buildSearchRegex(filters.search);
+
+    if (createdAt) {
+      query.createdAt = createdAt;
+    }
 
     if (filters.orderStatus) {
       query.orderStatus = filters.orderStatus;
@@ -53,6 +60,14 @@ class OrderService {
 
     if (filters.paymentType) {
       query.paymentType = normalizePaymentType(filters.paymentType);
+    }
+
+    if (searchRegex) {
+      query.$or = [
+        { product: searchRegex },
+        { orderId: searchRegex },
+        { category: searchRegex },
+      ];
     }
 
     if (options.assignedTo) {

@@ -83,7 +83,7 @@ const Dashboard = () => {
         <section className="surface-card rounded-[2rem] border border-surface p-6 shadow-soft">
           <p className="text-xs uppercase tracking-[0.3em] text-secondary">Admin Dashboard</p>
           <h1 className="mt-3 text-3xl font-semibold text-primary">Business Overview</h1>
-          <p className="mt-2 text-sm text-secondary">Live snapshot of customers, orders, and latest activity.</p>
+          <p className="mt-2 text-sm text-secondary">Current snapshot of customers, orders, and latest activity.</p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {statCards.map((card) => {

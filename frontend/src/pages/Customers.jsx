@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FiX } from 'react-icons/fi';
 import api from '../utils/api';
+import useAnalyticsStore from '../store/analyticsStore';
+import { getDateRangePayload } from '../utils/dateRange';
 
 const badgeClass = {
   existing: 'bg-emerald-100 text-emerald-700',
@@ -16,13 +18,24 @@ const Customers = () => {
   const [notes, setNotes] = useState([]);
   const [newNote, setNewNote] = useState('');
   const [showDetails, setShowDetails] = useState(false);
+  const dateRange = useAnalyticsStore((state) => state.dateRange);
+  const searchQuery = useAnalyticsStore((state) => state.searchQuery);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const visibleCustomers = useMemo(() => customers, [customers]);
 
   const fetchCustomers = async () => {
     try {
-      const response = await api.get(`/customers?page=${page}&limit=${limit}`);
+      const { from, to } = getDateRangePayload(dateRange);
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+      });
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+      if (searchQuery) params.set('search', searchQuery);
+
+      const response = await api.get(`/customers?${params.toString()}`);
       setCustomers(response.data.customers || []);
       setTotal(response.data.total || 0);
     } catch (error) {
@@ -32,7 +45,11 @@ const Customers = () => {
 
   useEffect(() => {
     fetchCustomers();
-  }, [page]);
+  }, [page, dateRange, searchQuery]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [dateRange, searchQuery]);
 
   const metrics = useMemo(() => {
     const totalCustomers = customers.length;

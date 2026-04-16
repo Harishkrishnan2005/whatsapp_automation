@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { FiEdit3, FiShoppingBag } from 'react-icons/fi';
 import api from '../utils/api';
 import CreateProductCampaignModal from '../components/CreateProductCampaignModal';
+import useAnalyticsStore from '../store/analyticsStore';
+import { getDateRangePayload } from '../utils/dateRange';
 
 const Campaigns = () => {
   const [campaigns, setCampaigns] = useState([]);
@@ -11,14 +13,22 @@ const Campaigns = () => {
   const [audience, setAudience] = useState('all');
   const [saving, setSaving] = useState(false);
   const [showProductCampaignModal, setShowProductCampaignModal] = useState(false);
+  const dateRange = useAnalyticsStore((state) => state.dateRange);
+  const searchQuery = useAnalyticsStore((state) => state.searchQuery);
 
   useEffect(() => {
     fetchCampaigns();
-  }, []);
+  }, [dateRange, searchQuery]);
 
   const fetchCampaigns = async () => {
     try {
-      const response = await api.get('/campaigns');
+      const { from, to } = getDateRangePayload(dateRange);
+      const params = new URLSearchParams();
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+      if (searchQuery) params.set('search', searchQuery);
+
+      const response = await api.get(`/campaigns${params.toString() ? `?${params.toString()}` : ''}`);
       setCampaigns(response.data);
     } catch (error) {
       console.error('Failed to load campaigns:', error);
@@ -43,6 +53,10 @@ const Campaigns = () => {
   useEffect(() => {
     setClientPage(1);
   }, [campaigns.length]);
+
+  useEffect(() => {
+    setClientPage(1);
+  }, [dateRange, searchQuery]);
 
   const clientTotalPages = Math.max(1, Math.ceil(campaigns.length / clientLimit));
   const visibleCampaigns = campaigns.slice((clientPage - 1) * clientLimit, clientPage * clientLimit);

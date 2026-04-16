@@ -2,12 +2,30 @@ import Customer from '../models/Customer.js';
 import Order from '../models/Order.js';
 import CustomerStatusService from './customerStatusService.js';
 import buildTenantScope from '../utils/tenantScope.js';
+import { buildCreatedAtFilter, buildSearchRegex } from '../utils/queryFilters.js';
 
 class CustomerService {
-  async getCustomers(businessId, page = 1, limit = 10) {
+  async getCustomers(businessId, page = 1, limit = 10, filters = {}) {
     const skip = (page - 1) * limit;
     const tenantScope = buildTenantScope(businessId);
-    const customers = await Customer.find(tenantScope).skip(skip).limit(limit).sort({ createdAt: -1 }).lean();
+    const query = { ...tenantScope };
+    const createdAt = buildCreatedAtFilter(filters);
+    const searchRegex = buildSearchRegex(filters.search);
+
+    if (createdAt) {
+      query.createdAt = createdAt;
+    }
+
+    if (searchRegex) {
+      query.$or = [
+        { name: searchRegex },
+        { phone: searchRegex },
+        { address: searchRegex },
+        { upiId: searchRegex },
+      ];
+    }
+
+    const customers = await Customer.find(query).skip(skip).limit(limit).sort({ createdAt: -1 }).lean();
     const statusMap = await CustomerStatusService.syncStatusesForCustomers(customers.map((customer) => customer._id));
 
     const customerIds = customers.map((customer) => customer._id);
@@ -74,7 +92,7 @@ class CustomerService {
       };
     });
 
-    const total = await Customer.countDocuments(tenantScope);
+    const total = await Customer.countDocuments(query);
     return { customers: enrichedCustomers, total, page, limit };
   }
 

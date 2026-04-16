@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import Select from '../components/ui/Select';
 import Badge from '../components/ui/Badge';
 import api from '../utils/api';
+import useAnalyticsStore from '../store/analyticsStore';
+import { getDateRangePayload } from '../utils/dateRange';
 
 const ORDER_STATUSES = ['Pending', 'Confirmed', 'Cancelled', 'Delivered', 'Return Requested', 'Returned'];
 const PAYMENT_STATUSES = ['Pending', 'Paid', 'Failed', 'Refunded'];
@@ -25,11 +27,14 @@ const Orders = () => {
     paymentStatus: '',
     paymentType: '',
   });
+  const dateRange = useAnalyticsStore((state) => state.dateRange);
+  const searchQuery = useAnalyticsStore((state) => state.searchQuery);
 
   const clientLimit = 10;
   const clientTotalPages = Math.max(1, Math.ceil(orders.length / clientLimit));
 
   const fetchOrders = async () => {
+    const { from, to } = getDateRangePayload(dateRange);
     const params = new URLSearchParams({
       page: '1',
       limit: String(serverLimit),
@@ -38,6 +43,9 @@ const Orders = () => {
     if (filters.orderStatus) params.set('orderStatus', filters.orderStatus);
     if (filters.paymentStatus) params.set('paymentStatus', filters.paymentStatus);
     if (filters.paymentType) params.set('paymentType', filters.paymentType);
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    if (searchQuery) params.set('search', searchQuery);
 
     const response = await api.get(`/orders?${params.toString()}`);
     setOrders(response.data.orders || []);
@@ -57,7 +65,11 @@ const Orders = () => {
   useEffect(() => {
     fetchOrders();
     fetchStaff();
-  }, [filters.orderStatus, filters.paymentStatus, filters.paymentType]);
+  }, [filters.orderStatus, filters.paymentStatus, filters.paymentType, dateRange, searchQuery]);
+
+  useEffect(() => {
+    setClientPage(1);
+  }, [dateRange, searchQuery]);
 
   const updateStatus = async (id, orderStatus) => {
     await api.put(`/orders/${id}/status`, { orderStatus });

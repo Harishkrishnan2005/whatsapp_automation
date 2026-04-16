@@ -41,7 +41,12 @@ class CampaignController {
   async getCampaigns(req, res) {
     try {
       const scopeBusinessId = req.user?.role === 'admin' ? undefined : req.user.businessId;
-      const campaigns = await CampaignService.getCampaigns(scopeBusinessId);
+      const filters = {
+        from: req.query.from || '',
+        to: req.query.to || '',
+        search: req.query.search || '',
+      };
+      const campaigns = await CampaignService.getCampaigns(scopeBusinessId, filters);
       res.json(campaigns);
     } catch (error) {
       res.status(500).json({ message: error.message });

@@ -74,34 +74,16 @@ const highlightText = (value, query) => {
   );
 };
 
-const Toggle = ({ enabled, onChange }) => (
-  <button
-    type="button"
-    onClick={() => onChange(!enabled)}
-    className={`relative inline-flex h-7 w-14 items-center rounded-full border transition ${
-      enabled
-        ? 'border-[rgba(52,211,153,0.4)] bg-[rgba(52,211,153,0.3)]'
-        : 'border-[rgba(148,163,184,0.3)] bg-[rgba(148,163,184,0.2)]'
-    }`}
-  >
-    <span
-      className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
-        enabled ? 'translate-x-8' : 'translate-x-1'
-      }`}
-    />
-  </button>
-);
-
 const TopBar = ({ onToggleSidebar, onRefreshGlobal, theme = 'dark', onToggleTheme }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const pageTitle = usePageTitle();
 
   const dateRange = useAnalyticsStore((state) => state.dateRange);
-  const liveMode = useAnalyticsStore((state) => state.liveMode);
+  const globalSearchQuery = useAnalyticsStore((state) => state.searchQuery);
   const setDatePreset = useAnalyticsStore((state) => state.setDatePreset);
   const setCustomDateRange = useAnalyticsStore((state) => state.setCustomDateRange);
-  const setLiveMode = useAnalyticsStore((state) => state.setLiveMode);
+  const setSearchQuery = useAnalyticsStore((state) => state.setSearchQuery);
   const triggerRefresh = useAnalyticsStore((state) => state.triggerRefresh);
 
   const [notifications, setNotifications] = useState([]);
@@ -110,7 +92,7 @@ const TopBar = ({ onToggleSidebar, onRefreshGlobal, theme = 'dark', onToggleThem
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(globalSearchQuery || '');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searching, setSearching] = useState(false);
   const [searchResult, setSearchResult] = useState(DEFAULT_SEARCH_RESULT);
@@ -121,6 +103,10 @@ const TopBar = ({ onToggleSidebar, onRefreshGlobal, theme = 'dark', onToggleThem
   const profileRef = useRef(null);
 
   const debouncedSearch = useDebounce(searchTerm, 350);
+
+  useEffect(() => {
+    setSearchQuery(debouncedSearch.trim());
+  }, [debouncedSearch, setSearchQuery]);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -339,11 +325,6 @@ const TopBar = ({ onToggleSidebar, onRefreshGlobal, theme = 'dark', onToggleThem
                 />
               </div>
             )}
-
-            <div className="hidden items-center gap-2 rounded-2xl border border-surface bg-surface px-3 py-2 md:flex">
-              <span className="text-xs text-secondary">Live</span>
-              <Toggle enabled={liveMode} onChange={setLiveMode} />
-            </div>
 
             <button type="button" onClick={onToggleTheme} className="btn-ghost" aria-label="Toggle theme">
               {theme === 'dark' ? <FiSun className="h-4 w-4" /> : <FiMoon className="h-4 w-4" />}

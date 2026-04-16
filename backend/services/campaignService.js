@@ -5,6 +5,7 @@ import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import CustomerStatusService from './customerStatusService.js';
 import buildTenantScope from '../utils/tenantScope.js';
+import { buildCreatedAtFilter, buildSearchRegex } from '../utils/queryFilters.js';
 
 class CampaignService {
   toValidNumber(value, fallback = 0) {
@@ -102,12 +103,13 @@ class CampaignService {
   }
 
   async getCampaignAnalytics(businessId, campaignId) {
-    const campaign = await Campaign.findOne({ _id: campaignId, businessId }).lean();
+    const tenantScope = buildTenantScope(businessId);
+    const campaign = await Campaign.findOne({ _id: campaignId, ...tenantScope }).lean();
     if (!campaign) {
       throw new Error('Campaign not found');
     }
 
-    const convertedCustomers = await Order.countDocuments({ campaignId, businessId, status: 'Confirmed' });
+    const convertedCustomers = await Order.countDocuments({ campaignId, ...tenantScope, status: 'Confirmed' });
     const successRate = campaign.totalCustomers > 0
       ? Math.round((campaign.sentCount / campaign.totalCustomers) * 100)
       : 0;
@@ -124,11 +126,25 @@ class CampaignService {
     };
   }
 
-  async getCampaigns(businessId) {
-    const campaigns = await Campaign.find(buildTenantScope(businessId)).sort({ createdAt: -1 }).lean();
+  async getCampaigns(businessId, filters = {}) {
+    const tenantScope = buildTenantScope(businessId);
+    const query = { ...tenantScope };
+    const createdAt = buildCreatedAtFilter(filters);
+    const searchRegex = buildSearchRegex(filters.search);
+
+    if (createdAt) query.createdAt = createdAt;
+    if (searchRegex) {
+      query.$or = [
+        { message: searchRegex },
+        { audience: searchRegex },
+        { type: searchRegex },
+      ];
+    }
+
+    const campaigns = await Campaign.find(query).sort({ createdAt: -1 }).lean();
 
     const enriched = await Promise.all(campaigns.map(async (campaign) => {
-      const convertedCustomers = await Order.countDocuments({ campaignId: campaign._id, businessId, status: 'Confirmed' });
+      const convertedCustomers = await Order.countDocuments({ campaignId: campaign._id, ...tenantScope, status: 'Confirmed' });
       const successRate = campaign.totalCustomers > 0
         ? Math.round((campaign.sentCount / campaign.totalCustomers) * 100)
         : 0;

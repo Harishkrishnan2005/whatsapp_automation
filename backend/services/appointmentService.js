@@ -2,6 +2,7 @@ import Appointment from '../models/Appointment.js';
 import Notification from '../models/Notification.js';
 import CustomerStatusService from './customerStatusService.js';
 import buildTenantScope from '../utils/tenantScope.js';
+import { buildCreatedAtFilter, buildSearchRegex } from '../utils/queryFilters.js';
 
 class AppointmentService {
   // Create appointment
@@ -12,23 +13,49 @@ class AppointmentService {
   }
 
   // Get all appointments (admin) or assigned appointments (staff)
-  async getAppointments(user, page = 1, limit = 10) {
-    const skip = (page - 1) * limit;
+  async getAppointments(user, page = 1, limit = 10, filters = {}) {
+    const safePage = Math.max(1, Number(page) || 1);
+    const safeLimit = Math.min(200, Math.max(1, Number(limit) || 10));
+    const skip = (safePage - 1) * safeLimit;
     const scopeBusinessId = user.role === 'admin' ? undefined : user.businessId;
     let query = { ...buildTenantScope(scopeBusinessId) };
+    const createdAt = buildCreatedAtFilter(filters);
+    const searchRegex = buildSearchRegex(filters.search);
+
+    if (createdAt) {
+      query.createdAt = createdAt;
+    }
 
     if (user.role === 'staff') {
       query.assignedTo = user.id;
     }
 
-    const appointments = await Appointment.find(query)
+    let appointmentQuery = Appointment.find(query)
       .populate('customerId', 'name phone')
       .populate('assignedTo', 'name')
-      .skip(skip)
-      .limit(limit)
       .sort({ date: 1 });
-    const total = await Appointment.countDocuments(query);
-    return { appointments, total, page, limit };
+
+    if (!searchRegex) {
+      appointmentQuery = appointmentQuery.skip(skip).limit(safeLimit);
+    }
+
+    let appointments = await appointmentQuery;
+    let total = await Appointment.countDocuments(query);
+
+    if (searchRegex) {
+      appointments = appointments.filter(
+        (apt) =>
+          searchRegex.test(String(apt?.customerId?.name || '')) ||
+          searchRegex.test(String(apt?.customerId?.phone || '')) ||
+          searchRegex.test(String(apt?.timeSlot || '')) ||
+          searchRegex.test(String(apt?.status || ''))
+      );
+
+      total = appointments.length;
+      appointments = appointments.slice(skip, skip + safeLimit);
+    }
+
+    return { appointments, total, page: safePage, limit: safeLimit };
   }
 
   // Get customer appointments
