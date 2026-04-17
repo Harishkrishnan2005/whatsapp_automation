@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { FiMessageCircle, FiPlus, FiTerminal, FiActivity } from 'react-icons/fi';
 import api from '../../utils/api';
 
 const initialForm = {
@@ -49,23 +50,22 @@ const ChatbotManagement = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.trigger.trim() || !form.reply.trim() || !form.step.trim() || !form.nextStep.trim()) {
-      setMessage('Please fill all required fields');
+      setMessage('Required fields missing');
       return;
     }
     try {
       if (editing) {
         await api.put(`/chatbot/${editing._id}`, form);
-        setMessage('Flow updated successfully');
+        setMessage('Node updated');
       } else {
         await api.post('/chatbot', form);
-        setMessage('Flow added successfully');
+        setMessage('Node activated');
       }
       resetForm();
       fetchFlows();
     } catch (error) {
-      console.error('Unable to save flow', error);
-      const errorMessage = error?.response?.data?.message || 'Unable to save flow. Please try again.';
-      setMessage(errorMessage);
+      console.error('Save failed', error);
+      setMessage(error?.response?.data?.message || 'Synchronization error');
     }
   };
 
@@ -84,228 +84,205 @@ const ChatbotManagement = () => {
 
   const toggleFlowStatus = async (flow) => {
     try {
-      await api.put(`/chatbot/${flow._id}`, {
-        trigger: flow.trigger,
-        reply: flow.reply,
-        step: flow.step,
-        nextStep: flow.nextStep,
-        action: flow.action,
-        isActive: !flow.isActive,
-      });
+      await api.put(`/chatbot/${flow._id}`, { ...flow, isActive: !flow.isActive });
       fetchFlows();
     } catch (error) {
-      console.error('Unable to update flow status', error);
+      console.error('Toggle failed', error);
     }
   };
 
   const deleteFlow = async (id) => {
-    if (!confirm('Are you sure you want to delete this flow?')) return;
+    if (!confirm('Confirm deletion of this logic module?')) return;
     try {
       await api.delete(`/chatbot/${id}`);
       fetchFlows();
     } catch (error) {
-      console.error('Unable to delete flow', error);
+      console.error('Deletion error', error);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-4 md:p-8 text-white">
-      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="rounded-2xl backdrop-blur-md border border-white/10 shadow-xl bg-slate-950/30 p-6 flex-1">
-          <h1 className="text-4xl font-bold text-white">Chatbot Flow Management</h1>
-          <p className="text-cyan-200 mt-2">Create and manage dynamic chatbot conversation flows.</p>
+    <div className="space-y-10 animate-fade-in pb-10">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Logic Engine</h1>
+          <p className="mt-1 text-slate-500 font-medium">Architecting automated conversation flows and decision nodes.</p>
         </div>
-        <div className="rounded-2xl backdrop-blur-md border border-white/10 shadow-xl bg-slate-950/30 p-6 w-full lg:w-auto">
-          <p className="text-sm text-cyan-200 font-medium">Total Flows</p>
-          <p className="text-3xl font-bold text-white">{total}</p>
+        <div className="bg-white px-5 py-3 rounded-2xl border border-slate-200/60 shadow-sm">
+           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Global Configurations</p>
+           <p className="text-sm font-bold text-slate-900 mt-1">{total} Active Logic Modules</p>
         </div>
-      </div>
+      </header>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        <section className="lg:col-span-1 rounded-2xl backdrop-blur-md border border-white/10 shadow-xl bg-slate-950/30 p-6">
-          <h2 className="text-xl font-semibold mb-6 text-white">{editing ? 'Edit Flow' : 'Add New Flow'}</h2>
-          {message && <div className="mb-4 text-sm text-green-100 bg-emerald-500/10 backdrop-blur-sm border border-green-500/20 p-3 rounded-xl">{message}</div>}
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div>
-              <label className="block text-cyan-200 font-medium mb-2">Trigger</label>
-              <input
-                value={form.trigger}
-                onChange={(e) => setForm({ ...form, trigger: e.target.value })}
-                className="w-full border border-white/10 bg-slate-900/40 backdrop-blur-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none"
-                placeholder="e.g., hi, hello, 1, ask_address (for system prompts)"
-                required
-              />
-              <p className="mt-2 text-xs text-slate-400">
-                Use <code className="bg-slate-800 px-1 rounded">step=system</code> to customize built-in prompts like menu, ask_name_prompt, ask_age_prompt, ask_address, ask_quantity, ask_coupon, appointment_prompt.
-              </p>
-            </div>
-            <div>
-              <label className="block text-cyan-200 font-medium mb-2">Reply</label>
-              <textarea
-                value={form.reply}
-                onChange={(e) => setForm({ ...form, reply: e.target.value })}
-                className="w-full border border-white/10 bg-slate-900/40 backdrop-blur-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none resize-none"
-                placeholder="Bot response message"
-                rows="3"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-cyan-200 font-medium mb-2">Step</label>
-              <input
-                value={form.step}
-                onChange={(e) => setForm({ ...form, step: e.target.value })}
-                className="w-full border border-white/10 bg-slate-900/40 backdrop-blur-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none"
-                placeholder="e.g., start, menu"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-cyan-200 font-medium mb-2">Next Step</label>
-              <input
-                value={form.nextStep}
-                onChange={(e) => setForm({ ...form, nextStep: e.target.value })}
-                className="w-full border border-white/10 bg-slate-900/40 backdrop-blur-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none"
-                placeholder="e.g., menu, order"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-cyan-200 font-medium mb-2">Action</label>
-              <select
-                value={form.action}
-                onChange={(e) => setForm({ ...form, action: e.target.value })}
-                className="w-full border border-white/10 bg-slate-900/40 backdrop-blur-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none"
-              >
-                <option value="NONE">NONE</option>
-                <option value="SHOW_PRODUCTS">SHOW_PRODUCTS</option>
-                <option value="CREATE_ORDER">CREATE_ORDER</option>
-                <option value="PROCESS_PAYMENT">PROCESS_PAYMENT</option>
-                <option value="CANCEL_ORDER">CANCEL_ORDER</option>
-                <option value="RETURN_ORDER">RETURN_ORDER</option>
-                <option value="SAVE_NAME">SAVE_NAME</option>
-                <option value="SAVE_PRODUCT">SAVE_PRODUCT</option>
-                <option value="BOOK_APPOINTMENT">BOOK_APPOINTMENT</option>
-                <option value="CREATE_FEEDBACK">CREATE_FEEDBACK</option>
-                <option value="START_SUPPORT">START_SUPPORT</option>
-                <option value="CREATE_SUPPORT">CREATE_SUPPORT</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-cyan-200 font-medium mb-2">Status</label>
-              <select
-                value={form.isActive ? 'active' : 'inactive'}
-                onChange={(e) => setForm({ ...form, isActive: e.target.value === 'active' })}
-                className="w-full border border-white/10 bg-slate-900/40 backdrop-blur-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
-            <div className="flex gap-3 pt-4">
-              <button
-                type="submit"
-                className="flex-1 bg-blue-500/80 hover:bg-blue-600/80 backdrop-blur-sm border border-blue-400/50 text-white px-4 py-3 rounded-xl font-semibold transition-all"
-              >
-                {editing ? 'Update' : 'Add'} Flow
-              </button>
-              {editing && (
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="px-4 py-3 border border-white/10 bg-slate-950/40 backdrop-blur-sm rounded-xl font-semibold hover:bg-slate-900/60 transition-all"
+      <div className="grid gap-10 lg:grid-cols-12">
+        <aside className="lg:col-span-4">
+          <div className="bg-white p-8 rounded-[2rem] border border-slate-200/60 shadow-sm sticky top-6">
+            <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+               {editing ? 'Edit Module' : 'Define Node'}
+               <span className="h-2 w-2 rounded-full bg-blue-600 block" />
+            </h2>
+            
+            {message && <div className="mb-6 p-4 rounded-2xl bg-blue-50 border border-blue-100 text-xs font-bold text-blue-700">{message}</div>}
+
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Signal Trigger</label>
+                <input
+                  value={form.trigger}
+                  onChange={(e) => setForm({ ...form, trigger: e.target.value })}
+                  className="mt-3 w-full rounded-xl border-slate-200 bg-slate-100/30 px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  placeholder="e.g., initialization, 1, support_req"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Response Protocol</label>
+                <textarea
+                  value={form.reply}
+                  onChange={(e) => setForm({ ...form, reply: e.target.value })}
+                  className="mt-3 w-full rounded-xl border-slate-200 bg-slate-100/30 px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all min-h-[100px]"
+                  placeholder="Automated bot transmission"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Source Step</label>
+                  <input
+                    value={form.step}
+                    onChange={(e) => setForm({ ...form, step: e.target.value })}
+                    className="mt-3 w-full rounded-xl border-slate-200 bg-slate-100/30 px-4 py-3 text-xs font-bold text-slate-600 outline-none"
+                    placeholder="start"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Target Step</label>
+                  <input
+                    value={form.nextStep}
+                    onChange={(e) => setForm({ ...form, nextStep: e.target.value })}
+                    className="mt-3 w-full rounded-xl border-slate-200 bg-slate-100/30 px-4 py-3 text-xs font-bold text-slate-600 outline-none"
+                    placeholder="menu"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Function Execution</label>
+                <select
+                  value={form.action}
+                  onChange={(e) => setForm({ ...form, action: e.target.value })}
+                  className="mt-3 w-full rounded-xl border-slate-200 bg-slate-100/30 px-4 py-3 text-xs font-black uppercase tracking-tight text-slate-600 outline-none focus:bg-white transition-all cursor-pointer"
                 >
-                  Cancel
-                </button>
-              )}
-            </div>
-          </form>
-        </section>
+                  <option value="NONE">Static Output</option>
+                  <option value="SHOW_PRODUCTS">Product Display</option>
+                  <option value="CREATE_ORDER">Order Genesis</option>
+                  <option value="BOOK_APPOINTMENT">Schedule Node</option>
+                  <option value="SAVE_NAME">Identity Mapping</option>
+                </select>
+              </div>
 
-        <section className="lg:col-span-2 rounded-2xl backdrop-blur-md border border-white/10 shadow-xl bg-slate-950/30 p-6">
-          <h2 className="text-xl font-semibold mb-6 text-white">Chatbot Flows</h2>
-          {loading ? (
-            <div className="text-center py-8 text-cyan-200">Loading...</div>
-          ) : flows.length === 0 ? (
-            <div className="text-center py-8 text-cyan-200">No flows created yet.</div>
-          ) : (
+              <div className="flex gap-3 pt-2">
+                <button type="submit" className="btn-primary flex-1 py-4 text-xs shadow-none">
+                  {editing ? 'Update Module' : 'Sync New Node'}
+                </button>
+                {editing && (
+                  <button type="button" onClick={resetForm} className="btn-secondary px-6 text-xs">
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        </aside>
+
+        <main className="lg:col-span-8">
+          <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden flex flex-col min-h-[700px]">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-left">
                 <thead>
-                  <tr className="border-b border-white/10">
-                    <th className="text-left py-3 text-cyan-200 font-semibold">Trigger</th>
-                    <th className="text-left py-3 text-cyan-200 font-semibold">Reply</th>
-                    <th className="text-left py-3 text-cyan-200 font-semibold">Step → Next</th>
-                    <th className="text-left py-3 text-cyan-200 font-semibold">Action</th>
-                    <th className="text-left py-3 text-cyan-200 font-semibold">Status</th>
-                    <th className="text-left py-3 text-cyan-200 font-semibold">Actions</th>
+                  <tr className="border-b border-slate-100 bg-slate-50/30">
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Signal</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Protocol Path</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Function</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">State</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Utility</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-slate-50">
                   {visibleFlows.map((flow) => (
-                    <tr key={flow._id} className="border-b border-white/10 hover:bg-blue-500/10 backdrop-blur-sm transition-colors">
-                      <td className="py-3 text-white">{flow.trigger}</td>
-                      <td className="py-3 text-slate-300 max-w-xs truncate">{flow.reply}</td>
-                      <td className="py-3 text-slate-300">{flow.step} → {flow.nextStep}</td>
-                      <td className="py-3">
-                        <span className="rounded-full bg-cyan-500/10 backdrop-blur-sm border border-cyan-400/20 px-3 py-1 text-xs font-semibold text-cyan-100">
-                          {flow.action}
+                    <tr key={flow._id} className="group hover:bg-slate-50 transition-colors duration-300">
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-3">
+                           <div className="h-2 w-2 rounded-full bg-blue-500" />
+                           <span className="text-sm font-bold text-slate-900 tracking-tight">{flow.trigger}</span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                           {flow.step} <span className="mx-2 text-slate-200">→</span> {flow.nextStep}
+                        </p>
+                        <p className="text-xs font-medium text-slate-500 mt-1.5 line-clamp-1">{flow.reply}</p>
+                      </td>
+                      <td className="px-8 py-6">
+                        <span className="inline-flex px-3 py-1 rounded-lg bg-blue-50 border border-blue-100 text-[9px] font-black text-blue-600 uppercase tracking-widest shadow-sm shadow-blue-900/5">
+                           {flow.action}
                         </span>
                       </td>
-                      <td className="py-3">
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                            flow.isActive
-                              ? 'bg-emerald-500/15 border border-emerald-400/20 text-emerald-100'
-                              : 'bg-rose-500/15 border border-rose-400/20 text-rose-100'
-                          }`}
-                        >
-                          {flow.isActive ? 'Active' : 'Inactive'}
-                        </span>
+                      <td className="px-8 py-6">
+                         <div className={`h-2.5 w-2.5 rounded-full ring-4 ring-white shadow-sm ${flow.isActive ? 'bg-emerald-500' : 'bg-slate-300'}`} />
                       </td>
-                      <td className="py-3">
-                        <button
-                          onClick={() => startEdit(flow)}
-                          className="text-cyan-200 hover:text-white mr-3 font-medium transition-colors"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => toggleFlowStatus(flow)}
-                          className="text-amber-300 hover:text-amber-100 mr-3 font-medium transition-colors"
-                        >
-                          {flow.isActive ? 'Disable' : 'Enable'}
-                        </button>
-                        <button
-                          onClick={() => deleteFlow(flow._id)}
-                          className="text-red-400 hover:text-red-200 font-medium transition-colors"
-                        >
-                          Delete
-                        </button>
+                      <td className="px-8 py-6 text-right">
+                        <div className="flex justify-end items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => startEdit(flow)} className="text-[10px] font-black uppercase text-blue-600 hover:tracking-[0.1em] transition-all">Modify</button>
+                          <div className="h-3 w-[1px] bg-slate-200" />
+                          <button onClick={() => deleteFlow(flow._id)} className="text-[10px] font-black uppercase text-rose-500 hover:tracking-[0.1em] transition-all">Purge</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
+                  {visibleFlows.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="py-24 text-center opacity-30">
+                        <div className="flex flex-col items-center">
+                          <FiTerminal className="h-16 w-16 mb-4" />
+                          <p className="font-black uppercase tracking-[0.2em] text-sm">Logic Buffer Empty</p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
-          )}
-          <div className="mt-6 flex items-center justify-end gap-3">
-            <button
-              onClick={() => setClientPage((prev) => Math.max(1, prev - 1))}
-              disabled={clientPage === 1}
-              className="rounded-xl bg-slate-900/40 backdrop-blur-sm border border-white/10 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 transition-all"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setClientPage((prev) => Math.min(clientTotalPages, prev + 1))}
-              disabled={clientPage >= clientTotalPages}
-              className="rounded-xl bg-blue-500/80 hover:bg-blue-600/80 backdrop-blur-sm border border-blue-400/50 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 transition-all"
-            >
-              Next
-            </button>
+
+            {flows.length > clientLimit && (
+              <div className="mt-auto px-8 py-6 border-t border-slate-100 flex items-center justify-between">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  Page {clientPage} of {clientTotalPages}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    disabled={clientPage === 1}
+                    onClick={() => setClientPage(p => p - 1)}
+                    className="btn-secondary h-10 px-4 text-[10px] uppercase font-black"
+                  >
+                    Back
+                  </button>
+                  <button
+                    disabled={clientPage >= clientTotalPages}
+                    onClick={() => setClientPage(p => p + 1)}
+                    className="btn-primary h-10 px-6 text-[10px] uppercase font-black"
+                  >
+                    Advance
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        </section>
+        </main>
       </div>
     </div>
   );

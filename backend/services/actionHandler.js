@@ -187,8 +187,6 @@ class ActionHandler {
     );
 
     return {
-      text: `Thanks ${name}.`,
-      type: 'text',
       contextDelta: { name },
     };
   }
@@ -228,8 +226,6 @@ class ActionHandler {
       if (suggestions.length === 1) {
         const match = suggestions[0];
         return {
-          text: `Selected "${match.name}". Please share your delivery address.`,
-          type: 'text',
           matched: true,
           contextDelta: {
             productId: match._id,
@@ -258,8 +254,6 @@ class ActionHandler {
     }
 
     return {
-      text: `You selected ${exactProduct.name}. Please share your delivery address.`,
-      type: 'text',
       matched: true,
       contextDelta: {
         productId: exactProduct._id,

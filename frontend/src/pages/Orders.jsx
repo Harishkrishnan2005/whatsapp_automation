@@ -34,22 +34,26 @@ const Orders = () => {
   const clientTotalPages = Math.max(1, Math.ceil(orders.length / clientLimit));
 
   const fetchOrders = async () => {
-    const { from, to } = getDateRangePayload(dateRange);
-    const params = new URLSearchParams({
-      page: '1',
-      limit: String(serverLimit),
-    });
+    try {
+      const { from, to } = getDateRangePayload(dateRange);
+      const params = new URLSearchParams({
+        page: '1',
+        limit: String(serverLimit),
+      });
 
-    if (filters.orderStatus) params.set('orderStatus', filters.orderStatus);
-    if (filters.paymentStatus) params.set('paymentStatus', filters.paymentStatus);
-    if (filters.paymentType) params.set('paymentType', filters.paymentType);
-    if (from) params.set('from', from);
-    if (to) params.set('to', to);
-    if (searchQuery) params.set('search', searchQuery);
+      if (filters.orderStatus) params.set('orderStatus', filters.orderStatus);
+      if (filters.paymentStatus) params.set('paymentStatus', filters.paymentStatus);
+      if (filters.paymentType) params.set('paymentType', filters.paymentType);
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+      if (searchQuery) params.set('search', searchQuery);
 
-    const response = await api.get(`/orders?${params.toString()}`);
-    setOrders(response.data.orders || []);
-    setTotal(response.data.total || 0);
+      const response = await api.get(`/orders?${params.toString()}`);
+      setOrders(response.data.orders || []);
+      setTotal(response.data.total || 0);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    }
   };
 
   const fetchStaff = async () => {
@@ -72,34 +76,31 @@ const Orders = () => {
   }, [dateRange, searchQuery]);
 
   const updateStatus = async (id, orderStatus) => {
-    await api.put(`/orders/${id}/status`, { orderStatus });
-    fetchOrders();
+    try {
+      await api.put(`/orders/${id}/status`, { orderStatus });
+      fetchOrders();
+    } catch (error) {
+      console.error('Error updating order status:', error);
+    }
   };
 
   const updatePaymentStatus = async (id, paymentStatus) => {
-    await api.put(`/orders/${id}/payment-status`, { paymentStatus });
-    fetchOrders();
-  };
-
-  const cancelOrder = async (id) => {
-    await api.post(`/orders/${id}/cancel`, { reason: 'Cancelled by admin' });
-    fetchOrders();
-  };
-
-  const requestReturn = async (id) => {
-    await api.post(`/orders/${id}/return-request`, { reason: 'Requested by admin' });
-    fetchOrders();
-  };
-
-  const approveReturn = async (id) => {
-    await api.post(`/orders/${id}/approve-return`, { refundOnline: true });
-    fetchOrders();
+    try {
+      await api.put(`/orders/${id}/payment-status`, { paymentStatus });
+      fetchOrders();
+    } catch (error) {
+      console.error('Error updating payment status:', error);
+    }
   };
 
   const assignOrder = async (id, assignedTo) => {
-    if (!assignedTo) return;
-    await api.put(`/orders/${id}/assign`, { assignedTo });
-    fetchOrders();
+    try {
+      if (!assignedTo) return;
+      await api.put(`/orders/${id}/assign`, { assignedTo });
+      fetchOrders();
+    } catch (error) {
+      console.error('Error assigning order:', error);
+    }
   };
 
   const metrics = useMemo(() => {
@@ -116,169 +117,167 @@ const Orders = () => {
   }, [orders, clientPage, clientLimit]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-white mb-2">Orders</h1>
-        <p className="text-white/60">Track order lifecycle, payment status, return requests and refunds.</p>
-        <div className="mt-4 text-sm text-white/50">Total Orders: {total}</div>
-      </div>
-
-      <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
-<Select
-          value={filters.orderStatus}
-          onChange={(e) => {
-            setClientPage(1);
-            setFilters((prev) => ({ ...prev, orderStatus: e.target.value }));
-          }}
-        >
-          <option value="">All Order Statuses</option>
-          {ORDER_STATUSES.map((status) => (
-            <Select.Option value={status}>{status}</Select.Option>
-          ))}
-        </Select>
-
-        <Select
-          value={filters.paymentStatus}
-          onChange={(e) => {
-            setClientPage(1);
-            setFilters((prev) => ({ ...prev, paymentStatus: e.target.value }));
-          }}
-        >
-          <option value="">All Payment Statuses</option>
-          {PAYMENT_STATUSES.map((status) => (
-            <Select.Option value={status}>{status}</Select.Option>
-          ))}
-        </Select>
-
-        <Select
-          value={filters.paymentType}
-          onChange={(e) => {
-            setClientPage(1);
-            setFilters((prev) => ({ ...prev, paymentType: e.target.value }));
-          }}
-        >
-          <option value="">All Payment Types</option>
-          {PAYMENT_TYPES.map((type) => (
-            <Select.Option value={type}>{type}</Select.Option>
-          ))}
-        </Select>
-      </div>
-
-      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl backdrop-blur-md border border-indigo-400/30 bg-indigo-600/20 p-6">
-          <p className="text-sm text-white/70">Online Orders</p>
-          <p className="text-3xl font-bold text-white mt-2">{metrics.onlineCount}</p>
+    <div className="space-y-10 animate-fade-in pb-10">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Order Logistics</h1>
+          <p className="mt-2 text-slate-500 font-medium">Tracking enterprise fulfillment cycles and liquidity resolution.</p>
         </div>
-        <div className="rounded-2xl backdrop-blur-md border border-amber-400/30 bg-amber-600/20 p-6">
-          <p className="text-sm text-white/70">COD Orders</p>
-          <p className="text-3xl font-bold text-white mt-2">{metrics.codCount}</p>
+        <div className="bg-white px-5 py-3 rounded-2xl border border-slate-200/60 shadow-sm">
+           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Global Ledger</p>
+           <p className="text-sm font-bold text-slate-900 mt-1">{total} Processed Transactions</p>
         </div>
-        <div className="rounded-2xl backdrop-blur-md border border-rose-400/30 bg-rose-600/20 p-6">
-          <p className="text-sm text-white/70">Pending Payments</p>
-          <p className="text-3xl font-bold text-white mt-2">{metrics.pendingPayments}</p>
+      </header>
+
+      <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200/60 shadow-sm flex flex-col md:flex-row gap-4">
+        <div className="flex-1">
+           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Order State</label>
+           <select 
+             value={filters.orderStatus} 
+             onChange={(e) => { setClientPage(1); setFilters(f => ({ ...f, orderStatus: e.target.value })); }}
+             className="w-full bg-slate-50/50 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white transition-all"
+           >
+              <option value="">All Operational States</option>
+              {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+           </select>
+        </div>
+        <div className="flex-1">
+           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Payment State</label>
+           <select 
+             value={filters.paymentStatus} 
+             onChange={(e) => { setClientPage(1); setFilters(f => ({ ...f, paymentStatus: e.target.value })); }}
+             className="w-full bg-slate-50/50 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white transition-all"
+           >
+              <option value="">All Payment Resolutions</option>
+              {PAYMENT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+           </select>
+        </div>
+        <div className="flex-1">
+           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Vector Type</label>
+           <select 
+             value={filters.paymentType} 
+             onChange={(e) => { setClientPage(1); setFilters(f => ({ ...f, paymentType: e.target.value })); }}
+             className="w-full bg-slate-50/50 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white transition-all"
+           >
+              <option value="">All Transfer Protocols</option>
+              {PAYMENT_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
+           </select>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl backdrop-blur-md border border-white/20 shadow-xl">
-        <table className="w-full min-w-[1180px]">
-          <thead className="border-b border-white/10 bg-white/5">
-            <tr>
-              <th className="p-4 text-left text-sm font-semibold text-white">Customer</th>
-              <th className="p-4 text-left text-sm font-semibold text-white">Product</th>
-              <th className="p-4 text-left text-sm font-semibold text-white">Amount</th>
-              <th className="p-4 text-left text-sm font-semibold text-white">Payment Type</th>
-              <th className="p-4 text-left text-sm font-semibold text-white">Payment Status</th>
-              <th className="p-4 text-left text-sm font-semibold text-white">Order Status</th>
-              <th className="p-4 text-left text-sm font-semibold text-white">Order ID</th>
-              <th className="p-4 text-left text-sm font-semibold text-white">Assigned To</th>
-              <th className="p-4 text-left text-sm font-semibold text-white">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visibleOrders.map((order) => {
-              const paymentType = order.paymentType || (order.paymentMethod === 'UPI' ? 'ONLINE' : 'COD');
-              const paymentStatus = normalizePaymentStatus(order.paymentStatus, paymentType);
-              const orderStatus = order.orderStatus || order.status || 'Pending';
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+        {[
+          { label: 'Cloud Transfers', value: metrics.onlineCount, sub: 'Online Yield', color: 'blue' },
+          { label: 'Physical Settlements', value: metrics.codCount, sub: 'COD Base', color: 'indigo' },
+          { label: 'Unresolved Nodes', value: metrics.pendingPayments, sub: 'Liquidity Latency', color: 'rose' },
+        ].map((m, i) => (
+          <div key={i} className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-sm flex flex-col justify-between h-32">
+             <div className="flex justify-between items-start">
+               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{m.label}</span>
+               <div className={`h-1.5 w-1.5 rounded-full bg-${m.color}-500`} />
+             </div>
+             <div>
+               <p className="text-2xl font-black text-slate-900 tracking-tighter leading-none">{m.value}</p>
+               <p className="text-[9px] font-bold text-slate-400 mt-1">{m.sub}</p>
+             </div>
+          </div>
+        ))}
+      </div>
 
-              return (
-                <tr key={order._id} className="border-t border-white/10 hover:bg-white/5 transition-colors">
-                  <td className="p-4 text-sm">
-                    <div className="font-medium text-white">{order.customerId?.name || '-'}</div>
-                    <div className="text-xs text-white/50">{order.customerId?.phone || '-'}</div>
-                  </td>
-                  <td className="p-4 text-sm text-white/70">{order.product}</td>
-                  <td className="p-4 text-sm text-white/70">Rs {Number(order.amount || order.finalPrice || order.price || 0).toFixed(2)}</td>
-                  <td className="p-4 text-sm">
-                    <Badge variant={paymentType === 'ONLINE' ? 'info' : 'warning'}>
-                      {paymentType}
-                    </Badge>
-                  </td>
-                  <td className="p-4 text-sm">
-                    <Badge variant={paymentStatus.toLowerCase().replace(' ', '-') || 'pending'}>
-                      {paymentStatus}
-                    </Badge>
-                  </td>
-                  <td className="p-4 text-sm">
-                    <Badge variant={orderStatus.toLowerCase().replace(/ /g, '-').replace('return-requested', 'warning') || 'pending'}>
-                      {orderStatus}
-                    </Badge>
-                  </td>
-                  <td className="p-4 text-xs font-mono text-white/70">
-                    {order.orderId || order._id || '-'}
-                  </td>
-                  <td className="p-4 text-sm">
-                    <Select value={order.assignedTo?._id || ''} onChange={(e) => assignOrder(order._id, e.target.value)} size="sm">
-                      <option value="">Unassigned</option>
-                      {staffMembers.map((staff) => (
-                        <Select.Option value={staff._id}>{staff.name}</Select.Option>
-                      ))}
-                    </Select>
-                  </td>
-                  <td className="p-4 text-sm">
-                    <div className="flex flex-col gap-2">
-                      <Select value={paymentStatus} onChange={(e) => updatePaymentStatus(order._id, e.target.value)} size="sm">
-                        {PAYMENT_STATUSES.map((status) => (
-                          <Select.Option value={status}>{status}</Select.Option>
-                        ))}
-                      </Select>
-
-                      <Select value={orderStatus} onChange={(e) => updateStatus(order._id, e.target.value)} size="sm">
-                        {ORDER_STATUSES.map((status) => (
-                          <Select.Option value={status}>{status}</Select.Option>
-                        ))}
-                      </Select>
-
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-            {visibleOrders.length === 0 && (
-              <tr>
-                <td colSpan={9} className="p-8 text-center text-white/50">No orders found.</td>
+      <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden flex flex-col min-h-[600px]">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/30">
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Identity Node</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Resource Matrix</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Yield Val</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">State</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Utility</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {visibleOrders.map((order) => {
+                const paymentType = order.paymentType || (order.paymentMethod === 'UPI' ? 'ONLINE' : 'COD');
+                const paymentStatus = normalizePaymentStatus(order.paymentStatus, paymentType);
+                const orderStatus = order.orderStatus || order.status || 'Pending';
 
-      <div className="mt-6">
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={() => setClientPage((prev) => Math.max(1, prev - 1))}
-            disabled={clientPage === 1}
-            className="rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            Previous
-          </button>
-          <button
-            onClick={() => setClientPage((prev) => Math.min(clientTotalPages, prev + 1))}
-            disabled={clientPage >= clientTotalPages}
-            className="rounded-lg bg-blue-600/30 hover:bg-blue-600/50 border border-blue-400/30 px-4 py-2 text-sm font-semibold text-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            Next
-          </button>
+                return (
+                  <tr key={order._id} className="group hover:bg-slate-50 transition-colors duration-300">
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-4">
+                         <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 font-black text-xs ring-4 ring-white shadow-sm">
+                            {order.customerId?.name ? order.customerId.name[0].toUpperCase() : '?'}
+                         </div>
+                         <div>
+                            <p className="text-sm font-black text-slate-800 uppercase tracking-tight leading-none">{order.customerId?.name || 'ANONYMOUS'}</p>
+                            <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">ID: {order.orderId || order._id.slice(-8)}</p>
+                         </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <p className="text-xs font-bold text-slate-600 truncate max-w-[150px]">{order.product}</p>
+                      <span className="text-[9px] font-black uppercase text-blue-600 tracking-widest">{paymentType} VECTOR</span>
+                    </td>
+                    <td className="px-8 py-6">
+                      <p className="text-sm font-black text-slate-900 tracking-tighter hover:text-blue-600 transition-colors">Rs {Number(order.amount || order.finalPrice || 0).toFixed(2)}</p>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex flex-col gap-1.5">
+                         <span className={`inline-flex px-3 py-1 rounded-md text-[8px] font-black uppercase tracking-[0.15em] border ${
+                           paymentStatus === 'Paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'
+                         }`}>
+                           Payment: {paymentStatus}
+                         </span>
+                         <span className={`inline-flex px-3 py-1 rounded-md text-[8px] font-black uppercase tracking-[0.15em] border ${
+                           orderStatus === 'Pending' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                         }`}>
+                           Order: {orderStatus}
+                         </span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6 text-right">
+                       <div className="flex flex-col gap-2 items-end opacity-0 group-hover:opacity-100 transition-opacity">
+                          <select 
+                            value={order.assignedTo?._id || ''} 
+                            onChange={(e) => assignOrder(order._id, e.target.value)}
+                            className="bg-slate-100/50 border-none text-[9px] font-black uppercase tracking-widest rounded-lg px-3 py-1.5 outline-none cursor-pointer hover:bg-white border hover:border-slate-200 transition-all"
+                          >
+                             <option value="">Unassigned Node</option>
+                             {staffMembers.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                          </select>
+                          <div className="flex gap-2">
+                             <select 
+                               value={orderStatus} 
+                               onChange={(e) => updateStatus(order._id, e.target.value)}
+                               className="bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest rounded-lg px-3 py-1.5 border-none outline-none cursor-pointer"
+                             >
+                                {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                             </select>
+                          </div>
+                       </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {orders.length === 0 && (
+                <tr>
+                   <td colSpan={5} className="py-24 text-center opacity-30 italic font-black uppercase tracking-widest leading-none">Log Buffer Exhausted</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
+
+        {orders.length > clientLimit && (
+          <div className="mt-auto px-8 py-6 border-t border-slate-100 flex items-center justify-between bg-slate-50/20">
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Page {clientPage} for Client Index</p>
+             <div className="flex gap-2">
+                <button disabled={clientPage === 1} onClick={() => setClientPage(p => p - 1)} className="btn-secondary h-10 px-4 text-[10px] uppercase font-black">Back</button>
+                <button disabled={clientPage >= clientTotalPages} onClick={() => setClientPage(p => p + 1)} className="btn-primary h-10 px-6 text-[10px] uppercase font-black">Advance</button>
+             </div>
+          </div>
+        )}
       </div>
     </div>
   );

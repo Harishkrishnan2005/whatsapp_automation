@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Business from '../models/Business.js';
 import buildTenantScope from '../utils/tenantScope.js';
+import chatbotSeederService from './chatbotSeederService.js';
 
 const ADMIN_PERMISSIONS = [
   'manage_customers',
@@ -37,7 +38,8 @@ class AuthService {
       role: user.role,
       name: user.name,
       permissions: user.permissions,
-      businessId,
+      businessId: businessId?._id || businessId,
+      businessName: businessId?.name || user.businessName || null,
       businessType: user.businessType,
     };
   }
@@ -47,7 +49,7 @@ class AuthService {
       id: user._id,
       email: user.email,
       role: user.role,
-      businessId,
+      businessId: businessId?._id || businessId,
       businessType: user.businessType,
     };
   }
@@ -61,6 +63,8 @@ class AuthService {
       businessType = 'E_COMMERCE',
     } = payload;
 
+    const category = businessType === 'BOOKING' ? 'booking' : 'ecommerce';
+
     const exists = await User.findOne({ email });
     if (exists) {
       throw new Error('User already exists');
@@ -71,7 +75,15 @@ class AuthService {
       email,
       plan: 'Pro',
       businessType,
+      category,
     });
+
+    // Automatically seed chatbot flows based on category
+    if (category === 'booking') {
+      await chatbotSeederService.seedBookingFlows(business._id);
+    } else {
+      await chatbotSeederService.seedEcommerceFlows(business._id);
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const admin = await User.create({
@@ -84,7 +96,7 @@ class AuthService {
       businessType,
     });
 
-    return this.buildUserResponse(admin, business._id);
+    return this.buildUserResponse(admin, business);
   }
 
   async login(email, password, role = null) {
@@ -93,7 +105,7 @@ class AuthService {
       query.role = role;
     }
 
-    const user = await User.findOne(query);
+    const user = await User.findOne(query).populate('businessId');
     if (!user) {
       throw new Error('Invalid credentials');
     }
@@ -136,7 +148,7 @@ class AuthService {
     return {
       accessToken,
       refreshToken,
-      user: this.buildUserResponse(user, resolvedBusinessId),
+      user: this.buildUserResponse(user, user.businessId),
     };
   }
 

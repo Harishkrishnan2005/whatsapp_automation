@@ -87,6 +87,12 @@ const chatbotFlowSchema = new mongoose.Schema({
     ref: 'Business',
     required: true,
   },
+  category: {
+    type: String,
+    enum: ['booking', 'ecommerce'],
+    required: true,
+    index: true,
+  },
 }, {
   timestamps: true,
   collection: COLLECTIONS.CHATBOT_FLOWS,

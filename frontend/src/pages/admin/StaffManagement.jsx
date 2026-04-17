@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiUserPlus, FiUsers, FiMail, FiPhone, FiKey, FiMapPin, FiCalendar, FiActivity, FiX, FiCheck } from 'react-icons/fi';
 import api from '../../utils/api';
 
 const initialFormData = {
@@ -46,10 +48,10 @@ const StaffManagement = () => {
       setFormData(initialFormData);
       setShowForm(false);
       await fetchStaff();
-      setFormSuccess('Employee saved successfully.');
+      setFormSuccess('Personnel record established successfully.');
     } catch (error) {
       console.error('Error creating staff:', error);
-      setFormError(error?.response?.data?.message || 'Failed to save employee.');
+      setFormError(error?.response?.data?.message || 'Failed to sync record.');
     } finally {
       setIsSaving(false);
     }
@@ -67,10 +69,11 @@ const StaffManagement = () => {
     const year = formData.dateOfJoining
       ? new Date(formData.dateOfJoining).getFullYear()
       : new Date().getFullYear();
-    return `EMPID-${year}-####`;
+    return `ID-${year}-####`;
   };
 
   const deleteStaff = async (id) => {
+    if (!confirm('Permanent deletion of this operative record?')) return;
     try {
       await api.delete(`/auth/staff/${id}`);
       fetchStaff();
@@ -80,11 +83,11 @@ const StaffManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-4 md:p-8 text-white">
-      <div className="mb-8 flex justify-between items-center rounded-2xl backdrop-blur-md border border-white/10 shadow-xl bg-slate-950/30 p-6">
+    <div className="space-y-10 animate-fade-in pb-10">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-bold text-white">Staff Management</h1>
-          <p className="text-cyan-200 mt-2">Manage and organize your staff members.</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Staff Registry</h1>
+          <p className="mt-2 text-slate-500 font-medium tracking-tight">Managing enterprise resource personnel and specialized access protocols.</p>
         </div>
         <button
           onClick={() => {
@@ -95,208 +98,251 @@ const StaffManagement = () => {
               setFormError('');
             }
           }}
-          className="bg-blue-500/80 hover:bg-blue-600/80 backdrop-blur-sm border border-blue-400/50 text-white px-6 py-3 rounded-xl font-semibold transition-all"
+          className={`btn-primary px-10 h-14 rounded-2xl flex items-center gap-3 transition-all ${showForm ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/20' : 'shadow-blue-500/20'}`}
         >
-          {showForm ? 'Cancel' : 'Add Staff'}
+          {showForm ? <FiX className="h-5 w-5" /> : <FiUserPlus className="h-5 w-5" />}
+          <span className="text-[10px] font-black uppercase tracking-widest">{showForm ? 'Abort Entry' : 'Enroll Personnel'}</span>
         </button>
-      </div>
+      </header>
 
-      {formSuccess && (
-        <div className="mb-6 rounded-2xl backdrop-blur-md border border-green-200/50 bg-green-50/80 p-4 text-green-700">
-          {formSuccess}
-        </div>
-      )}
-
-      {showForm && (
-        <form onSubmit={handleCreateStaff} className="rounded-2xl backdrop-blur-md border border-white/10 shadow-xl bg-slate-950/30 p-6 mb-8">
-          {formError && (
-            <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 backdrop-blur-sm p-4 text-red-100">
-              {formError}
-            </div>
-          )}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">Name</label>
-              <input
-                type="text"
-                name="name"
-                placeholder="Staff Name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-white/10 bg-slate-900/40 backdrop-blur-sm rounded-xl focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">Email</label>
-              <input
-                type="email"
-                name="email"
-                placeholder="staff@example.com"
-                value={formData.email}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-white/10 bg-slate-900/40 backdrop-blur-sm rounded-xl focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">Password</label>
-              <input
-                type="password"
-                name="password"
-                placeholder="Create password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-white/10 bg-slate-900/40 backdrop-blur-sm rounded-xl focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none text-white"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">Employee Type</label>
-              <input
-                type="text"
-                value="Employee"
-                className="w-full px-4 py-3 border border-white/10 bg-slate-900/30 backdrop-blur-sm rounded-xl text-slate-300"
-                readOnly
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">Employee ID</label>
-              <input
-                type="text"
-                value={getEmployeeIdPreview()}
-                className="w-full px-4 py-3 border border-white/10 bg-slate-900/30 backdrop-blur-sm rounded-xl text-slate-300"
-                readOnly
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">Phone Number</label>
-              <input
-                type="text"
-                name="phone"
-                placeholder="9876543210"
-                value={formData.phone}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-white/10 bg-slate-900/40 backdrop-blur-sm rounded-xl focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none text-white"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">Gender</label>
-              <select
-                name="gender"
-                value={formData.gender}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-white/10 bg-slate-900/40 backdrop-blur-sm rounded-xl focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none text-white"
-              >
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">Date Of Birth</label>
-              <input
-                type="date"
-                name="dateOfBirth"
-                value={formData.dateOfBirth}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-white/10 bg-slate-900/40 backdrop-blur-sm rounded-xl focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">Date Of Joining</label>
-              <input
-                type="date"
-                name="dateOfJoining"
-                value={formData.dateOfJoining}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-white/10 bg-slate-900/40 backdrop-blur-sm rounded-xl focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none text-white"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">Address</label>
-            <textarea
-              name="address"
-              placeholder="Enter address"
-              value={formData.address}
-              onChange={handleInputChange}
-              className="w-full px-4 py-3 border border-white/10 bg-slate-900/40 backdrop-blur-sm rounded-xl focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none resize-none min-h-[120px] text-white"
-            />
-          </div>
-
-          <div className="mb-6">
-            <label className="inline-flex items-center gap-3 text-slate-300 font-medium">
-              <input
-                type="checkbox"
-                name="isActive"
-                checked={formData.isActive}
-                onChange={handleInputChange}
-                className="h-4 w-4 rounded border-white/10 bg-slate-900/40 backdrop-blur-sm focus:ring-cyan-400"
-              />
-              Active
-            </label>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="bg-green-500/80 hover:bg-green-600/80 backdrop-blur-sm border border-green-400/50 text-white px-6 py-3 rounded-xl font-semibold transition-all disabled:opacity-50"
+      <AnimatePresence>
+        {formSuccess && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="p-5 rounded-[1.5rem] bg-blue-50 border border-blue-100 text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 flex items-center justify-between"
           >
-            {isSaving ? 'Saving...' : 'Save Staff'}
-          </button>
-        </form>
-      )}
+             <span>{formSuccess}</span>
+             <FiCheck className="h-4 w-4" />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <div className="rounded-2xl backdrop-blur-md border border-white/10 shadow-xl bg-slate-950/30 overflow-hidden">
-        <table className="w-full">
-          <thead className="border-b border-white/10 bg-slate-950/20 backdrop-blur-sm">
-            <tr>
-              <th className="p-4 text-left text-cyan-200 font-semibold">Name</th>
-              <th className="p-4 text-left text-cyan-200 font-semibold">Email</th>
-              <th className="p-4 text-left text-cyan-200 font-semibold">Employee ID</th>
-              <th className="p-4 text-left text-slate-300 font-semibold">Status</th>
-              <th className="p-4 text-left text-slate-300 font-semibold">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {staff.map((s) => (
-              <tr key={s._id} className="border-b border-white/10 hover:bg-blue-500/10 backdrop-blur-sm transition-colors">
-                <td className="p-4 text-white">{s.name}</td>
-                <td className="p-4 text-slate-300">{s.email}</td>
-                <td className="p-4 text-slate-300">{s.employeeId || '-'}</td>
-                <td className="p-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    s.isActive
-                      ? 'bg-green-500/10 backdrop-blur-sm border border-green-500/20 text-green-100'
-                      : 'bg-slate-900/40 backdrop-blur-sm border border-white/10 text-slate-300'
-                  }`}>
-                    {s.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <button
-                    onClick={() => deleteStaff(s._id)}
-                    className="bg-red-500/80 hover:bg-red-600/80 backdrop-blur-sm border border-red-400/50 text-white px-3 py-1 rounded-lg text-sm font-medium transition-all"
-                  >
-                    Delete
-                  </button>
-                </td>
+      <AnimatePresence>
+        {showForm && (
+          <motion.form 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            onSubmit={handleCreateStaff} 
+            className="saas-card p-12"
+          >
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full -mr-32 -mt-32 opacity-30 blur-3xl" />
+            
+            <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-10 flex items-center gap-3">
+               Operative Specification
+               <span className="h-2 w-2 rounded-full bg-blue-600" />
+            </h2>
+            
+            {formError && (
+              <div className="mb-10 p-5 rounded-2xl bg-rose-50 border border-rose-100 text-[10px] font-black uppercase tracking-widest text-rose-600">
+                {formError}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Full Identity (Name)</label>
+                <div className="relative">
+                   <FiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                   <input
+                     type="text"
+                     name="name"
+                     value={formData.name}
+                     onChange={handleInputChange}
+                     placeholder="e.g., Jonathan Sterling"
+                     className="w-full rounded-xl border-slate-200 bg-slate-50 py-3.5 pl-12 pr-4 text-sm font-bold text-slate-700 outline-none transition-all"
+                     required
+                   />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Access Vector (Email)</label>
+                <div className="relative">
+                   <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                   <input
+                     type="email"
+                     name="email"
+                     value={formData.email}
+                     onChange={handleInputChange}
+                     placeholder="operative@enterprise.ia"
+                     className="w-full rounded-xl border-slate-200 bg-slate-50 py-3.5 pl-12 pr-4 text-sm font-bold text-slate-700 outline-none transition-all"
+                     required
+                   />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Authentication Key (Password)</label>
+                <div className="relative">
+                   <FiKey className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                   <input
+                     type="password"
+                     name="password"
+                     value={formData.password}
+                     onChange={handleInputChange}
+                     placeholder="••••••••••••"
+                     className="w-full rounded-xl border-slate-200 bg-slate-50 py-3.5 pl-12 pr-4 text-sm font-bold text-slate-700 outline-none transition-all"
+                     required
+                   />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10 border-t border-slate-50 pt-10">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Resource Type</label>
+                <input type="text" value="SYSTEM OPERATIVE" className="w-full rounded-xl border-slate-100 bg-slate-50 px-5 py-3.5 text-[10px] font-black text-slate-400 tracking-widest cursor-not-allowed" readOnly />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">ID Matrix Preview</label>
+                <input type="text" value={getEmployeeIdPreview()} className="w-full rounded-xl border-slate-100 bg-slate-50 px-5 py-3.5 text-[10px] font-black text-slate-400 tracking-widest cursor-not-allowed" readOnly />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Contact Coordinate (Phone)</label>
+                <div className="relative">
+                   <FiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                   <input
+                     type="text"
+                     name="phone"
+                     value={formData.phone}
+                     onChange={handleInputChange}
+                     placeholder="Network Signal"
+                     className="w-full rounded-xl border-slate-200 bg-slate-50 py-3.5 pl-12 pr-4 text-sm font-bold text-slate-700 outline-none focus:bg-white transition-all"
+                   />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10 border-t border-slate-50 pt-10">
+               <div className="space-y-2">
+                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Biometric Allocation</label>
+                 <select name="gender" value={formData.gender} onChange={handleInputChange} className="w-full rounded-xl border-slate-200 bg-slate-50 px-5 py-3.5 text-[10px] font-black uppercase text-slate-600 outline-none focus:bg-white transition-all cursor-pointer">
+                    <option value="Male">Alpha-Male</option>
+                    <option value="Female">Alpha-Female</option>
+                    <option value="Other">External Node</option>
+                 </select>
+               </div>
+               <div className="space-y-2">
+                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Existence Origin (DOB)</label>
+                 <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleInputChange} className="w-full rounded-xl border-slate-200 bg-slate-50 px-5 py-3 text-[10px] font-black text-slate-600" />
+               </div>
+               <div className="space-y-2">
+                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Service Onset Date</label>
+                 <input type="date" name="dateOfJoining" value={formData.dateOfJoining} onChange={handleInputChange} className="w-full rounded-xl border-slate-200 bg-slate-50 px-5 py-3 text-[10px] font-black text-slate-600" required />
+               </div>
+            </div>
+
+            <div className="mb-10 border-t border-slate-50 pt-10">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Base Coordinate (Address)</label>
+              <div className="relative mt-2">
+                 <FiMapPin className="absolute left-4 top-4 text-slate-400" />
+                 <textarea
+                   name="address"
+                   value={formData.address}
+                   onChange={handleInputChange}
+                   placeholder="Physical node location..."
+                   className="w-full rounded-2xl border-slate-200 bg-slate-50 py-4 pl-12 pr-4 text-sm font-medium text-slate-700 outline-none transition-all min-h-[120px] resize-none"
+                 />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between border-t border-slate-50 pt-10">
+              <label className="flex items-center gap-4 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  name="isActive"
+                  checked={formData.isActive}
+                  onChange={handleInputChange}
+                  className="h-6 w-6 rounded-lg border-slate-300 text-slate-900 focus:ring-slate-900/10 transition-all cursor-pointer"
+                />
+                <span className="text-[10px] font-black text-slate-400 group-hover:text-slate-900 transition-colors uppercase tracking-[0.2em] select-none">Operative Active Baseline</span>
+              </label>
+
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="btn-primary px-16 h-16 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest shadow-none"
+              >
+                {isSaving ? 'Synchronizing...' : 'Finalize Module Enlistment'}
+              </button>
+            </div>
+          </motion.form>
+        )}
+      </AnimatePresence>
+
+      {/* Database Interface */}
+      <div className="saas-card flex flex-col min-h-[600px]">
+        <header className="px-10 py-8 border-b border-slate-50 bg-slate-50/20 flex items-center justify-between">
+           <div>
+              <h2 className="text-xl font-bold text-slate-900 uppercase tracking-tight">Personnel Matrix</h2>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1.5">Audit Trail • {staff.length} Active Modules</p>
+           </div>
+           <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
+              <FiUsers className="h-5 w-5" />
+           </div>
+        </header>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/30">
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Personnel Node</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Matrix ID</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">System State</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Utility</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {staff.map((s) => (
+                <tr key={s._id} className="group hover:bg-slate-50 transition-colors duration-300">
+                  <td className="px-10 py-7">
+                    <div className="flex items-center gap-5">
+                      <div className="h-12 w-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white font-black text-sm ring-4 ring-white shadow-xl shadow-slate-900/10 group-hover:scale-110 transition-transform duration-500">
+                        {s.name ? s.name[0].toUpperCase() : '?'}
+                      </div>
+                      <div>
+                        <p className="text-base font-bold text-slate-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{s.name}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1.5">{s.email}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-10 py-7">
+                    <p className="text-xs font-black text-slate-600 tracking-tighter bg-slate-100 w-fit px-3 py-1 rounded-lg border border-slate-200/50">{s.employeeId || 'UNREGISTERED'}</p>
+                  </td>
+                  <td className="px-10 py-7">
+                    <div className="flex items-center gap-3">
+                       <div className={`h-2.5 w-2.5 rounded-full ring-4 ring-white shadow-sm ${s.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+                       <span className={`text-[10px] font-black uppercase tracking-widest ${s.isActive ? 'text-emerald-600' : 'text-slate-400'}`}>
+                          {s.isActive ? 'Operational' : 'Deactivated'}
+                       </span>
+                    </div>
+                  </td>
+                  <td className="px-10 py-7 text-right">
+                    <button
+                      onClick={() => deleteStaff(s._id)}
+                      className="btn-secondary py-2 px-5 text-[9px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all border-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white"
+                    >
+                      Expunge Record
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {staff.length === 0 && (
+                <tr>
+                   <td colSpan={4} className="py-24 text-center opacity-30 select-none grayscale">
+                      <FiActivity className="h-20 w-20 mx-auto mb-6 text-slate-300" />
+                      <p className="font-black uppercase tracking-[0.4em] text-sm italic text-slate-400">Database Buffer Depleted</p>
+                   </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <footer className="mt-auto px-10 py-8 border-t border-slate-50 bg-slate-50/10">
+           <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] text-center italic">Secure Enterprise Registry Interface • Root Managed</p>
+        </footer>
       </div>
     </div>
   );

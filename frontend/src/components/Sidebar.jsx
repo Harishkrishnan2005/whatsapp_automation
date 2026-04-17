@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { motion } from 'framer-motion';
 import {
   FiBarChart2,
   FiCalendar,
@@ -14,6 +15,8 @@ import {
   FiUserCheck,
   FiUsers,
   FiX,
+  FiLogOut,
+  FiShield,
 } from 'react-icons/fi';
 
 const Sidebar = ({ open, onClose }) => {
@@ -23,50 +26,48 @@ const Sidebar = ({ open, onClose }) => {
   const businessType = user?.businessType || 'E_COMMERCE';
 
   const commonMenuItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: FiGrid },
+    { path: '/dashboard', label: 'Overview', icon: FiGrid },
   ];
 
   const adminMenuItems =
     businessType === 'BOOKING'
       ? [
-          { path: '/chat', label: 'Chat Simulator', icon: FiMessageCircle },
-          { path: '/customers', label: 'Customers', icon: FiUsers },
-          { path: '/admin/appointments', label: 'Appointments', icon: FiCalendar },
-          { path: '/admin/chatbot', label: 'Chatbot', icon: FiMessageCircle },
-          { path: '/analytics', label: 'Analytics', icon: FiBarChart2 },
-          { path: '/admin/staff', label: 'Staff', icon: FiUserCheck },
-          { path: '/admin/advanced-analytics', label: 'Advanced Analytics', icon: FiTrendingUp },
+          { path: '/chat', label: 'Automation Web', icon: FiMessageCircle },
+          { path: '/customers', label: 'Clients', icon: FiUsers },
+          { path: '/admin/appointments', label: 'Booking Desk', icon: FiCalendar },
+          { path: '/admin/chatbot', label: 'AI Configuration', icon: FiMessageCircle },
+          { path: '/analytics', label: 'Global Stats', icon: FiBarChart2 },
+          { path: '/admin/staff', label: 'Team Roles', icon: FiUserCheck },
+          { path: '/admin/advanced-analytics', label: 'SaaS Insights', icon: FiTrendingUp },
         ]
       : [
-          { path: '/chat', label: 'Chat Simulator', icon: FiMessageCircle },
-          { path: '/customers', label: 'Customers', icon: FiUsers },
-          { path: '/orders', label: 'Orders', icon: FiShoppingCart },
-          { path: '/campaigns', label: 'Campaigns', icon: FiSend },
-          { path: '/products', label: 'Products', icon: FiPackage },
-          { path: '/admin/chat-management', label: 'Chat Management', icon: FiClipboard },
-          { path: '/analytics', label: 'Analytics', icon: FiBarChart2 },
-          { path: '/admin/chatbot', label: 'Chatbot', icon: FiMessageCircle },
-          { path: '/admin/staff', label: 'Staff', icon: FiUserCheck },
-          { path: '/admin/advanced-analytics', label: 'Advanced Analytics', icon: FiTrendingUp },
+          { path: '/chat', label: 'Automation Web', icon: FiMessageCircle },
+          { path: '/customers', label: 'Clients', icon: FiUsers },
+          { path: '/orders', label: 'E-com Orders', icon: FiShoppingCart },
+          { path: '/campaigns', label: 'Broadcasts', icon: FiSend },
+          { path: '/products', label: 'Inventory', icon: FiPackage },
+          { path: '/analytics', label: 'Global Stats', icon: FiBarChart2 },
+          { path: '/admin/chatbot', label: 'AI Configuration', icon: FiMessageCircle },
+          { path: '/admin/staff', label: 'Team Roles', icon: FiUserCheck },
         ];
 
   const staffMenuItems =
     businessType === 'BOOKING'
       ? [
-          { path: '/staff/chat', label: 'My Chats', icon: FiMessageCircle },
-          { path: '/staff/bookings', label: 'My Appointments', icon: FiCalendar },
-          { path: '/staff/notes', label: 'Customer Notes', icon: FiFileText },
+          { path: '/staff/chat', label: 'My Conversations', icon: FiMessageCircle },
+          { path: '/staff/bookings', label: 'My Schedule', icon: FiCalendar },
+          { path: '/staff/notes', label: 'Customer Files', icon: FiFileText },
         ]
       : [
-          { path: '/staff/chat', label: 'My Chats', icon: FiMessageCircle },
-          { path: '/staff/orders', label: 'My Orders', icon: FiShoppingCart },
-          { path: '/staff/notes', label: 'Customer Notes', icon: FiFileText },
+          { path: '/staff/chat', label: 'My Conversations', icon: FiMessageCircle },
+          { path: '/staff/orders', label: 'Assigned Orders', icon: FiShoppingCart },
+          { path: '/staff/notes', label: 'Customer Files', icon: FiFileText },
         ];
 
   const superAdminMenuItems = [
-    { path: '/superadmin/dashboard', label: 'Dashboard', icon: FiGrid },
-    { path: '/superadmin/businesses', label: 'Businesses', icon: FiUsers },
-    { path: '/superadmin/subscriptions', label: 'Subscriptions', icon: FiTrendingUp },
+    { path: '/superadmin/dashboard', label: 'System Control', icon: FiShield },
+    { path: '/superadmin/businesses', label: 'Tenants', icon: FiUsers },
+    { path: '/superadmin/subscriptions', label: 'Billing Plans', icon: FiTrendingUp },
   ];
 
   const menuItems = user?.role === 'super_admin'
@@ -85,56 +86,68 @@ const Sidebar = ({ open, onClose }) => {
 
   return (
     <>
-      <div
-        className={`surface-sidebar fixed inset-y-0 left-0 z-50 w-72 transform overflow-hidden no-scrollbar flex flex-col border-r shadow-soft transition-transform duration-300 md:fixed md:top-20 md:bottom-0 md:w-64 md:translate-x-0 ${
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-gradient-to-b from-[#0f172a] to-[#1e293b] border-r border-slate-800 transition-transform duration-300 ease-in-out md:translate-x-0 flex flex-col ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-between border-b border-surface p-5 md:hidden">
-          <div className="text-sm font-semibold tracking-wide text-secondary">Menu</div>
-          <button onClick={onClose} className="btn-ghost p-2">
-            <FiX className="h-5 w-5" />
-          </button>
+        <div className="flex items-center justify-between p-6 mb-4">
+           <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-xl shadow-blue-500/20">
+                <FiGrid className="h-5 w-5" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Business Engine</span>
+                <span className="text-sm font-black tracking-tight text-white uppercase truncate max-w-[140px]">
+                  {user?.businessName || user?.businessId?.businessName || 'Ematix Platform'}
+                </span>
+              </div>
+           </div>
+           <button onClick={onClose} className="text-slate-500 md:hidden hover:text-white transition-colors">
+              <FiX className="h-6 w-6" />
+           </button>
         </div>
 
-        <div className="hidden border-b border-surface p-5 md:block">
-          <div className="space-y-2">
-            <p className="text-xl font-semibold sidebar-logo">
-              {user?.role === 'super_admin' ? 'Platform' : 'Business'}
-            </p>
-            <p className="text-sm sidebar-section-title">
-              {user?.role === 'super_admin' ? 'Management dashboard' : 'Analytics dashboard'}
-            </p>
+        <nav className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
+          <div className="space-y-1">
+            <p className="px-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Operations Hub</p>
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.path);
+              return (
+                <Link
+                  key={item.path}
+                   to={item.path}
+                  onClick={onClose}
+                  className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${
+                    active 
+                    ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' 
+                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                   }`}
+                >
+                  <Icon className={`h-5 w-5 transition-transform group-hover:scale-110 ${active ? 'text-white' : 'text-slate-500 group-hover:text-white'}`} />
+                  <span className="text-sm font-bold tracking-tight">{item.label}</span>
+                </Link>
+              );
+            })}
           </div>
-        </div>
-
-        <nav className="flex-1 min-h-0 overflow-y-auto no-scrollbar py-4 px-3 md:px-0">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={onClose}
-                className={`sidebar-link mx-2 mb-2 ${isActive(item.path) ? 'sidebar-link-active' : ''}`}
-              >
-                <Icon className="h-5 w-5" />
-                <span className="text-sm md:text-[15px]">{item.label}</span>
-              </Link>
-            );
-          })}
         </nav>
 
-        <div className="border-t border-surface p-4">
-          <button onClick={handleLogout} className="sidebar-logout">
-            Logout
+        <div className="p-6 mt-auto border-t border-slate-800 bg-black/10">
+          <button 
+            onClick={handleLogout}
+            className="flex w-full items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-white/5 border border-slate-800 text-slate-400 text-sm font-black uppercase tracking-widest hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/20 transition-all"
+          >
+            <FiLogOut className="h-4 w-4" />
+            Sign Out
           </button>
         </div>
-      </div>
+      </aside>
 
-      {open && <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={onClose} />}
+      {open && <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm md:hidden" onClick={onClose} />}
     </>
   );
 };
 
 export default Sidebar;
+

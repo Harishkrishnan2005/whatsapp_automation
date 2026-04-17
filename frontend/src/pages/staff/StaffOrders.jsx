@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { FiShoppingCart, FiUser, FiPackage, FiCreditCard, FiHash, FiClock } from 'react-icons/fi';
 import api from '../../utils/api';
 import useAnalyticsStore from '../../store/analyticsStore';
 import { getDateRangePayload } from '../../utils/dateRange';
+import Badge from '../../components/ui/Badge';
 
 const ORDER_STATUSES = ['Pending', 'Confirmed', 'Cancelled', 'Delivered', 'Return Requested', 'Returned'];
 const PAYMENT_STATUSES = ['Pending', 'Paid', 'Failed', 'Refunded'];
@@ -65,87 +68,115 @@ const StaffOrders = () => {
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
+  const getStatusVariant = (status) => {
+    if (status === 'Delivered' || status === 'Paid') return 'delivered';
+    if (status === 'Cancelled' || status === 'Failed') return 'error';
+    if (status === 'Returned' || status === 'Refunded') return 'neutral';
+    return 'pending';
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-4 md:p-8 text-white">
-      <div className="mb-8 rounded-2xl border border-white/10 bg-slate-950/30 p-6 shadow-xl backdrop-blur-md">
-        <h1 className="text-4xl font-bold text-white">My Orders</h1>
-        <p className="mt-2 text-cyan-200">Manage only the orders assigned to you.</p>
-      </div>
+    <div className="space-y-10 animate-fade-in pb-10">
+      <header>
+        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Assigned Distributions</h1>
+        <p className="mt-2 text-slate-500 font-medium">Managing logistical nodes and payment verification for your assigned sectors.</p>
+      </header>
 
-      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-slate-950/30 shadow-xl backdrop-blur-md">
-        <table className="w-full min-w-[980px]">
-          <thead className="border-b border-white/10 bg-slate-950/20">
-            <tr>
-              <th className="p-4 text-left font-semibold text-cyan-200">Customer</th>
-              <th className="p-4 text-left font-semibold text-cyan-200">Product</th>
-              <th className="p-4 text-left font-semibold text-cyan-200">Amount</th>
-              <th className="p-4 text-left font-semibold text-cyan-200">Order Status</th>
-              <th className="p-4 text-left font-semibold text-cyan-200">Payment Status</th>
-              <th className="p-4 text-left font-semibold text-cyan-200">Order ID</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((order) => {
-              const orderStatus = order.orderStatus || order.status || 'Pending';
-              const paymentStatus = order.paymentStatus || 'Pending';
-              return (
-                <tr key={order._id} className="border-b border-white/10">
-                  <td className="p-4 text-white">
-                    <p className="font-semibold">{order.customerId?.name || '-'}</p>
-                    <p className="text-xs text-slate-300">{order.customerId?.phone || '-'}</p>
-                  </td>
-                  <td className="p-4 text-slate-200">{order.product}</td>
-                  <td className="p-4 text-slate-200">Rs {Number(order.amount || 0).toFixed(2)}</td>
-                  <td className="p-4">
-                    <select
-                      value={orderStatus}
-                      onChange={(e) => updateStatus(order._id, e.target.value)}
-                      className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white outline-none"
-                    >
-                      {ORDER_STATUSES.map((status) => (
-                        <option key={status} value={status} className="bg-slate-900">{status}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="p-4">
-                    <select
-                      value={paymentStatus}
-                      onChange={(e) => updatePaymentStatus(order._id, e.target.value)}
-                      className="rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white outline-none"
-                    >
-                      {PAYMENT_STATUSES.map((status) => (
-                        <option key={status} value={status} className="bg-slate-900">{status}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="p-4 font-mono text-xs text-slate-200">{order.orderId || order._id}</td>
-                </tr>
-              );
-            })}
-            {!loading && orders.length === 0 && (
-              <tr>
-                <td colSpan={6} className="p-8 text-center text-slate-400">No assigned orders found.</td>
+      <div className="bg-white rounded-[3rem] border border-slate-200/60 shadow-sm overflow-hidden flex flex-col min-h-[600px]">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/30">
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Stakeholder Node</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Product Detail</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Economic Value</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Logistics State</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Economic State</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Utility</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {orders.map((order) => {
+                const orderStatus = order.orderStatus || order.status || 'Pending';
+                const paymentStatus = order.paymentStatus || 'Pending';
+                return (
+                  <tr key={order._id} className="group hover:bg-slate-50 transition-colors duration-300">
+                    <td className="px-10 py-7">
+                      <div className="flex items-center gap-5">
+                        <div className="h-12 w-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-sm shadow-xl shadow-slate-900/10 group-hover:scale-110 transition-transform duration-500 ring-4 ring-white">
+                           {order.customerId?.name ? order.customerId.name[0].toUpperCase() : '?'}
+                        </div>
+                        <div>
+                           <p className="text-base font-bold text-slate-900 tracking-tight leading-none group-hover:text-blue-600 transition-colors uppercase">{order.customerId?.name || 'EXTERNAL AGENT'}</p>
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">{order.customerId?.phone}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-10 py-7">
+                       <p className="text-sm font-black text-slate-900 uppercase tracking-tighter line-clamp-1">{order.product}</p>
+                    </td>
+                    <td className="px-10 py-7">
+                       <p className="text-base font-black text-slate-900 tracking-tighter">Rs {Number(order.amount || 0).toFixed(2)}</p>
+                    </td>
+                    <td className="px-10 py-7">
+                      <select
+                        value={orderStatus}
+                        onChange={(e) => updateStatus(order._id, e.target.value)}
+                        className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all cursor-pointer"
+                      >
+                        {ORDER_STATUSES.map((status) => (
+                          <option key={status} value={status}>{status.toUpperCase()}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-10 py-7">
+                      <select
+                        value={paymentStatus}
+                        onChange={(e) => updatePaymentStatus(order._id, e.target.value)}
+                        className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all cursor-pointer"
+                      >
+                        {PAYMENT_STATUSES.map((status) => (
+                          <option key={status} value={status}>{status.toUpperCase()}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-10 py-7 text-right">
+                       <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2rem] transition-all group-hover:text-slate-400">{order.orderId || order._id}</p>
+                    </td>
+                  </tr>
+                );
+              })}
+              {!loading && orders.length === 0 && (
+                <tr>
+                   <td colSpan={6} className="py-24 text-center opacity-30 select-none grayscale">
+                      <FiPackage className="h-20 w-20 mx-auto mb-6 text-slate-300" />
+                      <p className="font-black uppercase tracking-[0.4em] text-sm text-slate-400">Distribution Ledger Empty</p>
+                   </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
-      <div className="mt-6 flex justify-end gap-3">
-        <button
-          onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-          disabled={page === 1}
-          className="rounded-xl border border-white/10 bg-slate-900/40 px-4 py-2 text-sm text-white disabled:opacity-50"
-        >
-          Previous
-        </button>
-        <button
-          onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-          disabled={page >= totalPages}
-          className="rounded-xl border border-blue-400/50 bg-blue-500/80 px-4 py-2 text-sm text-white disabled:opacity-50"
-        >
-          Next
-        </button>
+        <div className="mt-auto px-10 py-8 border-t border-slate-100 flex items-center justify-between bg-slate-50/20">
+           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic leading-none">Assigned Logistics Hub • Node Operational</p>
+           <div className="flex gap-3">
+             <button
+               disabled={page === 1}
+               onClick={() => setPage(p => Math.max(1, p - 1))}
+               className="btn-secondary h-12 px-6 text-[10px] uppercase font-black tracking-widest disabled:opacity-30"
+             >
+               Previous
+             </button>
+             <button
+               disabled={page >= totalPages}
+               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+               className="btn-primary h-12 px-8 text-[10px] uppercase font-black tracking-widest shadow-none"
+             >
+               Next
+             </button>
+           </div>
+        </div>
       </div>
     </div>
   );

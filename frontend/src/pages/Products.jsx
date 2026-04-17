@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { FiX } from 'react-icons/fi';
 import api from '../utils/api';
 import useAnalyticsStore from '../store/analyticsStore';
 import { getDateRangePayload } from '../utils/dateRange';
@@ -198,348 +200,270 @@ const Products = () => {
   const visibleProducts = products.slice((clientPage - 1) * clientLimit, clientPage * clientLimit);
 
   return (
-    <>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-white">Product Management</h1>
-            <p className="text-white/60 mt-2">Add, update, and manage product listings for the chatbot catalog.</p>
-          </div>
-          <div className="rounded-2xl backdrop-blur-md border border-white/20 shadow-xl p-6 w-full lg:w-auto">
-            <p className="text-sm text-white/70">Total Products</p>
-            <p className="text-4xl font-semibold text-white mt-2">{total}</p>
-          </div>
+    <div className="space-y-10 animate-fade-in pb-10">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Catalog Infrastructure</h1>
+          <p className="mt-2 text-slate-500 font-medium">Managing enterprise resource nodes and chatbot product indices.</p>
         </div>
+        <div className="bg-white px-5 py-3 rounded-2xl border border-slate-200/60 shadow-sm">
+           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Global Index</p>
+           <p className="text-sm font-bold text-slate-900 mt-1">{total} Managed Units</p>
+        </div>
+      </header>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <section className="lg:col-span-1 rounded-2xl backdrop-blur-md border border-white/20 shadow-xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-6">{editing ? 'Edit Product' : 'Add New Product'}</h2>
-            {message && <div className="mb-4 text-sm text-green-400 bg-green-600/20 border border-green-400/30 p-3 rounded-lg">{message}</div>}
-            <form className="space-y-4" onSubmit={handleSubmit}>
+      <div className="grid gap-10 lg:grid-cols-3">
+        <section className="lg:col-span-1 bg-white p-10 rounded-[2.5rem] border border-slate-200/60 shadow-sm h-fit">
+          <h2 className="text-xl font-bold text-slate-900 mb-8 flex items-center gap-2">
+             {editing ? 'Update Resource' : 'Register Unit'}
+             <span className="h-2 w-2 rounded-full bg-blue-600 block" />
+          </h2>
+          
+          {message && <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-100 text-[10px] font-black text-blue-700 uppercase tracking-widest">{message}</div>}
+          
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Resource Label</label>
+              <input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="w-full bg-slate-50/50 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
+                placeholder="Premium Grade Node"
+                required
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-white/70 font-medium mb-2">Product Name</label>
-                <input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full border border-white/20 rounded-lg px-4 py-2 bg-white/10 text-white placeholder-white/50 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                  placeholder="Rice"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-white/70 font-medium mb-2">MRP - Maximum Retail Price (Rs)</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Base MRP (Val)</label>
                 <input
                   type="number"
                   step="0.01"
                   value={form.mrp}
                   onChange={(e) => setForm({ ...form, mrp: e.target.value })}
-                  className="w-full border border-white/20 rounded-lg px-4 py-2 bg-white/10 text-white placeholder-white/50 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                  placeholder="100.00"
+                  className="w-full bg-slate-50/50 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
+                  placeholder="0.00"
                   required
                 />
               </div>
               <div>
-                <label className="block text-white/70 font-medium mb-2">Offer Discount (%)</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Offer %</label>
                 <input
                   type="number"
                   step="0.1"
                   value={form.offerPercentage}
                   onChange={(e) => setForm({ ...form, offerPercentage: e.target.value })}
-                  className="w-full border border-white/20 rounded-lg px-4 py-2 bg-white/10 text-white placeholder-white/50 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                  className="w-full bg-slate-50/50 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
                   placeholder="0"
                   min="0"
                   max="100"
                 />
-                {form.mrp && form.offerPercentage && (
-                  <p className="text-xs text-green-400 mt-1">
-                    Selling Price: Rs {(form.mrp - (form.mrp * form.offerPercentage / 100)).toFixed(2)}
-                  </p>
-                )}
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-2">
               <div>
-                <label className="block text-white/70 font-medium mb-2">Unit Type</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Unit Vector</label>
                 <select
                   value={form.unitType}
                   onChange={(e) => setForm({ ...form, unitType: e.target.value })}
-                  className="w-full border border-white/20 rounded-lg px-4 py-2 bg-white/10 text-white focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                  className="w-full bg-slate-50/50 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white transition-all cursor-pointer"
                   required
                 >
-                  <option value="kg" className="bg-slate-800">Kilogram (kg)</option>
-                  <option value="gram" className="bg-slate-800">Gram (g)</option>
-                  <option value="liter" className="bg-slate-800">Liter (L)</option>
-                  <option value="piece" className="bg-slate-800">Piece</option>
+                  <option value="kg">Kilogram (kg)</option>
+                  <option value="gram">Gram (g)</option>
+                  <option value="liter">Liter (L)</option>
+                  <option value="piece">Piece</option>
                 </select>
               </div>
               <div>
-                <label className="block text-white/70 font-medium mb-2">Category</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Category Hub</label>
                 <input
                   value={form.category}
                   onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  className="w-full border border-white/20 rounded-lg px-4 py-2 bg-white/10 text-white placeholder-white/50 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                  placeholder="Groceries"
+                  className="w-full bg-slate-50/50 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white transition-all"
+                  placeholder="Distribution Point"
                   required
                 />
               </div>
+            </div>
 
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <label className="block text-white/70 font-medium">Specifications</label>
-                  <button
-                    type="button"
-                    onClick={addSpecification}
-                    className="rounded-md bg-blue-600/30 hover:bg-blue-600/50 border border-blue-400/30 px-3 py-1 text-xs font-semibold text-blue-200"
-                  >
-                    + Add Spec
-                  </button>
-                </div>
-                <div className="space-y-2">
-                  {form.specifications.map((spec, index) => (
-                    <div key={index} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]">
-                      <input
-                        value={spec.label}
-                        onChange={(e) => updateSpecification(index, 'label', e.target.value)}
-                        className="w-full border border-white/20 rounded-lg px-3 py-2 bg-white/10 text-white placeholder-white/50 focus:ring-2 focus:ring-blue-400"
-                        placeholder="Label (e.g., Weight)"
-                      />
-                      <input
-                        value={spec.value}
-                        onChange={(e) => updateSpecification(index, 'value', e.target.value)}
-                        className="w-full border border-white/20 rounded-lg px-3 py-2 bg-white/10 text-white placeholder-white/50 focus:ring-2 focus:ring-blue-400"
-                        placeholder="Value (e.g., 5kg)"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeSpecification(index)}
-                        className="rounded-lg border border-white/20 px-3 py-2 text-sm text-white/70 hover:bg-white/10 transition"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-white/70 font-medium mb-2">Product Image</label>
-                <div className="flex items-center gap-3">
-                  <label className="inline-flex cursor-pointer items-center rounded-lg bg-blue-600/30 hover:bg-blue-600/50 border border-blue-400/30 px-4 py-2 text-sm font-semibold text-blue-200 transition">
-                    Choose File
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageFileChange}
-                    />
-                  </label>
-                  <span className="text-sm text-white/60 truncate">
-                    {selectedImageName || (editing && form.image ? 'Current image selected' : 'No file chosen')}
-                  </span>
-                </div>
-              </div>
-              <div>
-                <label className="block text-white/70 font-medium mb-2">Redirect URL</label>
-                <input
-                  value={form.redirectUrl}
-                  onChange={(e) => setForm({ ...form, redirectUrl: e.target.value })}
-                  className="w-full border border-white/20 rounded-lg px-4 py-2 bg-white/10 text-white placeholder-white/50 focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-                  placeholder="https://example.com/product"
-                />
-              </div>
-              <div className="flex items-center gap-3 pt-2">
-                <button className="flex-1 bg-blue-600/30 hover:bg-blue-600/50 border border-blue-400/30 text-blue-200 rounded-lg px-4 py-2 transition font-semibold">
-                  {editing ? 'Update Product' : 'Create Product'}
+            <div className="border-t border-slate-50 pt-6">
+              <div className="mb-4 flex items-center justify-between">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Resource Specs</label>
+                <button
+                  type="button"
+                  onClick={addSpecification}
+                  className="text-[9px] font-black uppercase text-blue-600 tracking-widest hover:underline"
+                >
+                  + Append Spec
                 </button>
-                {editing && (
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="flex-1 border border-white/20 text-white/70 hover:text-white rounded-lg px-4 py-2 transition"
-                  >
-                    Cancel
-                  </button>
-                )}
               </div>
-            </form>
-          </section>
-
-          <section className="lg:col-span-2">
-            <div className="rounded-2xl backdrop-blur-md border border-white/20 shadow-xl p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-semibold text-white">Products</h2>
-                  <p className="text-white/60 text-sm">Active product catalog for the chatbot and storefront.</p>
-                  <p className="text-xs text-blue-400 mt-2">Tap any card to view full details.</p>
-                </div>
-              </div>
-              {loading ? (
-                <div className="text-center py-16 text-white/50">Loading products...</div>
-              ) : (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {visibleProducts.map((product) => (
-                    <div
-                      key={product._id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setSelectedProduct(product)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          setSelectedProduct(product);
-                        }
-                      }}
-                      className="rounded-2xl border border-white/20 overflow-hidden shadow-lg cursor-pointer transition hover:shadow-2xl hover:border-white/40 hover:-translate-y-1 bg-white/5"
-                    >
-                      <div className="h-40 bg-slate-800/50 overflow-hidden">
-                        {product.image ? (
-                          <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
-                        ) : (
-                          <div className="h-full flex items-center justify-center text-white/30">No image</div>
-                        )}
-                      </div>
-                      <div className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-semibold text-white truncate">{product.name}</h3>
-                          <span className={`text-xs font-semibold px-2 py-1 rounded-full ${product.isActive ? 'bg-green-600/30 text-green-200 border border-green-400/30' : 'bg-red-600/30 text-red-200 border border-red-400/30'}`}>
-                            {product.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </div>
-                        <div className="mb-3">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-sm text-white/50 line-through">Rs {product.mrp?.toFixed(2)}</span>
-                            <span className="text-lg font-bold text-green-400">Rs {product.offerPrice?.toFixed(2)}</span>
-                            {product.offerPercentage > 0 && (
-                              <span className="text-xs bg-red-600/30 text-red-200 border border-red-400/30 px-2 py-0.5 rounded font-semibold">
-                                {product.offerPercentage}% OFF
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <p className="text-xs text-white/60 mb-1">{product.unitType}</p>
-                        <p className="text-sm text-white/60 mb-2">{product.category}</p>
-                        {product.specifications?.length > 0 && (
-                          <p className="text-xs text-white/60 mb-3">{product.specifications.length} specification(s)</p>
-                        )}
-                        <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => startEdit(product)}
-                            className="flex-1 bg-blue-600/30 hover:bg-blue-600/50 border border-blue-400/30 text-blue-200 rounded-lg px-3 py-2 text-sm transition"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => deleteProduct(product._id)}
-                            className="flex-1 border border-white/20 text-white/70 hover:text-white rounded-lg px-3 py-2 text-sm transition"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="mt-8 flex justify-end">
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setClientPage((prev) => Math.max(1, prev - 1))}
-                    disabled={clientPage === 1}
-                    className="rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 transition-all"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => setClientPage((prev) => Math.min(clientTotalPages, prev + 1))}
-                    disabled={clientPage >= clientTotalPages}
-                    className="rounded-lg bg-blue-600/30 hover:bg-blue-600/50 border border-blue-400/30 px-4 py-2 text-sm font-semibold text-blue-200 disabled:opacity-50 transition-all"
-                  >
-                    Next
-                  </button>
-                </div>
+              <div className="space-y-3 max-h-[200px] overflow-y-auto custom-scrollbar pr-2">
+                {form.specifications.map((spec, index) => (
+                  <div key={index} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
+                    <input
+                      value={spec.label}
+                      onChange={(e) => updateSpecification(index, 'label', e.target.value)}
+                      className="bg-slate-50 border-none rounded-lg px-3 py-2 text-[10px] font-bold text-slate-600 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/10 transition-all shadow-sm"
+                      placeholder="Label"
+                    />
+                    <input
+                      value={spec.value}
+                      onChange={(e) => updateSpecification(index, 'value', e.target.value)}
+                      className="bg-slate-50 border-none rounded-lg px-3 py-2 text-[10px] font-bold text-slate-600 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/10 transition-all shadow-sm"
+                      placeholder="Value"
+                    />
+                    <button type="button" onClick={() => removeSpecification(index)} className="h-8 w-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center text-xs hover:bg-rose-100 transition-all"><FiX /></button>
+                  </div>
+                ))}
               </div>
             </div>
-          </section>
-        </div>
+
+            <div className="border-t border-slate-50 pt-6">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Resource Visualization</label>
+              <div className="flex items-center gap-3">
+                <label className="flex-1 cursor-pointer group">
+                  <div className="bg-slate-50 border-slate-100 border rounded-xl px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center group-hover:bg-slate-100 transition-all">
+                     {selectedImageName ? selectedImageName : 'Upload Image Buffer'}
+                  </div>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleImageFileChange} />
+                </label>
+                {form.image && <div className="h-10 w-10 rounded-lg bg-slate-900 overflow-hidden ring-2 ring-white shadow-sm"><img src={form.image} className="h-full w-full object-cover" /></div>}
+              </div>
+            </div>
+
+            <button type="submit" className="btn-primary w-full py-4 rounded-2xl shadow-xl shadow-blue-500/10 text-xs font-black uppercase tracking-[0.2em] mt-8">
+              {editing ? 'Update Operational Node' : 'Register New Resource'}
+            </button>
+            {editing && <button type="button" onClick={resetForm} className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-colors mt-4">Abort Modification</button>}
+          </form>
+        </section>
+
+        <section className="lg:col-span-2 space-y-8">
+           <div className="flex items-center justify-between px-4">
+              <div>
+                 <h2 className="text-xl font-bold text-slate-900 uppercase tracking-tight">Resource Management</h2>
+                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Operational view of registered catalog nodes</p>
+              </div>
+           </div>
+
+           {loading ? (
+             <div className="grid gap-6 sm:grid-cols-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-64 bg-white rounded-[2rem] animate-pulse shadow-sm" />
+                ))}
+             </div>
+           ) : (
+             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+               {visibleProducts.map((product) => (
+                 <div
+                   key={product._id}
+                   className="bg-white rounded-[2rem] border border-slate-200/60 shadow-sm overflow-hidden flex flex-col group hover:shadow-xl hover:shadow-blue-500/5 hover:-translate-y-1 transition-all duration-300"
+                 >
+                   <div className="h-44 bg-slate-100 relative overflow-hidden flex items-center justify-center cursor-pointer" onClick={() => setSelectedProduct(product)}>
+                     {product.image ? (
+                       <img src={product.image} alt={product.name} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                     ) : (
+                       <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No Visual Data</div>
+                     )}
+                     <div className="absolute top-4 right-4">
+                        <span className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest shadow-sm ${product.isActive ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
+                          {product.isActive ? 'Active' : 'Offline'}
+                        </span>
+                     </div>
+                   </div>
+                   
+                   <div className="p-6 flex-1 flex flex-col">
+                     <div className="mb-4">
+                        <p className="text-[8px] font-black text-blue-600 uppercase tracking-widest mb-1">{product.category}</p>
+                        <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight line-clamp-1">{product.name}</h3>
+                     </div>
+
+                     <div className="mb-6 space-y-1">
+                        <div className="flex items-baseline gap-2">
+                           <p className="text-lg font-black text-slate-900 tracking-tighter">Rs {product.offerPrice?.toFixed(2)}</p>
+                           <p className="text-[10px] font-bold text-slate-400 line-through">Rs {product.mrp?.toFixed(2)}</p>
+                        </div>
+                        {product.offerPercentage > 0 && (
+                          <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest">System Credit: {product.offerPercentage}% EFFICIENCY</span>
+                        )}
+                     </div>
+
+                     <div className="mt-auto flex gap-2 pt-4 border-t border-slate-50">
+                        <button onClick={() => startEdit(product)} className="flex-1 py-2 rounded-xl bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest hover:bg-black transition-all">Modify</button>
+                        <button onClick={() => deleteProduct(product._id)} className="flex-1 py-2 rounded-xl bg-slate-50 text-slate-400 text-[9px] font-black uppercase tracking-widest hover:bg-rose-50 hover:text-rose-500 transition-all">Expunge</button>
+                     </div>
+                   </div>
+                 </div>
+               ))}
+             </div>
+           )}
+
+           {products.length > clientLimit && (
+             <div className="flex justify-end gap-2 px-2">
+                <button disabled={clientPage === 1} onClick={() => setClientPage(p => p - 1)} className="btn-secondary h-12 px-6 text-[10px] uppercase font-black">Back</button>
+                <button disabled={clientPage >= clientTotalPages} onClick={() => setClientPage(p => p + 1)} className="btn-primary h-12 px-8 text-[10px] uppercase font-black">Advance</button>
+             </div>
+           )}
+        </section>
       </div>
 
       {selectedProduct && (
-        <div
-          className="fixed inset-0 z-50 bg-black/70 p-4 sm:p-8 backdrop-blur-sm"
-          onClick={() => setSelectedProduct(null)}
-          role="presentation"
-        >
-          <div
-            className="mx-auto max-w-2xl h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto rounded-2xl backdrop-blur-md border border-white/20 shadow-2xl bg-slate-900/95"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
-            {selectedProduct.image ? (
-              <img src={selectedProduct.image} alt={selectedProduct.name} className="h-56 w-full object-cover rounded-2xl rounded-b-none" />
-            ) : (
-              <div className="h-56 w-full bg-slate-800 flex items-center justify-center text-white/30 rounded-2xl rounded-b-none">No image</div>
-            )}
-
-            <div className="p-5 sm:p-6">
-              <div className="mb-6 flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-2xl font-bold text-white">{selectedProduct.name}</h3>
-                  <p className="text-sm text-white/60 mt-2">{selectedProduct.category} | {selectedProduct.unitType}</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedProduct(null)} />
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+             <div className="h-64 bg-slate-100 relative">
+                {selectedProduct.image ? <img src={selectedProduct.image} className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center font-black text-slate-300">NO VISUAL</div>}
+                <button onClick={() => setSelectedProduct(null)} className="absolute top-8 right-8 h-10 w-10 rounded-full bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-white/40 transition-all"><FiX /></button>
+             </div>
+             
+             <div className="p-12 overflow-y-auto custom-scrollbar">
+                <div className="mb-8 flex justify-between items-start">
+                   <div>
+                      <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">{selectedProduct.category}</p>
+                      <h3 className="text-3xl font-extrabold text-slate-900 tracking-tight uppercase leading-none">{selectedProduct.name}</h3>
+                   </div>
+                   <span className="text-2xl font-black text-slate-900 tracking-tighter">Rs {selectedProduct.offerPrice?.toFixed(2)}</span>
                 </div>
-                <button
-                  onClick={() => setSelectedProduct(null)}
-                  className="rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 px-3 py-1.5 text-sm text-white transition"
-                >
-                  Close
-                </button>
-              </div>
 
-              <div className="mb-6 rounded-xl bg-white/5 border border-white/10 p-4">
-                <p className="text-sm text-white/60">Price Details</p>
-                <div className="mt-3 flex items-center gap-3 flex-wrap">
-                  <span className="text-sm text-white/50 line-through">Rs {selectedProduct.mrp?.toFixed(2)}</span>
-                  <span className="text-2xl font-bold text-green-400">Rs {selectedProduct.offerPrice?.toFixed(2)}</span>
-                  {selectedProduct.offerPercentage > 0 && (
-                    <span className="rounded bg-red-600/30 border border-red-400/30 px-2 py-1 text-xs font-semibold text-red-200">
-                      {selectedProduct.offerPercentage}% OFF
-                    </span>
-                  )}
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                   <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col justify-between h-28">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Resource Type</p>
+                      <p className="text-sm font-black text-slate-800 uppercase tracking-tight">{selectedProduct.unitType}</p>
+                   </div>
+                   <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col justify-between h-28">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">System Efficiency</p>
+                      <p className="text-sm font-black text-emerald-600 uppercase tracking-tight">+{selectedProduct.offerPercentage}% REBATE</p>
+                   </div>
                 </div>
-              </div>
 
-              {selectedProduct.specifications?.length > 0 ? (
-                <div className="mb-6">
-                  <h4 className="mb-3 text-sm font-semibold text-white">Specifications</h4>
-                  <div className="space-y-2">
-                    {selectedProduct.specifications.map((spec, index) => (
-                      <div key={`${spec.label}-${index}`} className="flex items-start justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3">
-                        <p className="text-sm font-medium text-white pr-3">{spec.label}</p>
-                        <p className="text-sm text-white/70 text-right">{spec.value}</p>
+                <div className="space-y-4">
+                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Resource Dimensions (Specs)</h4>
+                   {selectedProduct.specifications?.length > 0 ? (
+                      <div className="space-y-2">
+                         {selectedProduct.specifications.map((spec, index) => (
+                           <div key={index} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-white shadow-sm">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{spec.label}</span>
+                              <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">{spec.value}</span>
+                           </div>
+                         ))}
                       </div>
-                    ))}
-                  </div>
+                   ) : <p className="text-xs font-bold text-slate-300 italic px-1">No protocol specs detected.</p>}
                 </div>
-              ) : (
-                <p className="mb-6 text-sm text-white/50">No specifications added for this product.</p>
-              )}
 
-              {selectedProduct.redirectUrl ? (
-                <a
-                  href={selectedProduct.redirectUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex rounded-lg bg-blue-600/30 hover:bg-blue-600/50 border border-blue-400/30 px-4 py-2 text-sm font-semibold text-blue-200 transition"
-                >
-                  Open Redirect URL
-                </a>
-              ) : (
-                <p className="text-sm text-white/50">No redirect URL available.</p>
-              )}
-            </div>
-          </div>
+                {selectedProduct.redirectUrl && (
+                  <a href={selectedProduct.redirectUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 mt-10 text-[10px] font-black uppercase tracking-widest text-blue-600 hover:underline">
+                    Access External Documentation <FiX className="rotate-45" />
+                  </a>
+                )}
+             </div>
+          </motion.div>
         </div>
       )}
-    </>
+    </div>
   );
 };
+
 
 export default Products;

@@ -29,8 +29,8 @@ const ProtectedRoute = ({ children, requiredRole, allowedBusinessTypes }) => {
     }
   }
 
-  // Check if login type matches user role
-  if (loginType !== user.role) {
+  // Check if login type matches user role (if login type is tracked)
+  if (loginType && loginType !== user.role) {
     return <Navigate to="/" />;
   }
 

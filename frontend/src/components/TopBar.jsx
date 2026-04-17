@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   FiBell,
   FiChevronDown,
-  FiMoon,
   FiMenu,
   FiRefreshCw,
   FiSearch,
   FiSettings,
-  FiSun,
   FiUser,
+  FiLogOut,
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
@@ -17,7 +17,6 @@ import usePageTitle from '../hooks/usePageTitle';
 import useDebounce from '../hooks/useDebounce';
 import customerService from '../services/customerService';
 import useAnalyticsStore from '../store/analyticsStore';
-import { DATE_RANGE_OPTIONS } from '../utils/designTokens';
 
 const MOCK_NOTIFICATIONS = [
   {
@@ -36,61 +35,23 @@ const MOCK_NOTIFICATIONS = [
     isRead: true,
     category: 'customers',
   },
-  {
-    _id: 'mock-system-1',
-    title: 'System health stable',
-    message: 'No delivery failures in the last 30 minutes.',
-    createdAt: new Date(Date.now() - 1000 * 60 * 34).toISOString(),
-    isRead: true,
-    category: 'system',
-  },
 ];
 
 const DEFAULT_SEARCH_RESULT = { customers: [], orders: [], campaigns: [] };
 
-const inferCategory = (title = '') => {
-  const t = title.toLowerCase();
-  if (t.includes('order')) return 'orders';
-  if (t.includes('customer')) return 'customers';
-  return 'system';
-};
-
-const highlightText = (value, query) => {
-  const text = String(value || '');
-  if (!query) return text;
-
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`(${escaped})`, 'ig');
-  const parts = text.split(regex);
-
-  return parts.map((part, idx) =>
-    idx % 2 === 1 ? (
-      <mark key={`${part}-${idx}`} className="rounded bg-[rgba(79,70,229,0.15)] px-0.5 text-[var(--accent)]">
-        {part}
-      </mark>
-    ) : (
-      <span key={`${part}-${idx}`}>{part}</span>
-    )
-  );
-};
-
-const TopBar = ({ onToggleSidebar, onRefreshGlobal, theme = 'dark', onToggleTheme }) => {
+const TopBar = ({ onToggleSidebar, onRefreshGlobal }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const pageTitle = usePageTitle();
   const isSuperAdmin = user?.role === 'super_admin';
 
-  const dateRange = useAnalyticsStore((state) => state.dateRange);
   const globalSearchQuery = useAnalyticsStore((state) => state.searchQuery);
-  const setDatePreset = useAnalyticsStore((state) => state.setDatePreset);
-  const setCustomDateRange = useAnalyticsStore((state) => state.setCustomDateRange);
   const setSearchQuery = useAnalyticsStore((state) => state.setSearchQuery);
   const triggerRefresh = useAnalyticsStore((state) => state.triggerRefresh);
 
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState(globalSearchQuery || '');
@@ -114,11 +75,10 @@ const TopBar = ({ onToggleSidebar, onRefreshGlobal, theme = 'dark', onToggleThem
       setNotifications([]);
       return;
     }
-
     try {
       const response = await api.get('/notifications');
       const rows = Array.isArray(response.data) ? response.data : [];
-      setNotifications(rows.map((item) => ({ ...item, category: item.category || inferCategory(item.title) })));
+      setNotifications(rows.map((item) => ({ ...item, isRead: !!item.readAt })));
     } catch {
       setNotifications(MOCK_NOTIFICATIONS);
     }
@@ -126,75 +86,28 @@ const TopBar = ({ onToggleSidebar, onRefreshGlobal, theme = 'dark', onToggleThem
 
   useEffect(() => {
     fetchNotifications();
-    const intervalId = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(intervalId);
   }, [fetchNotifications]);
 
   useEffect(() => {
-    const clock = setInterval(() => {
-      setLastUpdated(new Date());
-    }, 5000);
-    return () => clearInterval(clock);
-  }, []);
-
-  useEffect(() => {
-    const onKeyDown = (event) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        setSearchOpen(true);
-        searchInputRef.current?.focus();
-      }
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
-
-  useEffect(() => {
-    if (isSuperAdmin) {
+    if (isSuperAdmin || !debouncedSearch.trim()) {
       setSearchResult(DEFAULT_SEARCH_RESULT);
       setSearching(false);
       return;
     }
-
-    if (!debouncedSearch.trim()) {
-      setSearchResult(DEFAULT_SEARCH_RESULT);
-      setSearching(false);
-      return;
-    }
-
-    let active = true;
     setSearching(true);
     customerService
       .globalSearch(debouncedSearch)
-      .then((result) => {
-        if (active) setSearchResult(result);
-      })
-      .catch(() => {
-        if (active) setSearchResult(DEFAULT_SEARCH_RESULT);
-      })
-      .finally(() => {
-        if (active) setSearching(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [debouncedSearch, isSuperAdmin]);
+      .then((result) => setSearchResult(result))
+      .catch(() => setSearchResult(DEFAULT_SEARCH_RESULT))
+      .finally(() => setSearching(false));
+  }, [isSuperAdmin, debouncedSearch]);
 
   useEffect(() => {
     const closeMenus = (event) => {
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setSearchOpen(false);
-      }
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
-        setShowNotifications(false);
-      }
-      if (profileRef.current && !profileRef.current.contains(event.target)) {
-        setShowProfileMenu(false);
-      }
+      if (searchRef.current && !searchRef.current.contains(event.target)) setSearchOpen(false);
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) setShowNotifications(false);
+      if (profileRef.current && !profileRef.current.contains(event.target)) setShowProfileMenu(false);
     };
-
     window.addEventListener('click', closeMenus);
     return () => window.removeEventListener('click', closeMenus);
   }, []);
@@ -205,7 +118,6 @@ const TopBar = ({ onToggleSidebar, onRefreshGlobal, theme = 'dark', onToggleThem
     try {
       triggerRefresh();
       await Promise.resolve(onRefreshGlobal?.());
-      setLastUpdated(new Date());
     } finally {
       setTimeout(() => setRefreshing(false), 600);
     }
@@ -218,219 +130,131 @@ const TopBar = ({ onToggleSidebar, onRefreshGlobal, theme = 'dark', onToggleThem
 
   const unreadCount = useMemo(() => notifications.filter((item) => !item.isRead).length, [notifications]);
 
-  const groupedNotifications = useMemo(
-    () => ({
-      orders: notifications.filter((n) => n.category === 'orders'),
-      customers: notifications.filter((n) => n.category === 'customers'),
-      system: notifications.filter((n) => n.category === 'system'),
-    }),
-    [notifications]
-  );
-
-  const totalSearchResults = searchResult.customers.length + searchResult.orders.length + searchResult.campaigns.length;
-
   const avatarText = useMemo(() => {
     const name = user?.name || user?.email || 'A';
     return String(name).trim().charAt(0).toUpperCase();
   }, [user]);
 
   return (
-    <header className="surface-header fixed top-0 right-0 left-0 z-50 border-b shadow-soft">
-      <div className="h-20 px-3 md:px-6">
-        <div className="mx-auto flex h-full max-w-[1800px] items-center justify-between gap-2 md:gap-4">
-          <div className="flex min-w-0 items-center gap-2 md:gap-3">
-            <button type="button" onClick={onToggleSidebar} className="btn-ghost md:hidden">
-              <FiMenu className="h-5 w-5" />
-            </button>
-            <div className="hidden min-w-0 md:block">
-              <p className="truncate text-xl font-bold text-primary md:text-2xl">{pageTitle}</p>
-              <p className="text-xs text-secondary">
-                Last updated: {lastUpdated.toLocaleTimeString('en-US', { hour12: false })}
-              </p>
+    <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-sm">
+      <div className="flex items-center justify-between h-20 px-6 max-w-[1600px] mx-auto gap-6 sm:gap-10">
+        <div className="flex items-center gap-4 min-w-[150px]">
+          <button onClick={onToggleSidebar} className="p-2 -ml-2 text-slate-500 md:hidden">
+            <FiMenu className="h-6 w-6" />
+          </button>
+          <div className="hidden md:block">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 group flex items-center gap-2">
+               {pageTitle}
+               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            </h1>
+            <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Live Infrastructure</p>
+          </div>
+        </div>
+
+        <div ref={searchRef} className="flex-1 max-w-xl relative hidden sm:block">
+          <div className="flex items-center gap-3 bg-slate-100/50 border border-slate-200 rounded-2xl px-4 py-2.5 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+            <FiSearch className="h-4 w-4 text-slate-400" />
+            <input 
+              ref={searchInputRef}
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search data network..."
+              className="flex-1 bg-transparent text-sm font-medium text-slate-700 placeholder:text-slate-400 outline-none"
+              onFocus={() => setSearchOpen(true)}
+            />
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-200/50 text-[10px] font-bold text-slate-500">
+               <span>⌘</span>
+               <span>K</span>
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
-            <div ref={searchRef} className="relative hidden w-full max-w-[360px] lg:block">
-              <div className="input-surface" onClick={() => { setSearchOpen(true); searchInputRef.current?.focus(); }}>
-                <FiSearch className="h-4 w-4 text-secondary" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search customers, orders, campaigns..."
-                  className="text-sm text-primary placeholder:text-secondary"
-                />
-                <span className="rounded-full border border-surface px-2 py-1 text-[10px] text-secondary">Ctrl+K</span>
-              </div>
-
-              {searchOpen && (
-                <div className="search-dropdown absolute left-0 right-0 mt-2 max-h-96 overflow-auto rounded-[1.5rem] border shadow-soft">
-                  {searching ? (
-                    <p className="py-4 text-center text-sm text-secondary">Searching...</p>
-                  ) : totalSearchResults === 0 ? (
-                    <p className="py-4 text-center text-sm text-secondary">No results found</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {searchResult.customers.length > 0 && (
-                        <div>
-                          <p className="mb-2 text-[11px] uppercase tracking-widest text-secondary">Customers</p>
-                          {searchResult.customers.map((item, idx) => (
-                            <div key={`c-${idx}`} className="rounded-2xl border border-surface bg-surface p-3 text-sm text-primary">
-                              {highlightText(item?.name || item?.phone || 'Customer', debouncedSearch)}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {searchResult.orders.length > 0 && (
-                        <div>
-                          <p className="mb-2 text-[11px] uppercase tracking-widest text-secondary">Orders</p>
-                          {searchResult.orders.map((item, idx) => (
-                            <div key={`o-${idx}`} className="rounded-2xl border border-surface bg-surface p-3 text-sm text-primary">
-                              {highlightText(item?.product || item?.status || 'Order', debouncedSearch)}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {searchResult.campaigns.length > 0 && (
-                        <div>
-                          <p className="mb-2 text-[11px] uppercase tracking-widest text-secondary">Campaigns</p>
-                          {searchResult.campaigns.map((item, idx) => (
-                            <div key={`cp-${idx}`} className="rounded-2xl border border-surface bg-surface p-3 text-sm text-primary">
-                              {highlightText(item?.name || item?.message || 'Campaign', debouncedSearch)}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <select
-              value={dateRange.preset}
-              onChange={(e) => setDatePreset(e.target.value)}
-              className="hidden rounded-2xl border border-surface bg-surface px-3 py-2 text-sm text-primary outline-none md:block"
-            >
-              {DATE_RANGE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value} className="bg-surface text-primary">
-                  {option.label}
-                </option>
-              ))}
-            </select>
-
-            {dateRange.preset === 'custom' && (
-              <div className="hidden items-center gap-2 md:flex">
-                <input
-                  type="date"
-                  value={dateRange.from || ''}
-                  onChange={(e) => setCustomDateRange({ from: e.target.value, to: dateRange.to })}
-                  className="rounded-2xl border border-surface bg-surface px-3 py-2 text-xs text-primary outline-none"
-                />
-                <input
-                  type="date"
-                  value={dateRange.to || ''}
-                  onChange={(e) => setCustomDateRange({ from: dateRange.from, to: e.target.value })}
-                  className="rounded-2xl border border-surface bg-surface px-3 py-2 text-xs text-primary outline-none"
-                />
-              </div>
-            )}
-
-            <button type="button" onClick={onToggleTheme} className="btn-ghost" aria-label="Toggle theme">
-              {theme === 'dark' ? <FiSun className="h-4 w-4" /> : <FiMoon className="h-4 w-4" />}
-              <span className="hidden sm:inline">{theme === 'dark' ? 'Light' : 'Dark'}</span>
-            </button>
-
-            <button type="button" onClick={handleRefresh} disabled={refreshing} className="btn-primary">
-              <FiRefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
-
-            <div ref={notificationsRef} className="relative">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowProfileMenu(false);
-                  setShowNotifications((prev) => !prev);
-                }}
-                className="btn-ghost p-2"
-              >
-                <FiBell className="h-5 w-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-bold text-white">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
-              </button>
-
-              {showNotifications && (
-                <div className="search-dropdown absolute right-0 mt-2 w-96 overflow-hidden rounded-[1.5rem] border shadow-soft">
-                  <div className="border-b border-surface px-4 py-3 text-sm font-semibold text-primary">Notification Center</div>
-                  <div className="max-h-80 overflow-y-auto p-3">
-                    {['orders', 'customers', 'system'].map((category) => (
-                      <div key={category} className="mb-3 last:mb-0">
-                        <p className="mb-1 text-[11px] uppercase tracking-widest text-secondary">{category}</p>
-                        <div className="space-y-2">
-                          {(groupedNotifications[category] || []).slice(0, 4).map((notif) => (
-                            <div
-                              key={notif._id}
-                              className={`rounded-2xl border px-3 py-2 text-sm ${notif.isRead ? 'border-surface bg-surface text-primary' : 'border-[rgba(56,189,248,0.2)] bg-[rgba(56,189,248,0.12)] text-[var(--accent)]'}`}
-                            >
-                              <p className="font-medium">{notif.title}</p>
-                              <p className="mt-1 text-xs text-secondary">{notif.message}</p>
-                            </div>
-                          ))}
-                          {groupedNotifications[category]?.length === 0 && (
-                            <p className="text-xs text-secondary">No items</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+          {searchOpen && (
+             <motion.div 
+               initial={{ opacity: 0, y: 10 }}
+               animate={{ opacity: 1, y: 0 }}
+               className="absolute top-full left-0 right-0 mt-3 p-4 bg-white rounded-[2rem] border border-slate-200 shadow-2xl overflow-hidden max-h-[400px] overflow-y-auto"
+             >
+                {searching ? (
+                  <p className="py-8 text-center text-sm text-slate-400 font-medium">Indexing results...</p>
+                ) : (
+                  <div className="space-y-4">
+                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-2">Network Results</p>
+                     <div className="grid gap-1">
+                        {searchResult.customers.length === 0 && searchResult.orders.length === 0 && (
+                           <p className="p-6 text-center text-slate-300 italic text-sm">No activity found</p>
+                        )}
+                        {searchResult.customers.slice(0, 3).map((c, i) => (
+                           <div key={i} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 cursor-pointer">
+                              <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">C</div>
+                              <div>
+                                 <p className="text-sm font-bold text-slate-700">{c.name}</p>
+                                 <p className="text-[10px] text-slate-400">{c.phone}</p>
+                              </div>
+                           </div>
+                        ))}
+                     </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+             </motion.div>
+          )}
+        </div>
 
-            <div ref={profileRef} className="relative">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowNotifications(false);
-                  setShowProfileMenu((prev) => !prev);
-                }}
-                className="btn-avatar"
+        <div className="flex items-center gap-2 md:gap-4 shrink-0">
+          <button 
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center justify-center h-11 w-11 rounded-2xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all border border-transparent hover:border-slate-200"
+          >
+            <FiRefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+
+          <div ref={notificationsRef} className="relative">
+            <button 
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="h-11 w-11 flex items-center justify-center rounded-2xl bg-white border border-slate-200 text-slate-500 hover:bg-slate-50 transition-all relative"
+            >
+              <FiBell className="h-5 w-5" />
+              {unreadCount > 0 && <span className="absolute top-3 right-3 h-2.5 w-2.5 rounded-full bg-blue-600 ring-4 ring-white" />}
+            </button>
+          </div>
+
+          <div ref={profileRef} className="relative">
+            <button 
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="flex items-center gap-3 pl-1 pr-3 py-1 rounded-full bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-all"
+            >
+               <div className="h-9 w-9 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-blue-200">
+                 {avatarText}
+               </div>
+               <FiChevronDown className="h-4 w-4 text-slate-400 hidden sm:block" />
+            </button>
+
+            {showProfileMenu && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="absolute right-0 mt-3 w-64 p-3 bg-white rounded-[2rem] border border-slate-200 shadow-2xl"
               >
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--accent)] text-sm font-bold text-white">
-                  {avatarText}
-                </span>
-                <span className="hidden max-w-[120px] truncate md:inline">{user?.name || user?.email || 'Admin'}</span>
-                <FiChevronDown className="hidden h-4 w-4 md:inline" />
-              </button>
-
-              {showProfileMenu && (
-                <div className="search-dropdown absolute right-0 mt-2 w-48 overflow-hidden rounded-[1.5rem] border shadow-soft">
-                  <button type="button" className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-primary transition hover:bg-surface-muted">
-                    <FiUser className="h-4 w-4" />
-                    Profile
-                  </button>
-                  <button type="button" className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm text-primary transition hover:bg-surface-muted">
-                    <FiSettings className="h-4 w-4" />
-                    Settings
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="w-full border-t border-surface px-4 py-3 text-left text-sm font-semibold text-rose-500 transition hover:bg-rose-500/10"
-                  >
-                    Logout
-                  </button>
+                <div className="p-4 border-b border-slate-100 mb-2">
+                   <p className="font-bold text-slate-900 truncate text-sm">{user?.name || 'Authorized User'}</p>
+                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{user?.role}</p>
                 </div>
-              )}
-            </div>
+                <button className="flex w-full items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
+                  <FiUser className="h-4 w-4" /> Identity
+                </button>
+                <button className="flex w-full items-center gap-3 px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 rounded-xl transition-all">
+                  <FiSettings className="h-4 w-4" /> Preferences
+                </button>
+                <div className="h-px bg-slate-100 my-2 mx-4" />
+                <button 
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-3 px-4 py-3 text-sm font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                >
+                  <FiLogOut className="h-4 w-4" /> Finalize Session
+                </button>
+              </motion.div>
+            )}
           </div>
         </div>
       </div>

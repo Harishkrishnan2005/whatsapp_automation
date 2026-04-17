@@ -1,6 +1,9 @@
 import mongoose from 'mongoose';
 import ChatbotFlow from '../models/ChatbotFlow.js';
 import ChatSession from '../models/ChatSession.js';
+import Business from '../models/Business.js';
+import actionHandler from './actionHandler.js';
+import AnalyticsEvent from '../models/AnalyticsEvent.js'; // Added import
 
 const normalize = (text) => String(text || '').toLowerCase().trim();
 const defaultReply = 'Sorry, I did not understand that. Please try again.';
@@ -11,65 +14,99 @@ const splitTriggers = (value) =>
     .filter(Boolean);
 
 class ChatbotEngine {
-  async buildLegacyReply({ flow, session, message }) {
-    const normalizedMessage = normalize(message);
-    const triggerMatch = splitTriggers(flow.trigger || '');
+  async trackEvent(businessId, customerId, eventType, data = {}) {
+    try {
+      await AnalyticsEvent.create({
+        businessId,
+        customerId,
+        eventType,
+        eventData: data,
+        source: 'chatbot',
+      });
+    } catch (err) {
+      console.error('[Analytics] Failed to track event:', err.message);
+    }
+  }
 
-    if (!triggerMatch.includes(normalizedMessage)) {
-      return {
-        response: defaultReply,
-        text: defaultReply,
-        type: 'text',
-        products: [],
-      };
+  async buildLegacyReply({ flow, session, message, phone, businessId }) {
+    console.log('[DEBUG] Executing buildLegacyReply for flow:', flow._id, 'Action:', flow.action);
+    const normalizedMessage = normalize(message);
+    const triggers = splitTriggers(flow.trigger || '');
+
+    const isMatched = triggers.includes('*') || triggers.includes(normalizedMessage);
+
+    if (!isMatched) {
+      return { response: defaultReply, text: defaultReply, type: 'text', products: [] };
     }
 
-    const nextStep = String(flow.nextStep || session.currentNode || 'start').trim();
+    if (!session.context) session.context = {};
+
+    let responseText = String(flow.reply || '').trim();
+    let responseType = 'text';
+    let products = [];
+
+    if (flow.action && flow.action !== 'NONE') {
+      const actionResult = await actionHandler.executeAction(flow.action, {
+        message,
+        phone,
+        businessId,
+        session,
+      });
+
+      if (actionResult) {
+        if (actionResult.text) responseText = actionResult.text;
+        if (actionResult.type) responseType = actionResult.type;
+        if (actionResult.products) products = actionResult.products;
+        if (actionResult.contextDelta) {
+          session.context = { ...(session.context || {}), ...actionResult.contextDelta };
+          session.markModified('context');
+        }
+        
+        // Track conversions for specific actions
+        if (['CREATE_ORDER', 'BOOK_APPOINTMENT'].includes(flow.action)) {
+          this.trackEvent(businessId, session.customerId, 'conversion', { action: flow.action });
+        }
+      }
+    }
+
+    const nextStep = String(flow.nextStep || 'start').trim();
     session.currentNode = nextStep;
     await session.save();
 
-    const reply = String(flow.reply || defaultReply).trim();
+    // Track step reach
+    this.trackEvent(businessId, session.customerId, 'flow_step_reach', { 
+      step: flow.step, 
+      nextStep: nextStep,
+      flowId: flow._id 
+    });
+
+    const interpolatedReply = actionHandler.interpolate(responseText, session.context || {});
+
     return {
-      response: reply,
-      text: reply,
-      type: 'text',
-      products: [],
+      response: interpolatedReply || defaultReply,
+      text: interpolatedReply || defaultReply,
+      type: responseType || 'text',
+      products: products || [],
     };
   }
 
   async chatbotEngine({ message, phone, businessId }) {
     try {
-      if (!businessId) {
-        throw new Error('businessId is required');
-      }
-
-      if (!phone || !message) {
-        return {
-          response: 'Something went wrong',
-          text: 'Something went wrong',
-          type: 'text',
-          products: [],
-        };
-      }
+      if (!businessId) throw new Error('businessId is required');
 
       const resolvedBusinessId = mongoose.Types.ObjectId.isValid(String(businessId))
         ? new mongoose.Types.ObjectId(String(businessId))
         : null;
 
-      if (!resolvedBusinessId) {
-        throw new Error('Invalid businessId');
-      }
+      if (!resolvedBusinessId) throw new Error('Invalid businessId');
 
-      console.log('Incoming message:', message);
-      console.log('BusinessId:', String(resolvedBusinessId));
+      const business = await Business.findById(resolvedBusinessId).select('category').lean();
+      const category = business?.category || 'ecommerce';
 
       const normalizedPhone = String(phone).trim();
       const normalizedMessage = normalize(message);
 
-      let session = await ChatSession.findOne({
-        phone: normalizedPhone,
-        businessId: resolvedBusinessId,
-      });
+      let session = await ChatSession.findOne({ phone: normalizedPhone, businessId: resolvedBusinessId });
 
       if (!session) {
         session = await ChatSession.create({
@@ -77,115 +114,103 @@ class ChatbotEngine {
           businessId: resolvedBusinessId,
           currentNode: 'start',
         });
+        
+        // Track flow start
+        this.trackEvent(resolvedBusinessId, null, 'flow_start', { phone: normalizedPhone });
       }
-
-      console.log('Session step:', session?.currentNode);
 
       const graphFlow = await ChatbotFlow.findOne({
         businessId: resolvedBusinessId,
+        category,
         isActive: true,
         'nodes.0': { $exists: true },
-      })
-        .sort({ updatedAt: -1, createdAt: -1 })
-        .lean();
+      }).sort({ updatedAt: -1, createdAt: -1 }).lean();
 
       if (graphFlow) {
-        console.log('Flow found:', `graph:${graphFlow._id}`);
-
         const currentNode = graphFlow.nodes.find((node) => node.id === session.currentNode)
           || graphFlow.nodes.find((node) => node.type === 'start')
           || graphFlow.nodes[0];
 
-        const matchedEdge = graphFlow.edges.find((edge) =>
-          String(edge.source) === String(currentNode?.id) &&
-          splitTriggers(edge.label || '').some((label) => normalizedMessage === label || normalizedMessage.includes(label))
-        );
+        const exactEdge = graphFlow.edges.find(e => String(e.source) === String(currentNode?.id) && splitTriggers(e.label).includes(normalizedMessage));
+        const partialEdge = graphFlow.edges.find(e => String(e.source) === String(currentNode?.id) && splitTriggers(e.label).some(t => normalizedMessage.includes(t)));
+        const wildcardEdge = graphFlow.edges.find(e => String(e.source) === String(currentNode?.id) && splitTriggers(e.label).includes('*'));
 
-        console.log('Matched graph edge:', matchedEdge || null);
+        const matchedEdge = exactEdge || partialEdge || wildcardEdge;
 
         const nextNode = matchedEdge
           ? graphFlow.nodes.find((node) => node.id === matchedEdge.target)
           : graphFlow.nodes.find((node) => node.type === 'fallback');
 
         if (!nextNode) {
-          return {
-            response: defaultReply,
-            text: defaultReply,
-            type: 'text',
-            products: [],
-          };
+          const errorReply = await actionHandler.getSystemReply(resolvedBusinessId, 'invalid_input', defaultReply, session.context);
+          this.trackEvent(resolvedBusinessId, session.customerId, 'flow_drop_off', { step: session.currentNode });
+          return { response: errorReply, text: errorReply, type: 'text', products: [] };
         }
 
         session.currentNode = nextNode.id;
-        await session.save();
-
-        const reply = String(nextNode.data?.message || defaultReply).trim();
-        return {
-          response: reply,
-          text: reply,
-          type: nextNode.data?.type || 'text',
-          products: [],
-        };
-      }
-
-      const legacyStepFlows = await ChatbotFlow.find({
-        businessId: resolvedBusinessId,
-        isActive: true,
-        step: session.currentNode,
-      })
-        .sort({ updatedAt: -1, createdAt: -1 })
-        .lean()
-      const legacyStartFlows = session.currentNode === 'start'
-        ? []
-        : await ChatbotFlow.find({
-          businessId: resolvedBusinessId,
-          isActive: true,
-          step: 'start',
-        })
-          .sort({ updatedAt: -1, createdAt: -1 })
-          .lean();
-
-      const flow = [...legacyStepFlows, ...legacyStartFlows].find((candidate) =>
-        splitTriggers(candidate.trigger).includes(normalizedMessage)
-      );
-
-      if (!flow) {
-        const activeFlowCount = await ChatbotFlow.countDocuments({
-          businessId: resolvedBusinessId,
-          isActive: true,
+        
+        // Track step reach
+        this.trackEvent(resolvedBusinessId, session.customerId, 'flow_step_reach', { 
+          nodeId: nextNode.id, 
+          nodeType: nextNode.type,
+          flowId: graphFlow._id 
         });
 
-        console.log('Flow found:', null);
-        console.log('Active flow count:', activeFlowCount);
+        let responseText = nextNode.data?.message || '';
+        let responseType = nextNode.data?.type || 'text';
+        let products = [];
 
-        return {
-          response: activeFlowCount > 0 ? defaultReply : 'No chatbot configured.',
-          text: activeFlowCount > 0 ? defaultReply : 'No chatbot configured.',
-          type: 'text',
-          products: [],
-        };
+        if (nextNode.data?.action && nextNode.data.action !== 'NONE') {
+          const actionResult = await actionHandler.executeAction(nextNode.data.action, {
+            message,
+            phone,
+            businessId: resolvedBusinessId,
+            session,
+          });
+
+          if (actionResult) {
+            if (actionResult.text) responseText = actionResult.text;
+            if (actionResult.type) responseType = actionResult.type;
+            if (actionResult.products) products = actionResult.products;
+            if (actionResult.contextDelta) {
+              session.context = { ...(session.context || {}), ...actionResult.contextDelta };
+              session.markModified('context');
+            }
+            if (['CREATE_ORDER', 'BOOK_APPOINTMENT'].includes(nextNode.data.action)) {
+              this.trackEvent(resolvedBusinessId, session.customerId, 'conversion', { action: nextNode.data.action });
+            }
+          }
+        }
+
+        await session.save();
+        const finalResponse = actionHandler.interpolate(responseText || defaultReply, session.context);
+
+        return { response: finalResponse, text: finalResponse, type: responseType, products: products };
       }
 
-      console.log('Flow found:', {
-        id: String(flow._id),
-        step: flow.step,
-        trigger: flow.trigger,
-      });
-      return await this.buildLegacyReply({
-        flow,
-        session,
-        message,
-      });
+      // Legacy Mode
+      const flows = await ChatbotFlow.find({ businessId: resolvedBusinessId, category, isActive: true }).sort({ updatedAt: -1, createdAt: -1 }).lean();
+
+      const stepExactMatch = flows.find(f => f.step === session.currentNode && splitTriggers(f.trigger).includes(normalizedMessage));
+      const startMatch = (session.currentNode !== 'start') 
+        ? flows.find(f => f.step === 'start' && splitTriggers(f.trigger).includes(normalizedMessage)) 
+        : null;
+      const stepWildcardMatch = flows.find(f => f.step === session.currentNode && splitTriggers(f.trigger).includes('*'));
+
+      const flow = stepExactMatch || startMatch || stepWildcardMatch;
+
+      if (!flow) {
+        this.trackEvent(resolvedBusinessId, session.customerId, 'flow_drop_off', { step: session.currentNode });
+        const fallbackReply = await actionHandler.getSystemReply(resolvedBusinessId, 'invalid_input', defaultReply, session.context);
+        return { response: fallbackReply, text: fallbackReply, type: 'text', products: [] };
+      }
+
+      return await this.buildLegacyReply({ flow, session, message, phone, businessId: resolvedBusinessId });
     } catch (err) {
-      console.error('[ChatbotEngine] Error:', err);
-      return {
-        response: 'Something went wrong',
-        text: 'Something went wrong',
-        type: 'text',
-        products: [],
-      };
+      return { response: 'Something went wrong', text: 'Something went wrong', type: 'text', products: [] };
     }
   }
 }
 
 export default new ChatbotEngine();
+

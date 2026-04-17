@@ -5,313 +5,195 @@ import Customer from '../models/Customer.js';
 import Message from '../models/Message.js';
 import OrderService from '../services/orderService.js';
 import PaymentService from '../services/paymentService.js';
-
-/**
- * Production-Grade Webhook Controller
- * 
- * Features:
- * - Session-aware message handling
- * - Message logging for audit trail
- * - Error handling with graceful fallbacks
- * - Business validation and auto-bootstrap
- * - Session metadata in response (optional)
- */
+import WhatsAppService from '../services/whatsappService.js';
 
 class WebhookController {
   /**
-   * Resolve business ID with auto-bootstrap fallback
-   * 
-   * @private
+   * Meta Webhook Verification (GET /webhook)
    */
-  async resolveBusinessId(inputBusinessId) {
-    if (inputBusinessId) {
-      return inputBusinessId;
+  async verifyWebhook(req, res) {
+    const mode = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
+    const challenge = req.query['hub.challenge'];
+
+    // In production, we should find the business by this token or use a global one
+    // For now, let's use a simplified check or find any business that matches
+    const business = await Business.findOne({ 'whatsappConfig.verifyToken': token });
+
+    if (mode && token) {
+      if (mode === 'subscribe' && (token === process.env.WHATSAPP_VERIFY_TOKEN || business)) {
+        console.log('[Webhook] Webhook verified');
+        return res.status(200).send(challenge);
+      }
+      return res.status(403).send('Verification failed');
     }
-
-    const business = await Business.findOne().select('_id').lean();
-    if (business?._id) {
-      return business._id;
-    }
-
-    // Auto-bootstrap: Create default business for simulator/webhook usage
-    const created = await Business.create({
-      name: 'Default Business',
-      email: `default-business-${Date.now()}@local.test`,
-      plan: 'Free',
-    });
-
-    console.log(`[WebhookController] Auto-bootstrapped default business: ${created._id}`);
-    return created._id;
+    return res.status(400).send('Invalid request');
   }
 
   /**
-   * Main webhook handler
-   * 
-   * Request body:
-   * {
-   *   phone: string (required),
-   *   message: string (required),
-   *   businessId: string (optional)
-   * }
-   * 
-   * Response:
-   * {
-   *   response: string,
-   *   text: string,
-   *   products: Array,
-   *   type: 'text' | 'product',
-   *   sessionInfo: Object (optional, for debugging)
-   * }
-   * 
-   * @example
-   *   POST /webhook
-   *   {
-   *     "phone": "9876543210",
-   *     "message": "show products",
-   *     "businessId": "507f1f77bcf86cd799439011"
-   *   }
+   * Main Webhook Handler (POST /webhook)
+   * Supports both simulator (flat JSON) and real WhatsApp (nested Meta JSON)
    */
   async handleWebhook(req, res) {
-    const startTime = Date.now();
+    try {
+      const { body } = req;
+
+      // 1. Detect if it's a real WhatsApp webhook from Meta
+      if (body.object === 'whatsapp_business_account') {
+        return await this.handleRealWhatsAppWebhook(req, res);
+      }
+
+      // 2. Fallback to Simulator/Internal API logic
+      return await this.handleSimulatorWebhook(req, res);
+    } catch (error) {
+      console.error('[Webhook] handleWebhook error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Handle real WhatsApp messages from Meta
+   */
+  async handleRealWhatsAppWebhook(req, res) {
+    const { body } = req;
+    
+    // Respond quickly to Meta to avoid retries
+    res.status(200).send('EVENT_RECEIVED');
 
     try {
-      // ==================
-      // STEP 1: Validate input
-      // ==================
-      const { phone, message, businessId, includeSessionInfo } = req.body;
+      const entry = body.entry?.[0];
+      const changes = entry?.changes?.[0];
+      const value = changes?.value;
+      const messageObj = value?.messages?.[0];
+      const metadata = value?.metadata;
 
-      const normalizedPhone = String(phone || '').trim();
-      const incomingText = String(message || '').trim();
+      if (!messageObj) return;
 
-      if (!normalizedPhone || !incomingText) {
-        return res.status(400).json({
-          message: 'phone and message are required',
-          example: {
-            phone: '9876543210',
-            message: 'show products',
-            businessId: 'optional-business-id',
-          },
-        });
+      const phone = messageObj.from;
+      const phoneNumberId = metadata?.phone_number_id;
+      const messageText = messageObj.text?.body || '';
+
+      // Resolve business by phoneNumberId
+      const business = await Business.findOne({ 'whatsappConfig.phoneNumberId': phoneNumberId });
+      if (!business) {
+        console.error(`[Webhook] No business found for phoneNumberId: ${phoneNumberId}`);
+        return;
       }
 
-      // ==================
-      // STEP 2: Resolve business ID
-      // ==================
-      const resolvedBusinessId = await this.resolveBusinessId(businessId);
+      const businessId = business._id;
 
-      // ==================
-      // STEP 3: Ensure customer exists
-      // ==================
-      let customer = await Customer.findOne({
-        phone: normalizedPhone,
-        businessId: resolvedBusinessId,
+      // Process through chatbot engine
+      const botResult = await chatbotEngine.chatbotEngine({
+        phone,
+        message: messageText,
+        businessId,
       });
 
-      if (!customer) {
-        customer = await Customer.create({
-          phone: normalizedPhone,
-          businessId: resolvedBusinessId,
-          name: '',
-        });
-
-        console.log(`[WebhookController] Customer created: ${normalizedPhone}`);
-      }
-
-      // ==================
-      // STEP 4: Log incoming message
-      // ==================
+      // Log messages
+      const customer = await this.getOrCreateCustomer(phone, businessId, value?.contacts?.[0]?.profile?.name);
+      
       await Message.create({
         customerId: customer._id,
-        message: incomingText,
+        message: messageText,
         type: 'incoming',
         senderType: 'customer',
-        businessId: resolvedBusinessId,
+        businessId,
       });
 
-      // ==================
-      // STEP 5: Process through chatbot engine
-      // ==================
-      console.log('[WebhookController] Incoming webhook message:', {
-        phone: normalizedPhone,
-        message: incomingText,
-        businessId: String(resolvedBusinessId),
-      });
-
-      const botResult = await chatbotEngine.chatbotEngine({
-        phone: normalizedPhone,
-        message: incomingText,
-        businessId: resolvedBusinessId,
-      });
-
-      console.log('[WebhookController] Engine response:', {
-        businessId: String(resolvedBusinessId),
-        type: botResult?.type || 'text',
-        response: botResult?.response || botResult?.text || '',
-      });
-
-      // ==================
-      // STEP 6: Log outgoing message
-      // ==================
       await Message.create({
         customerId: customer._id,
         message: botResult.response || botResult.text,
         type: 'outgoing',
         senderType: 'chatbot',
-        products: Array.isArray(botResult.products) ? botResult.products : [],
-        businessId: resolvedBusinessId,
+        businessId,
       });
 
-      // ==================
-      // STEP 7: Build response
-      // ==================
-      const responsePayload = {
-        response: botResult.response || botResult.text,
-        text: botResult.text,
-        products: botResult.products || [],
-        type: botResult.type || 'text',
-        payment: botResult.payment || null,
-      };
-
-      // Optional: Include session info for debugging (enable when includeSessionInfo=true)
-      if (includeSessionInfo) {
-        try {
-          const session = await SessionService.getOrCreateSession(
-            normalizedPhone,
-            resolvedBusinessId
-          );
-          responsePayload.sessionInfo = SessionService.getSessionMetadata(session);
-        } catch (err) {
-          console.error('[WebhookController] Failed to get session info:', err.message);
-          // Don't fail response if session info fails
-        }
+      // Send real response via WhatsApp Cloud API
+      const responseText = botResult.response || botResult.text;
+      if (responseText) {
+        await WhatsAppService.sendTextMessage(businessId, phone, responseText);
       }
 
-      const processingTime = Date.now() - startTime;
-      console.log(`[WebhookController] Processed in ${processingTime}ms: ${normalizedPhone}`);
-
-      return res.json(responsePayload);
     } catch (error) {
-      const processingTime = Date.now() - startTime;
-
-      console.error('[WebhookController] handleWebhook error:', {
-        phone: req.body?.phone,
-        businessId: req.body?.businessId,
-        processingTime,
-        error: error.message,
-        stack: error.stack,
-      });
-
-      return res.status(500).json({
-        message: 'Internal server error',
-        error: error.message,
-        where: 'webhookController.handleWebhook',
-      });
+      console.error('[Webhook] Error processing real WhatsApp message:', error);
     }
   }
 
   /**
-   * Get session info (for debugging/admin)
-   * 
-   * Query params:
-   * - phone: User phone number
-   * - businessId: Business MongoDB ObjectId
-   * 
-   * @example
-   *   GET /webhook/session-info?phone=9876543210&businessId=507f1f77bcf86cd799439011
+   * Existing logic for simulator/internal testing
    */
-  async getSessionInfo(req, res) {
-    try {
-      const { phone, businessId } = req.query;
+  async handleSimulatorWebhook(req, res) {
+    const { phone, message, businessId } = req.body;
+    const normalizedPhone = String(phone || '').trim();
+    const incomingText = String(message || '').trim();
 
-      if (!phone || !businessId) {
-        return res.status(400).json({
-          message: 'phone and businessId query parameters are required',
-        });
-      }
-
-      const session = await SessionService.getOrCreateSession(phone, businessId);
-      const metadata = SessionService.getSessionMetadata(session);
-
-      return res.json({
-        success: true,
-        session: metadata,
-      });
-    } catch (error) {
-      console.error('[WebhookController] getSessionInfo error:', error.message);
-
-      return res.status(500).json({
-        message: 'Failed to get session info',
-        error: error.message,
-      });
+    if (!normalizedPhone || !incomingText) {
+      return res.status(400).json({ message: 'phone and message are required' });
     }
+
+    // Resolve businessId
+    let resolvedBusinessId = businessId;
+    if (!resolvedBusinessId) {
+      const business = await Business.findOne().select('_id').lean();
+      resolvedBusinessId = business?._id;
+    }
+
+    if (!resolvedBusinessId) {
+      return res.status(400).json({ message: 'No business context found' });
+    }
+
+    const botResult = await chatbotEngine.chatbotEngine({
+      phone: normalizedPhone,
+      message: incomingText,
+      businessId: resolvedBusinessId,
+    });
+
+    const customer = await this.getOrCreateCustomer(normalizedPhone, resolvedBusinessId);
+
+    // Save logs
+    await Message.create({
+      customerId: customer._id,
+      message: incomingText,
+      type: 'incoming',
+      senderType: 'customer',
+      businessId: resolvedBusinessId,
+    });
+
+    await Message.create({
+      customerId: customer._id,
+      message: botResult.response || botResult.text,
+      type: 'outgoing',
+      senderType: 'chatbot',
+      products: botResult.products || [],
+      businessId: resolvedBusinessId,
+    });
+
+    return res.json({
+      response: botResult.response || botResult.text,
+      text: botResult.text,
+      products: botResult.products || [],
+      type: botResult.type || 'text',
+      payment: botResult.payment || null,
+    });
+  }
+
+  async getOrCreateCustomer(phone, businessId, name = '') {
+    let customer = await Customer.findOne({ phone, businessId });
+    if (!customer) {
+      customer = await Customer.create({ phone, businessId, name });
+    } else if (name && !customer.name) {
+      customer.name = name;
+      await customer.save();
+    }
+    return customer;
   }
 
   /**
-   * Reset session (for debugging/admin)
-   * 
-   * Request body:
-   * {
-   *   phone: string (required),
-   *   businessId: string (required)
-   * }
-   * 
-   * @example
-   *   POST /webhook/reset-session
-   *   {
-   *     "phone": "9876543210",
-   *     "businessId": "507f1f77bcf86cd799439011"
-   *   }
-   */
-  async resetSession(req, res) {
-    try {
-      const { phone, businessId } = req.body;
-
-      if (!phone || !businessId) {
-        return res.status(400).json({
-          message: 'phone and businessId are required',
-        });
-      }
-
-      const session = await SessionService.getOrCreateSession(phone, businessId);
-      await SessionService.resetSession(session);
-
-      const metadata = SessionService.getSessionMetadata(session);
-
-      return res.json({
-        success: true,
-        message: 'Session reset successfully',
-        session: metadata,
-      });
-    } catch (error) {
-      console.error('[WebhookController] resetSession error:', error.message);
-
-      return res.status(500).json({
-        message: 'Failed to reset session',
-        error: error.message,
-      });
-    }
-  }
-
-  /**
-   * Verify Razorpay payment from callback/frontend
-   * Public endpoint for chat checkout completion
+   * Razorpay & other methods remain mostly same but updated for multi-tenant
    */
   async verifyRazorpayPayment(req, res) {
     try {
-      const {
-        businessId,
-        orderId,
-        razorpayOrderId,
-        razorpayPaymentId,
-        razorpaySignature,
-      } = req.body || {};
-
-      if (!businessId || !razorpayPaymentId || !razorpaySignature || (!orderId && !razorpayOrderId)) {
-        return res.status(400).json({
-          message: 'businessId, razorpayPaymentId, razorpaySignature and orderId/razorpayOrderId are required',
-        });
-      }
-
+      const { businessId, orderId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
       const order = await OrderService.verifyPayment({
         businessId,
         orderId,
@@ -319,54 +201,25 @@ class WebhookController {
         razorpayPaymentId,
         razorpaySignature,
       });
-
-      return res.json({
-        success: true,
-        message: 'Payment verified',
-        order,
-      });
+      return res.json({ success: true, message: 'Payment verified', order });
     } catch (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.message,
-      });
+      return res.status(400).json({ success: false, message: error.message });
     }
   }
 
-  /**
-   * Razorpay webhook listener
-   * Expects raw body for signature verification
-   */
   async handleRazorpayWebhook(req, res) {
     try {
       const signature = req.headers['x-razorpay-signature'];
-      const rawBody = req.body?.toString ? req.body.toString() : '';
-
-      if (!signature || !rawBody) {
-        return res.status(400).json({ message: 'Invalid webhook payload/signature' });
-      }
-
-      const isValid = PaymentService.verifyWebhookSignature(rawBody, signature);
-      if (!isValid) {
-        return res.status(400).json({ message: 'Invalid webhook signature' });
-      }
+      const rawBody = req.body?.toString();
+      const isValid = await PaymentService.verifyWebhookSignature(rawBody, signature);
+      if (!isValid) return res.status(400).json({ message: 'Invalid signature' });
 
       const payload = JSON.parse(rawBody);
-      const event = payload?.event;
       const paymentEntity = payload?.payload?.payment?.entity;
-
-      if (!paymentEntity) {
-        return res.status(200).json({ success: true, ignored: true });
-      }
-
       const businessId = paymentEntity?.notes?.businessId;
       const razorpayOrderId = paymentEntity?.order_id;
 
-      if (!businessId || !razorpayOrderId) {
-        return res.status(200).json({ success: true, ignored: true });
-      }
-
-      if (event === 'payment.captured') {
+      if (payload.event === 'payment.captured' && businessId && razorpayOrderId) {
         await OrderService.updatePaymentStatusByRazorpayOrder({
           businessId,
           razorpayOrderId,
@@ -374,22 +227,13 @@ class WebhookController {
           orderStatus: 'Confirmed',
           razorpayPaymentId: paymentEntity.id,
         });
-      } else if (event === 'payment.failed') {
-        await OrderService.updatePaymentStatusByRazorpayOrder({
-          businessId,
-          razorpayOrderId,
-          paymentStatus: 'Failed',
-        });
       }
-
-      return res.status(200).json({ success: true });
+      return res.json({ success: true });
     } catch (error) {
-      return res.status(500).json({
-        success: false,
-        message: error.message,
-      });
+      return res.status(500).json({ error: error.message });
     }
   }
 }
 
 export default new WebhookController();
+

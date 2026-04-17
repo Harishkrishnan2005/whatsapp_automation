@@ -8,17 +8,23 @@ const campaignSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['TEXT', 'PRODUCT'],
+    enum: ['TEXT', 'PRODUCT', 'TEMPLATE'],
     default: 'TEXT',
   },
   products: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product',
   }],
+  templateName: String,
   audience: {
     type: String,
-    enum: ['all', 'existing'],
+    enum: ['all', 'existing', 'new', 'custom'],
     default: 'all',
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'processing', 'completed', 'failed', 'scheduled'],
+    default: 'pending',
   },
   totalCustomers: {
     type: Number,
@@ -28,24 +34,30 @@ const campaignSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  convertedCount: {
-    type: Number,
-    default: 0,
+  scheduledAt: {
+    type: Date,
+    default: Date.now,
   },
   sentAt: {
     type: Date,
-    default: Date.now,
+  },
+  deliveryStats: {
+    delivered: { type: Number, default: 0 },
+    read: { type: Number, default: 0 },
+    failed: { type: Number, default: 0 },
   },
   businessId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Business',
     required: true,
+    index: true,
   },
 }, {
   timestamps: true,
   collection: COLLECTIONS.CAMPAIGNS,
 });
 
+campaignSchema.index({ businessId: 1, status: 1, scheduledAt: 1 });
 campaignSchema.index({ businessId: 1, createdAt: -1 });
 
 export default mongoose.model('Campaign', campaignSchema);

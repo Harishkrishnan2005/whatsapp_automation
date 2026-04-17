@@ -35,14 +35,18 @@ import notesRoutes from './routes/notes.js';
 import dashboardRoutes from './routes/dashboard.js';
 // Import middleware
 import { authenticateToken } from './middlewares/auth.js';
+import { apiLimiter, authLimiter, webhookLimiter } from './middlewares/rateLimit.js';
 
 // Import utils
 import seedDatabase from './utils/seed.js';
 
 const app = express();
 
-// Middleware
+// Global Middlewares
 app.use(cors());
+app.use(apiLimiter); // Protect everything with a moderate limit
+
+// Custom body parsing for Razorpay
 app.use((req, res, next) => {
   if (String(req.originalUrl || '').startsWith('/api/webhook/razorpay')) {
     return next();
@@ -54,58 +58,57 @@ app.use((req, res, next) => {
 async function connectMongo() {
   const primaryUri = process.env.MONGO_URI;
   const fallbackUri = process.env.MONGO_URI_FALLBACK;
-  const options = {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  };
+  const options = {};
 
   try {
     await mongoose.connect(primaryUri, options);
     console.log('MongoDB connected');
-    seedDatabase(); // Seed admin user
+    seedDatabase(); 
     return;
   } catch (err) {
-    const isSrvDnsError = err?.syscall === 'querySrv' || err?.code === 'ECONNREFUSED';
-
-    if (isSrvDnsError && fallbackUri) {
-      console.warn('MongoDB SRV DNS lookup failed, retrying with MONGO_URI_FALLBACK...');
+    if (fallbackUri) {
       try {
         await mongoose.connect(fallbackUri, options);
-        console.log('MongoDB connected (fallback URI)');
-        seedDatabase(); // Seed admin user
+        console.log('MongoDB connected (fallback)');
+        seedDatabase();
         return;
-      } catch (fallbackErr) {
-        console.error('MongoDB fallback connection error:', fallbackErr);
-        return;
-      }
+      } catch (fErr) { console.error(fErr); }
     }
-
-    console.error('MongoDB connection error:', err);
+    console.error('MongoDB error:', err);
   }
 }
 
 connectMongo();
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/superadmin', superAdminRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/staff', staffRoutes);
-app.use('/api/webhook', webhookRoutes);
+/**
+ * ROUTES
+ * Security Strategy:
+ * 1. Webhook: Higher rate limit, custom verification
+ * 2. Auth: Strict rate limit for login/register
+ * 3. Protected: require JWT (authenticateToken) + tenant filtering (businessContext manually in routes)
+ */
+
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/webhook', webhookLimiter, webhookRoutes);
+
+// Protected routes
+app.use('/api/superadmin', authenticateToken, superAdminRoutes);
+app.use('/api/admin', authenticateToken, adminRoutes);
+app.use('/api/staff', authenticateToken, staffRoutes);
 app.use('/api/customers', authenticateToken, customerRoutes);
 app.use('/api/orders', authenticateToken, orderRoutes);
 app.use('/api/campaigns', authenticateToken, campaignRoutes);
-app.use('/api/analytics', analyticsRoutes);
+app.use('/api/analytics', authenticateToken, analyticsRoutes);
 app.use('/api/chatbot', authenticateToken, chatbotRoutes);
 app.use('/api/appointments', authenticateToken, appointmentRoutes);
-app.use('/api/notes', notesRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/notes', authenticateToken, notesRoutes);
+app.use('/api/dashboard', authenticateToken, dashboardRoutes);
 app.use('/api/chats', authenticateToken, chatAssignmentRoutes);
 app.use('/api/staff/chats', authenticateToken, staffChatsRoutes);
 app.use('/api/assign', authenticateToken, assignRoutes);
 app.use('/api/quick-replies', authenticateToken, quickReplyRoutes);
 app.use('/api/products', authenticateToken, productRoutes);
-app.use('/api/notifications', notificationRoutes);
+app.use('/api/notifications', authenticateToken, notificationRoutes);
 app.use('/api/chat-management', authenticateToken, chatRoutes);
 
 // Error handling middleware

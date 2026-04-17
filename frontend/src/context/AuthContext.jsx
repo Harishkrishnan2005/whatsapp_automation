@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
       try {
         api.defaults.headers.common.Authorization = `Bearer ${token}`;
         setUser(JSON.parse(userData));
-        setLoginType(type);
+        setLoginType(type || JSON.parse(userData).role);
       } catch {
         localStorage.removeItem('token');
         localStorage.removeItem('user');

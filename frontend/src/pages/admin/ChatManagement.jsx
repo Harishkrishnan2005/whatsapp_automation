@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { FiMessageCircle } from 'react-icons/fi';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiMessageCircle, FiSearch, FiUser, FiClock, FiCheckSquare, FiSend, FiInbox } from 'react-icons/fi';
 import useInterval from '../../hooks/useInterval';
 import api from '../../utils/api';
 
@@ -88,11 +89,6 @@ const ChatManagement = () => {
             : chat
         ))
       );
-      setSelectedCustomer((prev) => (
-        prev && prev._id === customerId
-          ? { ...prev, unreadCount: 0 }
-          : prev
-      ));
     } catch (error) {
       console.error('Failed to mark messages as read:', error);
     }
@@ -154,260 +150,224 @@ const ChatManagement = () => {
     });
   };
 
-  const totalMessageCount = selectedCustomer
-    ? Number(selectedCustomer.totalMessages || 0) || messages.length
-    : 0;
   const totalUnreadCount = chats.reduce((sum, chat) => sum + Number(chat.unreadCount || 0), 0);
 
-  const formatUnreadCount = (count) => {
-    const value = Number(count || 0);
-    if (value <= 0) return '';
-    if (value > 99) return '99+';
-    return String(value);
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-4 md:p-8 text-white">
-      <div className="mb-8 rounded-2xl backdrop-blur-md border border-white/10 shadow-xl bg-slate-950/30 p-6">
-        <h1 className="text-4xl font-bold text-white">Chat Management</h1>
-        <p className="text-cyan-200 mt-2">Manage customer conversations and send responses.</p>
-        <div className="inline-flex items-center gap-2 rounded-2xl backdrop-blur-md border border-white/10 bg-cyan-500/10 px-4 py-2 mt-4 text-cyan-100">
-          <span className="inline-flex h-3 w-3 rounded-full bg-cyan-400" />
-          <span className="text-sm font-semibold text-emerald-700">
-            New messages: {formatUnreadCount(totalUnreadCount) || '0'}
-          </span>
+    <div className="space-y-10 animate-fade-in flex flex-col h-[calc(100vh-140px)] pb-6">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 shrink-0">
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Conversation Hub</h1>
+          <p className="mt-2 text-slate-500 font-medium tracking-tight">Monitoring multi-channel intelligence distribution and operative support logs.</p>
         </div>
-      </div>
-
-      <div className="flex min-h-0 flex-1 gap-6 overflow-hidden" style={{ height: 'calc(100vh - 240px)' }}>
-        {/* LEFT PANEL - Customer List */}
-        <div className="w-1/3 flex flex-col rounded-2xl backdrop-blur-md border border-white/10 shadow-xl bg-slate-950/30 overflow-hidden">
-          <div className="p-4 border-b border-white/10">
-            <input
-              type="text"
-              placeholder="Search customers..."
-              value={searchQuery}
-              onChange={handleSearch}
-              className="w-full px-4 py-3 border border-white/10 bg-slate-900/40 backdrop-blur-sm rounded-xl focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none text-white placeholder:text-cyan-200"
-            />
-          </div>
-
-          <div className="flex-1 overflow-y-auto">
-            {loading ? (
-              <div className="flex items-center justify-center h-full text-slate-500">
-                <p>Loading conversations...</p>
-              </div>
-            ) : chats.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-slate-500">
-                <p>No conversations found</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-white/10">
-                {chats.map((chat) => (
-                  <div
-                    key={chat._id}
-                    onClick={() => handleSelectCustomer(chat)}
-                    className={`p-4 cursor-pointer hover:bg-white/10 backdrop-blur-sm border-l-4 transition-all duration-300 ${
-                      selectedCustomer?._id === chat._id
-                        ? 'bg-cyan-500/10 border-cyan-300 shadow-xl'
-                        : 'border-transparent hover:border-cyan-300'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm text-white">{chat.name || 'Unknown'}</p>
-                        <p className="text-xs text-cyan-200 mt-1">{chat.phone}</p>
-                        <p className="text-xs text-cyan-200/80 mt-2 line-clamp-2 truncate">
-                          {chat.lastMessage}
-                        </p>
-                      </div>
-                      <div className="ml-2 text-right flex-shrink-0">
-                        <p className="text-xs text-slate-500">
-                          {formatTime(chat.lastMessageTime)}
-                        </p>
-                        {chat.unreadCount > 0 && (
-                          <span className="mt-1 inline-flex min-w-[22px] items-center justify-center rounded-full bg-green-500 px-2 text-[11px] font-bold text-white shadow-lg">
-                            {formatUnreadCount(chat.unreadCount)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="border-t border-white/10 p-4 bg-slate-950/30 backdrop-blur-sm flex gap-2">
-            <button
-              onClick={() => setPage(Math.max(1, page - 1))}
-              disabled={page === 1}
-              className="flex-1 px-4 py-2 text-sm bg-white/10 backdrop-blur-sm border border-white/10 text-cyan-100 rounded-xl hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setPage(page + 1)}
-              className="flex-1 px-4 py-2 text-sm bg-blue-500/80 backdrop-blur-sm border border-blue-400/50 text-white rounded-xl hover:bg-blue-600/80 transition-all"
-            >
-              Next
-            </button>
-          </div>
+        <div className="bg-white px-6 py-4 rounded-[1.5rem] border border-slate-200/60 shadow-sm flex items-center gap-4">
+           <div className="h-2 w-2 rounded-full bg-blue-600 animate-pulse ring-4 ring-blue-500/10" />
+           <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Global Backlog</p>
+              <p className="text-sm font-black text-slate-900 mt-1 uppercase leading-none">{totalUnreadCount} Active Events</p>
+           </div>
         </div>
+      </header>
 
-        {/* RIGHT PANEL - Chat Window */}
-        {selectedCustomer ? (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl backdrop-blur-md border border-white/10 shadow-xl bg-slate-950/30">
-            {/* Chat Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white p-6 border-b border-white/10">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold">{selectedCustomer.name || 'Unknown'}</h2>
-                  <p className="text-blue-100 text-sm">{selectedCustomer.phone}</p>
-                </div>
-                <div className="text-right space-y-2">
-                  <p className="text-sm font-medium">{selectedCustomer.status}</p>
-                  <p className="text-xs text-blue-100">
-                    Total messages: {totalMessageCount}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={selectedStaffId}
-                      onChange={(e) => setSelectedStaffId(e.target.value)}
-                      className="rounded-lg border border-white/20 bg-white/10 px-3 py-1 text-xs text-white outline-none"
-                    >
-                      <option value="" className="bg-slate-900">Assign staff</option>
-                      {staffMembers.map((staff) => (
-                        <option key={staff._id} value={staff._id} className="bg-slate-900">
-                          {staff.name}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      onClick={handleAssignChat}
-                      disabled={!selectedStaffId || assigning}
-                      className="rounded-lg border border-cyan-300/40 bg-cyan-500/20 px-3 py-1 text-xs font-semibold text-cyan-100 disabled:opacity-50"
-                    >
-                      {assigning ? 'Assigning...' : 'Assign'}
-                    </button>
-                  </div>
-                </div>
-              </div>
+      <div className="flex gap-10 flex-1 min-h-0 overflow-hidden">
+        {/* Contact Matrix */}
+        <aside className="w-1/3 flex flex-col bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden max-w-[420px]">
+          <div className="p-8 border-b border-slate-50 bg-slate-50/20">
+            <div className="relative group">
+               <FiSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+               <input
+                 type="text"
+                 placeholder="Search transmission nodes..."
+                 value={searchQuery}
+                 onChange={handleSearch}
+                 className="w-full pl-12 pr-5 py-4 rounded-2xl bg-white border border-slate-200 text-sm font-black text-slate-700 placeholder:text-slate-400 focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 outline-none transition-all shadow-sm"
+               />
             </div>
+          </div>
 
-            {/* Messages Container */}
-            <div className="flex-1 min-h-0 space-y-4 overflow-y-auto bg-slate-950/20 p-6">
-              {messages.length === 0 ? (
-                <div className="flex items-center justify-center h-full text-cyan-200">
-                  <div className="text-center">
-                    <FiMessageCircle className="mx-auto mb-4 h-12 w-12 text-cyan-200" />
-                    <p className="text-lg font-semibold">No messages yet</p>
-                  
-                  </div>
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2">
+            <AnimatePresence mode="popLayout">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center p-20 opacity-30">
+                   <div className="h-8 w-8 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin mb-4" />
+                   <p className="text-[10px] font-black uppercase tracking-widest">Residuing...</p>
+                </div>
+              ) : chats.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-20 opacity-30">
+                   <FiInbox className="h-12 w-12 mb-4" />
+                   <p className="text-[10px] font-black uppercase tracking-widest italic">Zero Signal Found</p>
                 </div>
               ) : (
-                messages.map((msg, index) => (
-                  <div
-                    key={`${msg._id}-${msg.createdAt}-${index}`}
-                    className={`mb-3 flex ${msg.type === 'incoming' ? 'justify-start' : 'justify-end'}`}
+                chats.map((chat) => (
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    key={chat._id}
+                    onClick={() => handleSelectCustomer(chat)}
+                    className={`p-6 rounded-[2rem] cursor-pointer transition-all duration-500 flex items-center gap-5 relative group border-2 ${
+                      selectedCustomer?._id === chat._id
+                        ? 'bg-slate-900 border-slate-900 shadow-2xl shadow-slate-900/20'
+                        : 'bg-transparent border-transparent hover:bg-slate-50 hover:border-slate-100'
+                    }`}
                   >
-                    <div className="max-w-[70%]">
-                      {Array.isArray(msg.products) && msg.products.length > 0 && (
-                        <div
-                          className={`w-fit max-w-[320px] rounded-2xl border p-3 shadow-lg backdrop-blur-sm ${
-                            msg.type === 'incoming'
-                              ? 'border-slate-200/50 bg-white/90'
-                              : 'border-blue-300/50 bg-blue-50/90'
-                          }`}
-                        >
-                          <div className="flex flex-col gap-2">
-                            {msg.products.map((product) => (
-                              <div key={String(product._id)} className="w-fit max-w-[300px] rounded-xl border border-slate-500/30 bg-slate-950/70 p-3 shadow-sm">
-                                <div className="mb-2 h-32 w-full overflow-hidden rounded-md bg-slate-900/60">
-                                  {product.image ? (
-                                    <img src={product.image} alt={product.name} className="h-32 w-full rounded-md object-cover" />
-                                  ) : (
-                                    <div className="flex h-full items-center justify-center text-xs text-slate-400">No image</div>
-                                  )}
-                                </div>
-                                <p className="truncate text-sm font-semibold text-slate-100">{product.name}</p>
-                                <div className="mt-1 flex flex-wrap items-center gap-2">
-                                  <span className="text-xs text-slate-400 line-through">Rs {Number(product.mrp || 0).toFixed(2)}</span>
-                                  <span className="text-sm font-bold text-green-300">Rs {Number(product.offerPrice || 0).toFixed(2)}</span>
-                                  <span className="rounded bg-red-500/10 backdrop-blur-sm border border-red-500/20 px-2 py-0.5 text-xs font-semibold text-red-200">
-                                    {Number(product.offerPercentage || 0)}% OFF
-                                  </span>
-                                </div>
-                                <p className="mt-1 text-xs text-slate-400">{product.category || 'General'} | {product.unitType || 'unit'}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {msg.message && (
-                        <div
-                          className={`mt-2 rounded-2xl px-4 py-3 backdrop-blur-sm ${
-                            msg.type === 'incoming'
-                              ? 'bg-slate-950/70 text-slate-100 rounded-bl-sm border border-slate-500/30'
-                              : 'bg-blue-500 text-white rounded-br-sm border border-blue-400/50'
-                          }`}
-                        >
-                          {Array.isArray(msg.products) && msg.products.length > 0 && (
-                            <p className={`mb-1 text-[11px] font-semibold uppercase tracking-wide ${msg.type === 'incoming' ? 'text-slate-600' : 'text-blue-100'}`}>
-                              Offer Message
-                            </p>
-                          )}
-                          <p className="text-sm break-words">{msg.message}</p>
-                          <p
-                            className={`text-xs mt-1 ${
-                              msg.type === 'incoming' ? 'text-slate-600' : 'text-blue-100'
-                            }`}
-                          >
-                            {formatTime(msg.createdAt)}
-                          </p>
-                        </div>
-                      )}
+                    <div className={`h-14 w-14 rounded-2xl flex items-center justify-center font-black text-sm ring-4 ring-white shadow-xl transition-all duration-500 ${
+                      selectedCustomer?._id === chat._id ? 'bg-white text-slate-900 scale-110' : 'bg-blue-600 text-white group-hover:bg-slate-900'
+                    }`}>
+                      {chat.name ? chat.name[0].toUpperCase() : '?'}
                     </div>
-                  </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className={`text-base font-black truncate leading-none uppercase tracking-tight ${selectedCustomer?._id === chat._id ? 'text-white' : 'text-slate-900'}`}>{chat.name}</p>
+                        <p className={`text-[9px] font-black uppercase shrink-0 ${selectedCustomer?._id === chat._id ? 'text-slate-400' : 'text-slate-400 group-hover:text-slate-500'}`}>{formatTime(chat.lastMessageTime)}</p>
+                      </div>
+                      <p className={`text-xs mt-2 truncate font-medium ${selectedCustomer?._id === chat._id ? 'text-slate-300' : 'text-slate-500'}`}>{chat.lastMessage}</p>
+                    </div>
+                    {chat.unreadCount > 0 && selectedCustomer?._id !== chat._id && (
+                      <div className="absolute top-4 right-4 h-5 w-5 rounded-full bg-blue-600 text-white text-[9px] font-black flex items-center justify-center animate-bounce shadow-lg shadow-blue-500/40">
+                        {chat.unreadCount}
+                      </div>
+                    )}
+                  </motion.div>
                 ))
               )}
-            </div>
+            </AnimatePresence>
+          </div>
 
-            {/* Message Input */}
-            <div className="border-t border-white/10 p-6 bg-slate-950/40 backdrop-blur-sm">
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  placeholder="Type a reply..."
-                  value={messageInput}
-                  onChange={(e) => setMessageInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                  className="flex-1 px-4 py-3 border border-white/10 bg-slate-900/40 backdrop-blur-sm rounded-full focus:ring-2 focus:ring-cyan-400 focus:border-transparent outline-none"
-                />
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!messageInput.trim() || sendingMessage}
-                  className="bg-blue-500/80 hover:bg-blue-600/80 backdrop-blur-sm border border-blue-400/50 text-white px-6 py-3 rounded-full font-medium transition-all disabled:opacity-50"
-                >
-                  {sendingMessage ? '...' : 'Send'}
-                </button>
+          <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-4">
+            <button
+               onClick={() => setPage(p => Math.max(1, p - 1))}
+               disabled={page === 1}
+               className="btn-secondary h-12 flex-1 py-0 text-[10px] font-black uppercase tracking-widest disabled:opacity-30"
+            >
+               Previous Node
+            </button>
+            <button
+               onClick={() => setPage(page + 1)}
+               className="btn-primary h-12 flex-1 py-0 text-[10px] font-black uppercase tracking-widest shadow-none"
+            >
+               Next Node
+            </button>
+          </div>
+        </aside>
+
+        {/* Intelligence Stream */}
+        <main className="flex-1 flex flex-col bg-white rounded-[3rem] border border-slate-200/60 shadow-sm overflow-hidden relative selection:bg-blue-100">
+          <AnimatePresence mode="wait">
+            {selectedCustomer ? (
+              <motion.div 
+                key={selectedCustomer._id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col h-full"
+              >
+                <header className="px-10 py-8 border-b border-slate-100 bg-white sticky top-0 z-10 flex items-center justify-between backdrop-blur-md bg-white/90">
+                  <div className="flex items-center gap-6">
+                     <div className="h-16 w-16 rounded-[1.5rem] bg-slate-900 flex items-center justify-center text-white font-black text-xl shadow-2xl shadow-slate-900/20 ring-4 ring-white">
+                        {selectedCustomer.name ? selectedCustomer.name[0].toUpperCase() : '?'}
+                     </div>
+                     <div>
+                        <h2 className="text-2xl font-black text-slate-900 leading-none tracking-tighter uppercase">{selectedCustomer.name}</h2>
+                        <div className="flex items-center gap-3 mt-3">
+                           <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100/50">{selectedCustomer.phone}</p>
+                           <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                           <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Active Node</span>
+                        </div>
+                     </div>
+                  </div>
+                  <div className="flex items-center gap-4 bg-slate-50 p-2 rounded-2xl border border-slate-100">
+                     <select
+                       value={selectedStaffId}
+                       onChange={(e) => setSelectedStaffId(e.target.value)}
+                       className="bg-white border-slate-200 rounded-xl px-5 py-3 text-[10px] font-black uppercase tracking-widest text-slate-700 outline-none focus:ring-4 focus:ring-blue-500/5 transition-all cursor-pointer border"
+                     >
+                       <option value="">NODE: UNALLOCATED</option>
+                       {staffMembers.map((s) => (
+                         <option key={s._id} value={s._id}>{s.name.toUpperCase()}</option>
+                       ))}
+                     </select>
+                     <button
+                       onClick={handleAssignChat}
+                       disabled={!selectedStaffId || assigning}
+                       className="btn-primary py-3 px-8 text-[10px] font-black uppercase tracking-widest shadow-none h-auto"
+                     >
+                       {assigning ? 'Syncing...' : 'Assign Specialist'}
+                     </button>
+                  </div>
+                </header>
+
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-10 space-y-8 bg-slate-50/20">
+                  {messages.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center opacity-10 grayscale select-none">
+                      <FiInbox className="h-32 w-32 mb-6" />
+                      <p className="font-black uppercase tracking-[0.4em] text-sm">Historical Buffer Empty</p>
+                    </div>
+                  ) : (
+                    messages.map((msg, index) => (
+                      <div key={index} className={`flex ${msg.type === 'incoming' ? 'justify-start' : 'justify-end'}`}>
+                         <div className={`max-w-[75%] ${msg.type === 'incoming' ? 'pr-20' : 'pl-20'}`}>
+                            <motion.div 
+                              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              transition={{ delay: index * 0.05 }}
+                              className={`px-8 py-6 rounded-[2.5rem] shadow-xl border relative ${
+                                msg.type === 'incoming' 
+                                  ? 'bg-white border-slate-200/60 rounded-bl-none text-slate-900 shadow-slate-200/40' 
+                                  : 'bg-slate-900 border-slate-900 rounded-br-none text-white shadow-slate-900/10'
+                              }`}
+                            >
+                               <p className="text-base font-medium leading-relaxed tracking-tight">{msg.message}</p>
+                               <div className="flex items-center justify-between mt-4">
+                                  <p className={`text-[9px] font-black uppercase tracking-widest lg:opacity-60 ${msg.type === 'incoming' ? 'text-slate-400' : 'text-slate-400 text-blue-200/60'}`}>
+                                     {formatTime(msg.createdAt)}
+                                  </p>
+                                  {msg.type !== 'incoming' && (
+                                    <div className="flex items-center gap-1">
+                                       <FiCheckSquare className="h-3 w-3 text-blue-400" />
+                                       <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest">Delivered</span>
+                                    </div>
+                                  )}
+                               </div>
+                            </motion.div>
+                         </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <footer className="p-8 border-t border-slate-100 bg-white">
+                   <div className="flex gap-4 p-2 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-inner focus-within:bg-white focus-within:shadow-2xl focus-within:shadow-slate-200/50 transition-all duration-500">
+                      <input
+                        type="text"
+                        placeholder="Construct tactical response..."
+                        value={messageInput}
+                        onChange={(e) => setMessageInput(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                        className="flex-1 px-8 py-3 bg-transparent text-base font-bold text-slate-900 placeholder:text-slate-400 placeholder:font-black placeholder:uppercase placeholder:text-[10px] placeholder:tracking-widest outline-none"
+                      />
+                      <button
+                        onClick={handleSendMessage}
+                        disabled={!messageInput.trim() || sendingMessage}
+                        className="h-14 w-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-xl shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:grayscale shrink-0"
+                      >
+                        <FiSend className="h-6 w-6" />
+                      </button>
+                   </div>
+                </footer>
+              </motion.div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center opacity-30 select-none grayscale">
+                 <div className="h-32 w-32 rounded-full border-4 border-dashed border-slate-200 flex items-center justify-center mb-10">
+                    <FiMessageCircle className="h-12 w-12 text-slate-300" />
+                 </div>
+                 <h2 className="text-2xl font-black text-slate-300 uppercase tracking-[0.2em] text-center">Select Intelligence Node<br/><span className="text-sm font-black lowercase opacity-40">Awaiting engagement cycle...</span></h2>
               </div>
-            </div>
-          </div>
-        ) : (
-          <div className="flex-1 flex items-center justify-center rounded-2xl backdrop-blur-md border-2 border-dashed border-white/10 bg-slate-950/30">
-            <div className="text-center">
-              <FiMessageCircle className="mx-auto mb-4 h-12 w-12 text-cyan-200" />
-              <p className="text-xl font-semibold text-white">Select a conversation</p>
-              <p className="text-slate-400 mt-2">Choose a customer from the list to view and manage their messages.</p>
-            </div>
-          </div>
-        )}
+            )}
+          </AnimatePresence>
+        </main>
       </div>
     </div>
   );
 };
 
 export default ChatManagement;
-

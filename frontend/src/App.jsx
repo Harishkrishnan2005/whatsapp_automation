@@ -80,23 +80,24 @@ function AppShell() {
   const isBooking = businessType === 'BOOKING';
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [theme, setTheme] = useState(() => localStorage.getItem('app-theme') || 'light');
-
-  useEffect(() => {
-    localStorage.setItem('app-theme', theme);
-  }, [theme]);
 
   return (
-    <div className={`app-shell theme-${theme} flex h-screen flex-col`}>
-      <TopBar
-        onToggleSidebar={() => setSidebarOpen(true)}
-        onRefreshGlobal={() => setRefreshKey((prev) => prev + 1)}
-        theme={theme}
-        onToggleTheme={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
-      />
-      <div className="flex flex-1 min-h-0 bg-app-page pt-20">
-        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <div key={refreshKey} className="flex-1 min-h-0 overflow-y-auto md:ml-64 pb-20 md:pb-0">
+    <div className="flex h-screen w-full bg-[#f1f5f9] overflow-hidden font-inter">
+      {/* Sidebar: Fixed left, blue gradient */}
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      <div className="flex flex-1 flex-col min-w-0 overflow-hidden md:pl-72">
+        {/* Header: White with search */}
+        <TopBar 
+          onToggleSidebar={() => setSidebarOpen(true)} 
+          onRefreshGlobal={() => setRefreshKey((prev) => prev + 1)}
+        />
+
+        {/* Dynamic Route Container */}
+        <main 
+          key={refreshKey}
+          className="flex-1 overflow-y-auto p-4 md:p-8"
+        >
           <Routes>
             <Route path="/" element={<Navigate to={isSuperAdmin ? '/superadmin/dashboard' : '/dashboard'} />} />
             
@@ -262,7 +263,7 @@ function AppShell() {
 
             <Route path="*" element={<Navigate to={isSuperAdmin ? '/superadmin/dashboard' : '/dashboard'} />} />
           </Routes>
-        </div>
+        </main>
       </div>
     </div>
   );
