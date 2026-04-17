@@ -33,12 +33,15 @@ import assignRoutes from './routes/assign.js';
 import staffChatsRoutes from './routes/staffChats.js';
 import notesRoutes from './routes/notes.js';
 import dashboardRoutes from './routes/dashboard.js';
+import subscriptionRoutes from './routes/subscription.js';
 // Import middleware
 import { authenticateToken } from './middlewares/auth.js';
 import { apiLimiter, authLimiter, webhookLimiter } from './middlewares/rateLimit.js';
 
 // Import utils
 import seedDatabase from './utils/seed.js';
+import { checkExpirations } from './scripts/expiryCron.js';
+import usageService from './services/usageService.js';
 
 const app = express();
 
@@ -110,6 +113,7 @@ app.use('/api/quick-replies', authenticateToken, quickReplyRoutes);
 app.use('/api/products', authenticateToken, productRoutes);
 app.use('/api/notifications', authenticateToken, notificationRoutes);
 app.use('/api/chat-management', authenticateToken, chatRoutes);
+app.use('/api/subscription', authenticateToken, subscriptionRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -141,3 +145,9 @@ const startServer = (port, maxAttempts = 10) => {
 };
 
 startServer(BASE_PORT);
+
+// Scheduled Tasks
+setInterval(() => {
+  checkExpirations();
+  usageService.resetMonthlyUsage();
+}, 24 * 60 * 60 * 1000); // Once a day

@@ -17,6 +17,7 @@ import {
   FiX,
   FiLogOut,
   FiShield,
+  FiCreditCard,
 } from 'react-icons/fi';
 
 const Sidebar = ({ open, onClose }) => {
@@ -32,23 +33,25 @@ const Sidebar = ({ open, onClose }) => {
   const adminMenuItems =
     businessType === 'BOOKING'
       ? [
-          { path: '/chat', label: 'Automation Web', icon: FiMessageCircle },
-          { path: '/customers', label: 'Clients', icon: FiUsers },
-          { path: '/admin/appointments', label: 'Booking Desk', icon: FiCalendar },
-          { path: '/admin/chatbot', label: 'AI Configuration', icon: FiMessageCircle },
-          { path: '/analytics', label: 'Global Stats', icon: FiBarChart2 },
-          { path: '/admin/staff', label: 'Team Roles', icon: FiUserCheck },
-          { path: '/admin/advanced-analytics', label: 'SaaS Insights', icon: FiTrendingUp },
+          { path: '/chat', label: 'Live Chat', icon: FiMessageCircle },
+          { path: '/customers', label: 'Customers', icon: FiUsers },
+          { path: '/admin/appointments', label: 'Appointments', icon: FiCalendar },
+          { path: '/admin/chatbot', label: 'Chatbot Settings', icon: FiMessageCircle },
+          { path: '/analytics', label: 'Reports', icon: FiBarChart2 },
+          { path: '/admin/staff', label: 'Manage Staff', icon: FiUserCheck },
+          { path: '/admin/advanced-analytics', label: 'Detailed Reports', icon: FiTrendingUp },
+          { path: '/pricing', label: 'Billing', icon: FiCreditCard },
         ]
       : [
-          { path: '/chat', label: 'Automation Web', icon: FiMessageCircle },
-          { path: '/customers', label: 'Clients', icon: FiUsers },
-          { path: '/orders', label: 'E-com Orders', icon: FiShoppingCart },
-          { path: '/campaigns', label: 'Broadcasts', icon: FiSend },
-          { path: '/products', label: 'Inventory', icon: FiPackage },
-          { path: '/analytics', label: 'Global Stats', icon: FiBarChart2 },
-          { path: '/admin/chatbot', label: 'AI Configuration', icon: FiMessageCircle },
-          { path: '/admin/staff', label: 'Team Roles', icon: FiUserCheck },
+          { path: '/chat', label: 'Live Chat', icon: FiMessageCircle },
+          { path: '/customers', label: 'Customers', icon: FiUsers },
+          { path: '/orders', label: 'Orders', icon: FiShoppingCart },
+          { path: '/campaigns', label: 'Marketing', icon: FiSend },
+          { path: '/products', label: 'Products', icon: FiPackage },
+          { path: '/analytics', label: 'Reports', icon: FiBarChart2 },
+          { path: '/admin/chatbot', label: 'Chatbot Settings', icon: FiMessageCircle },
+          { path: '/admin/staff', label: 'Manage Staff', icon: FiUserCheck },
+          { path: '/pricing', label: 'Billing', icon: FiCreditCard },
         ];
 
   const staffMenuItems =
@@ -65,9 +68,9 @@ const Sidebar = ({ open, onClose }) => {
         ];
 
   const superAdminMenuItems = [
-    { path: '/superadmin/dashboard', label: 'System Control', icon: FiShield },
-    { path: '/superadmin/businesses', label: 'Tenants', icon: FiUsers },
-    { path: '/superadmin/subscriptions', label: 'Billing Plans', icon: FiTrendingUp },
+    { path: '/superadmin/dashboard', label: 'Admin Panel', icon: FiShield },
+    { path: '/superadmin/businesses', label: 'Businesses', icon: FiUsers },
+    { path: '/superadmin/subscriptions', label: 'Plans', icon: FiTrendingUp },
   ];
 
   const menuItems = user?.role === 'super_admin'
@@ -97,7 +100,7 @@ const Sidebar = ({ open, onClose }) => {
                 <FiGrid className="h-5 w-5" />
               </div>
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Business Engine</span>
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Company Panel</span>
                 <span className="text-sm font-black tracking-tight text-white uppercase truncate max-w-[140px]">
                   {user?.businessName || user?.businessId?.businessName || 'Ematix Platform'}
                 </span>
@@ -110,7 +113,7 @@ const Sidebar = ({ open, onClose }) => {
 
         <nav className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
           <div className="space-y-1">
-            <p className="px-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Operations Hub</p>
+            <p className="px-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Main Menu</p>
             {menuItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);

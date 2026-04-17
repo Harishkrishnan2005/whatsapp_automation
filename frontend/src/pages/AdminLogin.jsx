@@ -69,10 +69,10 @@ const AdminLogin = () => {
           <main className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
             <div className="mb-6">
                <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-tight">
-                 {mode === 'login' ? 'Operational Login' : 'System Enrollment'}
+                 {mode === 'login' ? 'Admin Login' : 'Create Account'}
                </h1>
                <p className="mt-2 text-sm text-slate-500 font-medium">
-                 {mode === 'login' ? 'Authenticate your session node.' : 'Provision your administrative sector.'}
+                 {mode === 'login' ? 'Sign in to manage your account.' : 'Sign up to start your business.'}
                </p>
             </div>
 
@@ -89,7 +89,7 @@ const AdminLogin = () => {
                     className="grid gap-5 mb-5"
                   >
                     <div>
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Operative Identity</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Full Name</label>
                       <input 
                         type="text" value={name} onChange={e => setName(e.target.value)}
                         className="mt-2 w-full rounded-2xl border-slate-200 bg-slate-50/50 p-4 text-sm font-bold text-slate-700 outline-none transition-all"
@@ -97,7 +97,7 @@ const AdminLogin = () => {
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Enterprise Label</label>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Business Name</label>
                       <input 
                         type="text" value={businessName} onChange={e => setBusinessName(e.target.value)}
                         className="mt-2 w-full rounded-2xl border-slate-200 bg-slate-50/50 p-4 text-sm font-bold text-slate-700 outline-none transition-all"
@@ -105,13 +105,13 @@ const AdminLogin = () => {
                       />
                     </div>
                     <div>
-                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sector Specialization</label>
+                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Business Type</label>
                        <select 
                          value={businessType} onChange={e => setBusinessType(e.target.value)}
                          className="mt-2 w-full rounded-2xl border-slate-200 bg-slate-50/50 p-4 text-sm font-bold text-slate-700 outline-none transition-all cursor-pointer"
                        >
-                         <option value="E_COMMERCE">Digital Commerce (SaaS)</option>
-                         <option value="BOOKING">Scheduling Logics</option>
+                         <option value="E_COMMERCE">E-Commerce</option>
+                         <option value="BOOKING">Booking / Appointments</option>
                        </select>
                     </div>
                   </motion.div>
@@ -119,7 +119,7 @@ const AdminLogin = () => {
               </AnimatePresence>
 
               <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Access Vector (Email)</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Email Address</label>
                 <input 
                   type="email" value={email} onChange={e => setEmail(e.target.value)}
                   className="mt-2 w-full rounded-2xl border-slate-200 bg-slate-50/50 p-4 text-sm font-bold text-slate-700 outline-none transition-all"
@@ -129,7 +129,7 @@ const AdminLogin = () => {
 
               <div>
                 <div className="flex justify-between items-center px-1">
-                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Encryption Key</label>
+                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Password</label>
                    {mode === 'login' && <button type="button" className="text-[10px] font-black uppercase text-blue-600 tracking-tighter hover:underline">Lost access?</button>}
                 </div>
                 <input 
@@ -143,30 +143,30 @@ const AdminLogin = () => {
                 type="submit" disabled={loading}
                 className="btn-primary w-full py-5 rounded-[1.5rem] mt-4 shadow-xl shadow-blue-500/10"
               >
-                {loading ? 'Initializing...' : mode === 'login' ? 'Proceed to Dashboard' : 'Enroll System'}
+                {loading ? 'Starting...' : mode === 'login' ? 'Login' : 'Sign Up'}
                 {!loading && <FiArrowRight className="inline ml-2" />}
               </button>
             </form>
 
             <div className="mt-6 text-center bg-slate-50 p-4 rounded-3xl border border-dotted border-slate-200">
                <span className="text-xs font-medium text-slate-400">
-                  {mode === 'login' ? "New operative?" : "Existing node?"}
+                  {mode === 'login' ? "New user?" : "Already have an account?"}
                </span>
                <button 
                  onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
                  className="ml-2 text-xs font-black uppercase tracking-widest text-blue-600 hover:text-blue-700 transition-colors"
                >
-                 {mode === 'login' ? 'Start Protocol' : 'Authenticate'}
+                 {mode === 'login' ? 'Register' : 'Login'}
                </button>
             </div>
           </main>
 
           <footer className="mt-8 pt-6 border-t border-slate-50 flex justify-between items-center opacity-40 hover:opacity-100 transition-opacity">
              <button onClick={() => navigate('/staff/login')} className="text-[9px] font-black uppercase tracking-[0.1em] text-slate-400 hover:text-blue-600 flex items-center gap-2">
-                Specialist Node
+                Staff Login
              </button>
              <button onClick={() => navigate('/superadmin/login')} className="text-[9px] font-black uppercase tracking-[0.1em] text-slate-400 hover:text-blue-600 flex items-center gap-2">
-                Root Infrastructure
+                Super Admin
              </button>
           </footer>
         </div>
@@ -189,9 +189,9 @@ const AdminLogin = () => {
 
            <div className="relative z-10">
               <div className="bg-slate-900/40 backdrop-blur-3xl border border-white/10 p-10 rounded-[2.5rem] shadow-2xl">
-                 <p className="text-blue-200 text-xs font-black uppercase tracking-[0.3em] mb-4">Integrity Certificate</p>
+                 <p className="text-blue-200 text-xs font-black uppercase tracking-[0.3em] mb-4">Customer Success</p>
                  <p className="text-xl font-medium text-white leading-relaxed italic">
-                    "Systemic integration of AI nodes has optimized customer conversion by 342% across all distributed sectors."
+                    "Our automated chatbot has made talking to customers so much easier and helped us grow our sales faster than ever."
                  </p>
                  <div className="mt-8 flex items-center gap-4">
                     <div className="h-10 w-10 rounded-full bg-blue-500 shadow-xl border-2 border-white/10" />

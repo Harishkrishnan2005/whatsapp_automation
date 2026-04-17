@@ -3,7 +3,8 @@ import ChatbotFlow from '../models/ChatbotFlow.js';
 import ChatSession from '../models/ChatSession.js';
 import Business from '../models/Business.js';
 import actionHandler from './actionHandler.js';
-import AnalyticsEvent from '../models/AnalyticsEvent.js'; // Added import
+import AnalyticsEvent from '../models/AnalyticsEvent.js';
+import usageService from './usageService.js';
 
 const normalize = (text) => String(text || '').toLowerCase().trim();
 const defaultReply = 'Sorry, I did not understand that. Please try again.';
@@ -185,6 +186,12 @@ class ChatbotEngine {
         await session.save();
         const finalResponse = actionHandler.interpolate(responseText || defaultReply, session.context);
 
+        // Increment usage
+        const usageReport = await usageService.incrementMessages(resolvedBusinessId);
+        if (usageReport?.isExceeded) {
+          return { response: '⚠️ Monthly message limit reached. Upgrade plan.', text: '⚠️ Monthly message limit reached. Upgrade plan.', type: 'text', products: [] };
+        }
+
         return { response: finalResponse, text: finalResponse, type: responseType, products: products };
       }
 
@@ -202,10 +209,22 @@ class ChatbotEngine {
       if (!flow) {
         this.trackEvent(resolvedBusinessId, session.customerId, 'flow_drop_off', { step: session.currentNode });
         const fallbackReply = await actionHandler.getSystemReply(resolvedBusinessId, 'invalid_input', defaultReply, session.context);
+        
+        // Increment usage for fallback as well
+        await usageService.incrementMessages(resolvedBusinessId);
+        
         return { response: fallbackReply, text: fallbackReply, type: 'text', products: [] };
       }
 
-      return await this.buildLegacyReply({ flow, session, message, phone, businessId: resolvedBusinessId });
+      const reply = await this.buildLegacyReply({ flow, session, message, phone, businessId: resolvedBusinessId });
+      
+      // Increment usage for legacy reply
+      const legacyUsageReport = await usageService.incrementMessages(resolvedBusinessId);
+      if (legacyUsageReport?.isExceeded) {
+        return { response: '⚠️ Monthly message limit reached. Upgrade plan.', text: '⚠️ Monthly message limit reached. Upgrade plan.', type: 'text', products: [] };
+      }
+      
+      return reply;
     } catch (err) {
       return { response: 'Something went wrong', text: 'Something went wrong', type: 'text', products: [] };
     }

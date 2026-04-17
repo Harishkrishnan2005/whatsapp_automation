@@ -75,13 +75,13 @@ const Campaigns = () => {
     <div className="space-y-10 animate-fade-in pb-10">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Broadcast Network</h1>
-          <p className="mt-2 text-slate-500 font-medium tracking-tight">Managing large-scale audience distribution protocols.</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Marketing Messages</h1>
+          <p className="mt-2 text-slate-500 font-medium tracking-tight">Create and send messages to multiple customers at once.</p>
         </div>
         <div className="bg-white px-5 py-3 rounded-2xl border border-slate-200/60 shadow-sm flex items-center gap-4">
            <div className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Status</p>
-           <p className="text-sm font-bold text-slate-900 mt-1 uppercase">Transmission Ready</p>
+           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">System</p>
+           <p className="text-sm font-bold text-slate-900 mt-1 uppercase">Ready to Send</p>
         </div>
       </header>
 
@@ -90,17 +90,17 @@ const Campaigns = () => {
         <aside className="lg:col-span-4 space-y-6">
           <div className="saas-card p-10">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-8">
-               Broadcast Node
-               <span className="h-2 w-2 rounded-full bg-blue-600 block mt-1" />
+             Send Message
+             <span className="h-2 w-2 rounded-full bg-blue-600 block mt-1" />
             </h2>
             
             <div className="space-y-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] px-1">Message Payload</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] px-1">Message Text</label>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Initiate communication protocol..."
+                  placeholder="Type your message here..."
                   className="w-full rounded-2xl border-slate-200 bg-slate-50 p-5 text-sm font-medium text-slate-700 placeholder:text-slate-400 transition-all outline-none resize-none leading-relaxed"
                   rows="5"
                 />
@@ -108,32 +108,32 @@ const Campaigns = () => {
 
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] px-1">Target Segment</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] px-1">Send To</label>
                   <select
                     value={audience}
                     onChange={(e) => setAudience(e.target.value)}
                     className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black uppercase text-slate-600 outline-none focus:bg-white transition-all cursor-pointer"
                   >
-                    <option value="all">Full Global Network</option>
-                    <option value="existing">Converted Data Nodes</option>
-                    <option value="new">External Inbound Leads</option>
+                    <option value="all">All Customers</option>
+                    <option value="existing">Active Customers</option>
+                    <option value="new">New Customers</option>
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] px-1">Transmission Mode</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] px-1">Message Type</label>
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value)}
                     className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3 text-sm font-black uppercase text-slate-600 outline-none focus:bg-white transition-all cursor-pointer"
                   >
-                    <option value="TEXT">Native Protocol</option>
-                    <option value="TEMPLATE">Cloud Logic Template</option>
+                    <option value="TEXT">Simple Text</option>
+                    <option value="TEMPLATE">Message Template</option>
                   </select>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] px-1">Release Schedule</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] px-1">Schedule Sending</label>
                 <div className="relative">
                   <FiCalendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
@@ -150,7 +150,7 @@ const Campaigns = () => {
                 disabled={saving || !message}
                 className="btn-primary w-full py-5 text-[10px] font-black uppercase tracking-widest shadow-none h-auto"
               >
-                {saving ? 'Syncing...' : scheduledAt ? 'Schedule Distribution' : 'Initiate Broadcast'}
+               {saving ? 'Sending...' : scheduledAt ? 'Schedule Message' : 'Send Messages Now'}
                 <FiSend className="ml-2 h-4 w-4" />
               </button>
             </div>
@@ -161,8 +161,8 @@ const Campaigns = () => {
             className="w-full p-10 bg-slate-50/50 rounded-[2.5rem] border-2 border-dashed border-slate-200 flex items-center justify-between group hover:bg-slate-900 hover:border-slate-900 transition-all duration-500"
           >
             <div className="text-left">
-              <h4 className="font-black text-slate-900 group-hover:text-white transition-colors uppercase tracking-tight text-lg">Product Matrix</h4>
-              <p className="text-[10px] font-black text-slate-400 group-hover:text-slate-300 transition-colors uppercase tracking-widest mt-1">Disseminate Inventory Catalog</p>
+              <h4 className="font-black text-slate-900 group-hover:text-white transition-colors uppercase tracking-tight text-lg">Send Products</h4>
+              <p className="text-[10px] font-black text-slate-400 group-hover:text-slate-300 transition-colors uppercase tracking-widest mt-1">Share products with your customers</p>
             </div>
             <div className="h-14 w-14 rounded-2xl bg-white flex items-center justify-center text-slate-900 shadow-xl shadow-slate-900/5 group-hover:scale-110 transition-transform">
               <FiShoppingCart className="h-6 w-6" />
@@ -175,15 +175,15 @@ const Campaigns = () => {
           <div className="saas-card min-h-[750px] flex flex-col">
             <header className="px-10 py-8 border-b border-slate-50 bg-slate-50/20 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">Transmission History</h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Audit Trail • {campaigns.length} Executed Nodes</p>
+                <h2 className="text-xl font-bold text-slate-900">Message History</h2>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Recent Activity • {campaigns.length} messages sent</p>
               </div>
             </header>
 
             {campaigns.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center opacity-20 select-none">
                 <FiClock className="h-24 w-24 mb-6 text-slate-300" />
-                <p className="font-black text-lg uppercase tracking-[0.2em] text-slate-400">Ledger Empty</p>
+                <p className="font-black text-lg uppercase tracking-[0.2em] text-slate-400">History Empty</p>
               </div>
             ) : (
               <div className="flex-1 space-y-4 p-8 overflow-y-auto custom-scrollbar">
@@ -206,7 +206,7 @@ const Campaigns = () => {
                                  {getStatusBadge(c.status)}
                                  <div className="h-1 w-1 rounded-full bg-slate-300" />
                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100/50">
-                                    <FiUsers className="h-3 w-3" /> {c.audience} SEGMENT
+                                    <FiUsers className="h-3 w-3" /> {c.audience} Customers
                                  </span>
                               </div>
                            </div>
@@ -216,11 +216,11 @@ const Campaigns = () => {
                       <div className="flex items-center gap-10 md:pl-10 md:border-l border-slate-100">
                          <div className="text-center">
                             <p className="text-2xl font-black text-slate-900 tracking-tighter">{c.totalCustomers}</p>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Population</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Total</p>
                          </div>
                          <div className="text-center">
                             <p className="text-2xl font-black text-blue-600 tracking-tighter">{c.sentCount}</p>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Confirmed</p>
+                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Sent</p>
                          </div>
                       </div>
                     </div>
@@ -231,21 +231,21 @@ const Campaigns = () => {
 
             {campaigns.length > clientLimit && (
               <div className="mt-auto px-10 py-8 border-t border-slate-50 flex items-center justify-between bg-slate-50/30">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Viewing Index {clientPage} of {clientTotalPages}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Page {clientPage} of {clientTotalPages}</p>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setClientPage(p => Math.max(1, p - 1))}
                     disabled={clientPage === 1}
                     className="h-12 px-6 rounded-2xl bg-white border border-slate-200 text-[10px] font-black uppercase text-slate-600 disabled:opacity-30 hover:bg-slate-50 transition-all shadow-sm"
                   >
-                    Previous Node
+                    Previous
                   </button>
                   <button
                     onClick={() => setClientPage(p => Math.min(clientTotalPages, p + 1))}
                     disabled={clientPage >= clientTotalPages}
                     className="h-12 px-8 rounded-2xl bg-blue-600 text-[10px] font-black uppercase text-white disabled:opacity-30 hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/20"
                   >
-                    Next Frame
+                    Next
                   </button>
                 </div>
               </div>

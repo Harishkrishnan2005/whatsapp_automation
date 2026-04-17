@@ -95,12 +95,12 @@ const Customers = () => {
     <div className="space-y-10 animate-fade-in pb-10">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Client Infrastructure</h1>
-          <p className="mt-2 text-slate-500 font-medium tracking-tight">Monitoring enterprise stakeholder profiles and behavioral data nodes.</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Customers</h1>
+          <p className="mt-2 text-slate-500 font-medium tracking-tight">View and manage your customer information and history.</p>
         </div>
         <div className="bg-white px-5 py-3 rounded-2xl border border-slate-200/60 shadow-sm flex items-center gap-4">
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Global Index</p>
-           <p className="text-sm font-bold text-slate-900 mt-1 uppercase">{total} Verified Identities</p>
+           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Total Customers</p>
+           <p className="text-sm font-bold text-slate-900 mt-1 uppercase">{total} Customers Found</p>
         </div>
       </header>
 

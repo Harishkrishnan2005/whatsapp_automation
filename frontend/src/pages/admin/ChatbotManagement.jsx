@@ -105,12 +105,12 @@ const ChatbotManagement = () => {
     <div className="space-y-10 animate-fade-in pb-10">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Logic Engine</h1>
-          <p className="mt-1 text-slate-500 font-medium">Architecting automated conversation flows and decision nodes.</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Chatbot Settings</h1>
+          <p className="mt-1 text-slate-500 font-medium">Create automated chat paths for your customers.</p>
         </div>
         <div className="bg-white px-5 py-3 rounded-2xl border border-slate-200/60 shadow-sm">
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Global Configurations</p>
-           <p className="text-sm font-bold text-slate-900 mt-1">{total} Active Logic Modules</p>
+           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Settings</p>
+           <p className="text-sm font-bold text-slate-900 mt-1">{total} Responses Active</p>
         </div>
       </header>
 
@@ -118,7 +118,7 @@ const ChatbotManagement = () => {
         <aside className="lg:col-span-4">
           <div className="bg-white p-8 rounded-[2rem] border border-slate-200/60 shadow-sm sticky top-6">
             <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-               {editing ? 'Edit Module' : 'Define Node'}
+               {editing ? 'Edit Step' : 'Add New Step'}
                <span className="h-2 w-2 rounded-full bg-blue-600 block" />
             </h2>
             
@@ -126,30 +126,30 @@ const ChatbotManagement = () => {
 
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
-                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Signal Trigger</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Customer Message</label>
                 <input
                   value={form.trigger}
                   onChange={(e) => setForm({ ...form, trigger: e.target.value })}
                   className="mt-3 w-full rounded-xl border-slate-200 bg-slate-100/30 px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all"
-                  placeholder="e.g., initialization, 1, support_req"
+                  placeholder="e.g. Hello, 1, price"
                   required
                 />
               </div>
 
               <div>
-                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Response Protocol</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Bot Reply</label>
                 <textarea
                   value={form.reply}
                   onChange={(e) => setForm({ ...form, reply: e.target.value })}
                   className="mt-3 w-full rounded-xl border-slate-200 bg-slate-100/30 px-4 py-3 text-sm font-medium text-slate-700 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all min-h-[100px]"
-                  placeholder="Automated bot transmission"
+                  placeholder="What should the bot say?"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Source Step</label>
+                  <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Current Step</label>
                   <input
                     value={form.step}
                     onChange={(e) => setForm({ ...form, step: e.target.value })}
@@ -159,7 +159,7 @@ const ChatbotManagement = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Target Step</label>
+                  <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Next Step</label>
                   <input
                     value={form.nextStep}
                     onChange={(e) => setForm({ ...form, nextStep: e.target.value })}
@@ -171,23 +171,23 @@ const ChatbotManagement = () => {
               </div>
 
               <div>
-                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Function Execution</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Bot Action</label>
                 <select
                   value={form.action}
                   onChange={(e) => setForm({ ...form, action: e.target.value })}
                   className="mt-3 w-full rounded-xl border-slate-200 bg-slate-100/30 px-4 py-3 text-xs font-black uppercase tracking-tight text-slate-600 outline-none focus:bg-white transition-all cursor-pointer"
                 >
-                  <option value="NONE">Static Output</option>
-                  <option value="SHOW_PRODUCTS">Product Display</option>
-                  <option value="CREATE_ORDER">Order Genesis</option>
-                  <option value="BOOK_APPOINTMENT">Schedule Node</option>
-                  <option value="SAVE_NAME">Identity Mapping</option>
+                  <option value="NONE">Just Send Reply</option>
+                  <option value="SHOW_PRODUCTS">Show Products</option>
+                  <option value="CREATE_ORDER">Create Order</option>
+                  <option value="BOOK_APPOINTMENT">Book Appointment</option>
+                  <option value="SAVE_NAME">Ask for Name</option>
                 </select>
               </div>
 
               <div className="flex gap-3 pt-2">
                 <button type="submit" className="btn-primary flex-1 py-4 text-xs shadow-none">
-                  {editing ? 'Update Module' : 'Sync New Node'}
+                  {editing ? 'Update Step' : 'Add Step'}
                 </button>
                 {editing && (
                   <button type="button" onClick={resetForm} className="btn-secondary px-6 text-xs">
@@ -205,11 +205,11 @@ const ChatbotManagement = () => {
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/30">
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Signal</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Protocol Path</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Function</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">State</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Utility</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Message</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Flow Steps</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Action</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Edit</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -229,7 +229,7 @@ const ChatbotManagement = () => {
                       </td>
                       <td className="px-8 py-6">
                         <span className="inline-flex px-3 py-1 rounded-lg bg-blue-50 border border-blue-100 text-[9px] font-black text-blue-600 uppercase tracking-widest shadow-sm shadow-blue-900/5">
-                           {flow.action}
+                           {flow.action === 'NONE' ? 'REPLY' : flow.action}
                         </span>
                       </td>
                       <td className="px-8 py-6">
@@ -237,9 +237,9 @@ const ChatbotManagement = () => {
                       </td>
                       <td className="px-8 py-6 text-right">
                         <div className="flex justify-end items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => startEdit(flow)} className="text-[10px] font-black uppercase text-blue-600 hover:tracking-[0.1em] transition-all">Modify</button>
+                          <button onClick={() => startEdit(flow)} className="text-[10px] font-black uppercase text-blue-600 hover:tracking-[0.1em] transition-all">Edit</button>
                           <div className="h-3 w-[1px] bg-slate-200" />
-                          <button onClick={() => deleteFlow(flow._id)} className="text-[10px] font-black uppercase text-rose-500 hover:tracking-[0.1em] transition-all">Purge</button>
+                          <button onClick={() => deleteFlow(flow._id)} className="text-[10px] font-black uppercase text-rose-500 hover:tracking-[0.1em] transition-all">Delete</button>
                         </div>
                       </td>
                     </tr>
@@ -249,7 +249,7 @@ const ChatbotManagement = () => {
                       <td colSpan={5} className="py-24 text-center opacity-30">
                         <div className="flex flex-col items-center">
                           <FiTerminal className="h-16 w-16 mb-4" />
-                          <p className="font-black uppercase tracking-[0.2em] text-sm">Logic Buffer Empty</p>
+                          <p className="font-black uppercase tracking-[0.2em] text-sm">No Responses Found</p>
                         </div>
                       </td>
                     </tr>

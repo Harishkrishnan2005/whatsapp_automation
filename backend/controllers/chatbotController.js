@@ -2,6 +2,7 @@ import ChatbotFlow from '../models/ChatbotFlow.js';
 import Customer from '../models/Customer.js';
 import Message from '../models/Message.js';
 import ChatbotEngine from '../services/chatbotEngine.js';
+import usageService from '../services/usageService.js';
 
 class ChatbotController {
   constructor() {
@@ -36,6 +37,10 @@ class ChatbotController {
         ...this.getPayload(req.body),
         businessId,
       });
+
+      // Increment flow usage
+      await usageService.incrementFlows(businessId);
+
       res.status(201).json(flow);
     } catch (error) {
       res.status(400).json({ message: error.message });
@@ -84,6 +89,10 @@ class ChatbotController {
 
       const flow = await ChatbotFlow.findOneAndDelete({ _id: req.params.id, businessId });
       if (!flow) return res.status(404).json({ message: 'Flow not found' });
+
+      // Decrement flow usage
+      await usageService.decrementFlows(businessId);
+
       res.json({ message: 'Flow deleted' });
     } catch (error) {
       res.status(500).json({ message: error.message });

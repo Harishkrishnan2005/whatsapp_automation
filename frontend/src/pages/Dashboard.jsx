@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FiBox, FiCheckCircle, FiMessageCircle, FiShoppingCart, FiUsers, FiTrendingUp, FiActivity } from 'react-icons/fi';
+import { FiBox, FiCheckCircle, FiMessageCircle, FiShoppingCart, FiUsers, FiTrendingUp, FiActivity, FiCreditCard } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import Badge from '../components/ui/Badge';
@@ -27,8 +27,12 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await api.get('/dashboard/admin');
-      setDashboardData(response.data || {});
+      const dashboardResponse = await api.get('/dashboard/admin');
+      const subscriptionResponse = await api.get('/subscription/status');
+      setDashboardData({
+        ...dashboardResponse.data,
+        subscription: subscriptionResponse.data
+      } || {});
     } catch (error) {
       setDashboardData({});
     } finally {
@@ -46,9 +50,9 @@ const Dashboard = () => {
     const d = dashboardData || {};
     return [
       { id: 1, title: 'Total Customers', value: d.totalCustomers || 0, icon: FiUsers, color: 'blue' },
-      { id: 2, title: 'Active Orders', value: d.totalOrders || 0, icon: FiShoppingCart, color: 'blue' },
-      { id: 3, title: 'Conv. Rate', value: `${d.conversionRate || 0}%`, icon: FiTrendingUp, color: 'blue' },
-      { id: 4, title: 'Network Load', value: d.totalMessages || 0, icon: FiActivity, color: 'blue' },
+      { id: 2, title: 'Total Orders', value: d.totalOrders || 0, icon: FiShoppingCart, color: 'blue' },
+      { id: 3, title: 'Conversion Rate', value: `${d.conversionRate || 0}%`, icon: FiTrendingUp, color: 'blue' },
+      { id: 4, title: 'Total Messages', value: d.totalMessages || 0, icon: FiActivity, color: 'blue' },
     ];
   }, [dashboardData]);
 
@@ -59,9 +63,40 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-10 animate-fade-in pb-10">
-      <header>
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 leading-none">System Performance</h1>
-        <p className="mt-2 text-slate-500 font-medium">Monitoring multi-tenant infrastructure and customer engagement matrix.</p>
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 leading-none uppercase italic">Business Center</h1>
+          <p className="mt-2 text-slate-500 font-medium">View your overall performance and customer activity here.</p>
+        </div>
+        {!loading && dashboardData?.subscription && (
+           <div 
+            onClick={() => window.location.assign('/pricing')}
+            className="group flex items-center gap-6 bg-white pl-8 pr-10 py-5 rounded-[2rem] border border-slate-200/60 shadow-sm cursor-pointer hover:shadow-xl hover:shadow-blue-500/5 hover:-translate-y-1 transition-all duration-300"
+           >
+              <div className="h-12 w-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform">
+                <FiCreditCard className="h-6 w-6" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Active Plan</span>
+                <span className="text-sm font-black text-slate-900 uppercase italic leading-none">{dashboardData.subscription.plan}</span>
+              </div>
+              <div className="h-10 w-px bg-slate-100 hidden sm:block" />
+              <div className="hidden sm:flex flex-col min-w-[120px]">
+                 <div className="flex justify-between items-center mb-1.5">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Usage</span>
+                    <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">
+                      {dashboardData.subscription.usage.messagesUsed} / {dashboardData.subscription.limits.maxMessages === Infinity ? '∞' : dashboardData.subscription.limits.maxMessages}
+                    </span>
+                 </div>
+                 <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100/50">
+                    <div 
+                      className="h-full bg-blue-600 rounded-full transition-all duration-1000"
+                      style={{ width: `${Math.min(100, (dashboardData.subscription.usage.messagesUsed / (dashboardData.subscription.limits.maxMessages || 1)) * 100)}%` }}
+                    />
+                 </div>
+              </div>
+           </div>
+        )}
       </header>
 
       <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -87,8 +122,8 @@ const Dashboard = () => {
         <div className="bg-white p-10 rounded-[3rem] border border-slate-200/60 shadow-sm relative overflow-hidden group">
           <header className="flex items-center justify-between mb-10">
             <div>
-              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Traffic Distribution</h2>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Network Capacity Log</p>
+              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Messaging Activity</h2>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Daily Message Count</p>
             </div>
             <div className="h-12 w-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm">
               <FiActivity className="h-6 w-6" />
@@ -118,8 +153,8 @@ const Dashboard = () => {
         <div className="bg-white p-10 rounded-[3rem] border border-slate-200/60 shadow-sm relative overflow-hidden flex flex-col">
           <header className="flex items-center justify-between mb-10">
             <div>
-              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Operational Health</h2>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">System Uptime Matrix</p>
+              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">System Status</h2>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Live Server Check</p>
             </div>
             <div className="h-12 w-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm">
               <FiCheckCircle className="h-6 w-6" />
@@ -130,28 +165,28 @@ const Dashboard = () => {
                 <div className="flex items-center gap-5">
                    <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse ring-4 ring-emerald-500/10" />
                    <div>
-                      <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Main Gateway</p>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Cloud Node 01</p>
+                      <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Main Server</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Live Connection</p>
                    </div>
                 </div>
-                <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-100 uppercase tracking-widest group-hover:bg-emerald-600 group-hover:text-white transition-all">Operational</span>
+                <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-100 uppercase tracking-widest group-hover:bg-emerald-600 group-hover:text-white transition-all">Active</span>
              </div>
              <div className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100 flex items-center justify-between group hover:bg-white transition-all cursor-default">
                 <div className="flex items-center gap-5">
                    <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse ring-4 ring-emerald-500/10" />
                    <div>
-                      <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Neural Chat Engine</p>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Auto-Response Hive</p>
+                      <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Chat Engine</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Automated Replies</p>
                    </div>
                 </div>
-                <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-100 uppercase tracking-widest group-hover:bg-emerald-600 group-hover:text-white transition-all">Operational</span>
+                <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-100 uppercase tracking-widest group-hover:bg-emerald-600 group-hover:text-white transition-all">Active</span>
              </div>
              <div className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100 flex items-center justify-between group hover:bg-white transition-all cursor-default">
                 <div className="flex items-center gap-5">
                    <div className="h-3 w-3 rounded-full bg-blue-600 animate-pulse ring-4 ring-blue-600/10" />
                    <div>
-                      <p className="text-sm font-black text-slate-900 uppercase tracking-tight">AI Diffusion Hosting</p>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Resource Allocation</p>
+                      <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Media Storage</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Images & Files</p>
                    </div>
                 </div>
                 <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100 uppercase tracking-widest group-hover:bg-blue-600 group-hover:text-white transition-all">Processing</span>

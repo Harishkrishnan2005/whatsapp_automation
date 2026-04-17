@@ -21,6 +21,7 @@ import ChatbotManagement from './pages/admin/ChatbotManagement';
 import ChatManagement from './pages/admin/ChatManagement';
 import AppointmentManagement from './pages/admin/AppointmentManagement';
 import AdvancedAnalytics from './pages/admin/AdvancedAnalytics';
+import Pricing from './pages/admin/Pricing';
 import StaffChat from './pages/staff/StaffChat';
 import StaffBookings from './pages/staff/StaffBookings';
 import StaffDashboard from './pages/staff/StaffDashboard';
@@ -197,6 +198,14 @@ function AppShell() {
               element={
                 <ProtectedRoute requiredRole="admin">
                   <AdvancedAnalytics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pricing"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <Pricing />
                 </ProtectedRoute>
               }
             />

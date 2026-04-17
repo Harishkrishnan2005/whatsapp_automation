@@ -120,46 +120,46 @@ const Orders = () => {
     <div className="space-y-10 animate-fade-in pb-10">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Order Logistics</h1>
-          <p className="mt-2 text-slate-500 font-medium">Tracking enterprise fulfillment cycles and liquidity resolution.</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Orders</h1>
+          <p className="mt-2 text-slate-500 font-medium">Manage your customer orders and payment statuses here.</p>
         </div>
         <div className="bg-white px-5 py-3 rounded-2xl border border-slate-200/60 shadow-sm">
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Global Ledger</p>
-           <p className="text-sm font-bold text-slate-900 mt-1">{total} Processed Transactions</p>
+           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Total Orders</p>
+           <p className="text-sm font-bold text-slate-900 mt-1">{total} Orders Found</p>
         </div>
       </header>
 
       <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200/60 shadow-sm flex flex-col md:flex-row gap-4">
         <div className="flex-1">
-           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Order State</label>
+           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Order Status</label>
            <select 
              value={filters.orderStatus} 
              onChange={(e) => { setClientPage(1); setFilters(f => ({ ...f, orderStatus: e.target.value })); }}
              className="w-full bg-slate-50/50 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white transition-all"
            >
-              <option value="">All Operational States</option>
+              <option value="">All Statuses</option>
               {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
            </select>
         </div>
         <div className="flex-1">
-           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Payment State</label>
+           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Payment Status</label>
            <select 
              value={filters.paymentStatus} 
              onChange={(e) => { setClientPage(1); setFilters(f => ({ ...f, paymentStatus: e.target.value })); }}
              className="w-full bg-slate-50/50 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white transition-all"
            >
-              <option value="">All Payment Resolutions</option>
+              <option value="">All Payments</option>
               {PAYMENT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
            </select>
         </div>
         <div className="flex-1">
-           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Vector Type</label>
+           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Payment Type</label>
            <select 
              value={filters.paymentType} 
              onChange={(e) => { setClientPage(1); setFilters(f => ({ ...f, paymentType: e.target.value })); }}
              className="w-full bg-slate-50/50 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white transition-all"
            >
-              <option value="">All Transfer Protocols</option>
+              <option value="">All Types</option>
               {PAYMENT_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
            </select>
         </div>

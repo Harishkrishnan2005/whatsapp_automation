@@ -46,21 +46,15 @@ const businessSchema = new mongoose.Schema({
   subscription: {
     plan: {
       type: String,
-      enum: ['Free', 'Basic', 'Pro', 'Enterprise'],
-      default: 'Free',
+      enum: ['FREE', 'BASIC', 'PRO', 'ENTERPRISE'],
+      default: 'FREE',
     },
     status: {
       type: String,
-      enum: ['active', 'past_due', 'canceled', 'trialing'],
-      default: 'active',
+      enum: ['ACTIVE', 'EXPIRED'],
+      default: 'ACTIVE',
     },
-    expiresAt: { type: Date },
-    features: {
-      maxFlows: { type: Number, default: 5 },
-      maxCampaigns: { type: Number, default: 1 },
-      maxUsers: { type: Number, default: 2 },
-      analyticsLevel: { type: String, enum: ['basic', 'advanced'], default: 'basic' },
-    },
+    expiryDate: { type: Date },
   },
   razorpayConfig: {
     keyId: { type: String, trim: true },

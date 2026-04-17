@@ -41,6 +41,9 @@ class AuthService {
       businessId: businessId?._id || businessId,
       businessName: businessId?.name || user.businessName || null,
       businessType: user.businessType,
+      plan: businessId?.subscription?.plan || 'FREE',
+      subscriptionStatus: businessId?.subscription?.status || 'ACTIVE',
+      expiryDate: businessId?.subscription?.expiryDate || null,
     };
   }
 
@@ -51,6 +54,7 @@ class AuthService {
       role: user.role,
       businessId: businessId?._id || businessId,
       businessType: user.businessType,
+      plan: businessId?.subscription?.plan || 'FREE',
     };
   }
 
@@ -73,7 +77,7 @@ class AuthService {
     const business = await Business.create({
       name: businessName || `${name}'s Business`,
       email,
-      plan: 'Pro',
+      'subscription.plan': 'FREE',
       businessType,
       category,
     });
