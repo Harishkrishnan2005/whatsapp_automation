@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AdminLogin from './pages/AdminLogin';
 import StaffLogin from './pages/StaffLogin';
 import SuperAdminLogin from './pages/SuperAdminLogin';
+import HomePage from './pages/HomePage';
 import ProtectedRoute from './components/ProtectedRoute';
 import TopBar from './components/TopBar';
 import Dashboard from './pages/Dashboard';
@@ -49,20 +50,38 @@ function App() {
 }
 
 function AppContent() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50" />
+    );
+  }
+
+  if (location.pathname === '/') {
+    return (
+      <div className="app-shell theme-light min-h-screen">
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
       <div className="app-shell theme-light min-h-screen">
         <Routes>
-          <Route path="/" element={<Navigate to="/admin/login" />} />
+          <Route path="/" element={<HomePage />} />
           <Route path="/superadmin/login" element={<SuperAdminLogin />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/staff/login" element={<StaffLogin />} />
           <Route path="/login/superadmin" element={<Navigate to="/superadmin/login" />} />
           <Route path="/login/admin" element={<Navigate to="/admin/login" />} />
           <Route path="/login/staff" element={<Navigate to="/staff/login" />} />
-          <Route path="*" element={<Navigate to="/admin/login" />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     );

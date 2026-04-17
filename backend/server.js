@@ -34,6 +34,7 @@ import staffChatsRoutes from './routes/staffChats.js';
 import notesRoutes from './routes/notes.js';
 import dashboardRoutes from './routes/dashboard.js';
 import subscriptionRoutes from './routes/subscription.js';
+import publicRoutes from './routes/public.js';
 // Import middleware
 import { authenticateToken } from './middlewares/auth.js';
 import { apiLimiter, authLimiter, webhookLimiter } from './middlewares/rateLimit.js';
@@ -91,6 +92,7 @@ connectMongo();
  * 3. Protected: require JWT (authenticateToken) + tenant filtering (businessContext manually in routes)
  */
 
+app.use('/api/public', publicRoutes);  // Landing page – no auth required
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/webhook', webhookLimiter, webhookRoutes);
 

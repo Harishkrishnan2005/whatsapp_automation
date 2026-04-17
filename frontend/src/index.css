@@ -133,3 +133,14 @@ input, textarea, select {
 input:focus, textarea:focus, select:focus {
   @apply bg-blue-50 border-blue-600 ring-4 ring-blue-600/10 outline-none;
 }
+
+.landing-input:-webkit-autofill,
+.landing-input:-webkit-autofill:hover,
+.landing-input:-webkit-autofill:focus,
+.landing-input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff;
+  -webkit-box-shadow: 0 0 0 1000px rgba(15, 23, 42, 0.96) inset;
+  box-shadow: 0 0 0 1000px rgba(15, 23, 42, 0.96) inset;
+  transition: background-color 9999s ease-in-out 0s;
+  caret-color: #ffffff;
+}
