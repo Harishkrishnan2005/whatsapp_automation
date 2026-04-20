@@ -1,6 +1,7 @@
 import ChatbotFlow from '../models/ChatbotFlow.js';
 import Customer from '../models/Customer.js';
 import Message from '../models/Message.js';
+import Business from '../models/Business.js';
 import ChatbotEngine from '../services/chatbotEngine.js';
 import usageService from '../services/usageService.js';
 
@@ -20,6 +21,7 @@ class ChatbotController {
       step: body.step,
       nextStep: body.nextStep,
       action: body.action,
+      category: body.category,
       nodes: body.nodes || [],
       edges: body.edges || [],
       isActive: body.isActive ?? true,
@@ -33,9 +35,14 @@ class ChatbotController {
         return res.status(400).json({ message: 'Business is not mapped to this account. Please login again.' });
       }
 
+      const business = await Business.findById(businessId).select('category businessType').lean();
+      let category = (business?.businessType || business?.category || 'ecommerce').toLowerCase();
+      if (category === 'e_commerce') category = 'ecommerce';
+
       const flow = await ChatbotFlow.create({
         ...this.getPayload(req.body),
         businessId,
+        category, // Auto-populate from business
       });
 
       // Increment flow usage
@@ -68,9 +75,13 @@ class ChatbotController {
         return res.status(400).json({ message: 'Business is not mapped to this account. Please login again.' });
       }
 
+      const business = await Business.findById(businessId).select('category businessType').lean();
+      let category = (business?.businessType || business?.category || 'ecommerce').toLowerCase();
+      if (category === 'e_commerce') category = 'ecommerce';
+
       const flow = await ChatbotFlow.findOneAndUpdate(
         { _id: req.params.id, businessId },
-        this.getPayload(req.body),
+        { ...this.getPayload(req.body), category },
         { new: true, runValidators: true }
       );
       if (!flow) return res.status(404).json({ message: 'Flow not found' });

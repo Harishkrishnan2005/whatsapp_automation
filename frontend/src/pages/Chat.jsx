@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { FiMessageCircle, FiSend } from 'react-icons/fi';
+import { FiMessageCircle, FiSend, FiSearch, FiMoreVertical, FiUser, FiInfo } from 'react-icons/fi';
 import api from '../utils/api';
 import ProductCarousel from '../components/ProductCarousel';
 
@@ -12,7 +12,7 @@ const Chat = () => {
 
   useEffect(() => {
     if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [chatHistory]);
 
@@ -24,7 +24,7 @@ const Chat = () => {
         message: outgoingText,
       });
       const botPayload = { type: 'bot', ...response.data };
-      setChatHistory((prev) => [...prev, { type: 'user', text: outgoingText }, botPayload]);
+      setChatHistory((prev) => [...prev, { type: 'user', text: outgoingText, createdAt: new Date() }, botPayload]);
 
       if (response.data?.type === 'payment' && response.data?.payment) {
         openRazorpayPopup(response.data.payment);
@@ -33,13 +33,15 @@ const Chat = () => {
       return response.data;
     } catch (error) {
       console.error('Error sending message:', error);
+      const errorMsg = error?.response?.data?.message || 'Neural Link Error: Unable to process transmission.';
       setChatHistory((prev) => [
         ...prev,
-        { type: 'user', text: outgoingText },
+        { type: 'user', text: outgoingText, createdAt: new Date() },
         {
           type: 'bot',
-          response: error?.response?.data?.message || 'Neural Link Error: Unable to process transmission.',
-          text: error?.response?.data?.message || 'Neural Link Error: Unable to process transmission.',
+          response: errorMsg,
+          text: errorMsg,
+          createdAt: new Date()
         },
       ]);
       return null;
@@ -55,6 +57,7 @@ const Chat = () => {
             type: 'bot',
             response: 'Transaction Protocol Failed: Razorpay SDK not detected.',
             text: 'Transaction Protocol Failed: Razorpay SDK not detected.',
+            createdAt: new Date()
           },
         ]);
         return;
@@ -87,6 +90,7 @@ const Chat = () => {
                 type: 'bot',
                 response: `Settlement Confirmed.\nTrace ID: ${razorpayResponse.razorpay_payment_id}\nOrder node ${paymentPayload.internalOrderId} initialized.`,
                 text: `Settlement Confirmed.\nTrace ID: ${razorpayResponse.razorpay_payment_id}\nOrder node ${paymentPayload.internalOrderId} initialized.`,
+                createdAt: new Date()
               },
             ]);
           } catch (verifyError) {
@@ -96,6 +100,7 @@ const Chat = () => {
                 type: 'bot',
                 response: `Verification Latency: ${verifyError?.response?.data?.message || 'Resolution failed.'}`,
                 text: `Verification Latency: ${verifyError?.response?.data?.message || 'Resolution failed.'}`,
+                createdAt: new Date()
               },
             ]);
           }
@@ -108,6 +113,7 @@ const Chat = () => {
                 type: 'bot',
                 response: 'Transaction Aborted: User termination detected.',
                 text: 'Transaction Aborted: User termination detected.',
+                createdAt: new Date()
               },
             ]);
           },
@@ -135,116 +141,153 @@ const Chat = () => {
 
     return parts.map((part, idx) => {
       if (/^https?:\/\//i.test(part)) {
-        return <a key={`link-${idx}`} href={part} target="_blank" rel="noreferrer" className="text-blue-600 font-black underline">{part}</a>;
+        return <a key={`link-${idx}`} href={part} target="_blank" rel="noreferrer" className="text-blue-600 font-bold underline decoration-blue-200 decoration-2 underline-offset-4">{part}</a>;
       }
       return <span key={`txt-${idx}`}>{part}</span>;
     });
   };
 
+  const formatTime = (date) => {
+    const d = date ? new Date(date) : new Date();
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
-    <div className="space-y-10 animate-fade-in h-[calc(100vh-120px)] flex flex-col pb-10">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4">
-        <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none flex items-center gap-3">
-             Neural Simulation
-             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          </h1>
-          <p className="mt-2 text-slate-500 font-medium">Validating edge-case chatbot logic and product dissemination protocols.</p>
-        </div>
-        <div className="bg-white px-5 py-3 rounded-2xl border border-slate-200/60 shadow-sm">
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Status</p>
-           <p className="text-sm font-bold text-slate-900 mt-1 uppercase">Emulator Operational</p>
-        </div>
-      </header>
+    <div className="flex flex-col h-[calc(100vh-100px)] max-w-5xl mx-auto overflow-hidden bg-[#efeae2] border border-gray-300 rounded-2xl shadow-2xl relative">
+       {/* WhatsApp Doodle Background */}
+       <div 
+          className="absolute inset-0 opacity-[0.06] pointer-events-none"
+          style={{ backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")' }}
+       />
 
-      <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm flex-1 flex flex-col overflow-hidden mx-4">
-        {/* Chat Header */}
-        <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
-           <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-full bg-slate-900 flex items-center justify-center text-white ring-4 ring-white shadow-sm">
-                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-              </div>
-              <div>
-                 <p className="text-xs font-black text-slate-800 uppercase tracking-tight">Active Transmissions</p>
-                 <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">End-to-End Encrypted</p>
-              </div>
-           </div>
-           {phone && <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 py-2 rounded-xl bg-slate-100">Target: {phone}</div>}
-        </div>
-
-        {/* Message Thread */}
-        <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-10 space-y-8 custom-scrollbar bg-slate-50/10">
-           {chatHistory.length === 0 ? (
-             <div className="h-full flex flex-col items-center justify-center text-center opacity-30 select-none">
-                <div className="h-24 w-24 rounded-full border-4 border-dashed border-slate-200 mb-6 flex items-center justify-center">
-                   <FiMessageCircle className="h-10 w-10 text-slate-300" />
-                </div>
-                <h3 className="text-lg font-black text-slate-400 uppercase tracking-tighter">Awaiting Signal</h3>
-                <p className="text-[10px] uppercase font-black tracking-widest mt-2 max-w-[200px]">Establish node identity via phone entry to start protocol.</p>
+       {/* Header */}
+       <header className="bg-[#f0f2f5] border-b border-gray-300 px-6 py-3 flex items-center justify-between z-10">
+          <div className="flex items-center gap-4">
+             <div className="h-12 w-12 rounded-full bg-emerald-600 flex items-center justify-center text-white shadow-md">
+                <FiMessageCircle className="h-6 w-6" />
              </div>
-           ) : chatHistory.map((msg, index) => (
-             <motion.div key={index} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] flex items-end gap-3 ${msg.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                   {msg.type === 'bot' && (
-                      <div className="h-8 w-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-white text-[10px] font-black flex-shrink-0">A</div>
-                   )}
-                   <div className="space-y-2">
-                      {msg.response || msg.text ? (
-                        <div className={`p-5 rounded-[2rem] shadow-sm border ${
-                          msg.type === 'user' 
-                          ? 'bg-blue-600 text-white border-blue-500 rounded-br-md text-sm font-medium' 
-                          : 'bg-white text-slate-800 border-slate-100 rounded-bl-md text-sm font-semibold'
-                        }`}>
-                           <p className="whitespace-pre-line leading-relaxed">{msg.type === 'user' ? msg.text : renderTextWithLinks(msg.response || msg.text)}</p>
-                        </div>
-                      ) : null}
+             <div>
+                <h2 className="font-bold text-gray-800 leading-none">WhatsApp Bot Simulator</h2>
+                <div className="flex items-center gap-1.5 mt-1.5">
+                   <span className="h-2 w-2 rounded-full bg-[#25d366] animate-pulse" />
+                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none">Neural Link Active</span>
+                </div>
+             </div>
+          </div>
+          <div className="flex items-center gap-4 text-gray-500">
+             <div className="hidden md:flex flex-col items-end">
+                <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Phone Node</span>
+                <input 
+                  type="text" 
+                  placeholder="Enter Phone..." 
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="bg-white/50 border-none px-2 py-0.5 rounded text-xs font-bold text-gray-700 focus:bg-white outline-none w-32"
+                />
+             </div>
+             <button className="p-2 hover:bg-gray-200 rounded-full transition-colors"><FiSearch className="h-5 w-5"/></button>
+             <button className="p-2 hover:bg-gray-200 rounded-full transition-colors"><FiMoreVertical className="h-5 w-5"/></button>
+          </div>
+       </header>
 
-                      {msg.products && msg.products.length > 0 && (
-                        <div className="pt-2">
-                           <ProductCarousel 
-                             products={msg.products} 
-                             onProductBuy={(p) => sendWebhookMessage(p?.name || '')} 
+       {/* Main Chat Area */}
+       <div 
+         ref={chatContainerRef}
+         className="flex-1 overflow-y-auto px-8 md:px-14 py-8 space-y-3 custom-scrollbar relative z-0"
+       >
+          {chatHistory.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center">
+               <div className="bg-[#fff1c1] text-[#725a2c] text-[11px] px-6 py-2 rounded-lg font-bold shadow-sm uppercase tracking-wide border border-[#e6daae]">
+                  End-to-end encrypted protocol initiated
+               </div>
+               <div className="mt-10 max-w-sm">
+                  <p className="text-gray-500 text-sm font-medium leading-relaxed">
+                     Enter a phone number in the header and type a message below to test the automated chatbot flows.
+                  </p>
+               </div>
+            </div>
+          ) : (
+            chatHistory.map((msg, index) => {
+              const isUser = msg.type === 'user';
+              
+              return (
+                <div key={index} className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'}`}>
+                   <div className={`max-w-[85%] px-3 py-1.5 rounded-lg shadow-sm relative group ${
+                     isUser 
+                     ? 'bg-[#dcf8c6] text-gray-900 rounded-tr-none' 
+                     : 'bg-white text-gray-900 rounded-tl-none'
+                   }`}>
+                      {/* Tail */}
+                      <div className={`absolute top-0 w-3 h-3 ${
+                        isUser ? 'right-[-8px] text-[#dcf8c6]' : 'left-[-8px] text-white'
+                      }`}>
+                         <svg viewBox="0 0 8 13" height="13" width="8" preserveAspectRatio="xMidYMid meet" fill="currentColor">
+                           <path d={isUser 
+                             ? "M1.533 3.568 8 12.193V1H2.812C1.042 1 .474 2.156 1.533 3.568Z" 
+                             : "M6.467 3.568 0 12.193V1h5.188c1.77 0 2.338 1.156 1.279 2.568Z"} 
                            />
-                        </div>
-                      )}
+                         </svg>
+                      </div>
+
+                      <div className="flex flex-col">
+                         {!isUser && (
+                           <span className="text-[10px] font-bold text- emerald-600 uppercase tracking-tighter mb-1 select-none">Automated Bot</span>
+                         )}
+                         <div className="text-[14.5px] leading-[19px] whitespace-pre-wrap">
+                            {isUser ? msg.text : renderTextWithLinks(msg.response || msg.text)}
+                         </div>
+
+                         {/* Products */}
+                         {!isUser && msg.products && msg.products.length > 0 && (
+                           <div className="mt-3 bg-gray-50 rounded-xl overflow-hidden mb-1 border border-gray-100">
+                             <ProductCarousel 
+                               products={msg.products} 
+                               onProductBuy={(p) => sendWebhookMessage(p?.name || '')} 
+                             />
+                           </div>
+                         )}
+
+                         <div className="flex items-center justify-end gap-1 -mb-1 mt-1 ml-10">
+                            <span className="text-[9px] text-gray-400 font-medium tracking-tight">
+                               {formatTime(msg.createdAt)}
+                            </span>
+                            {isUser && (
+                              <div className="flex text-[#34b7f1] font-bold">
+                                 <svg viewBox="0 0 16 11" height="11" width="16" preserveAspectRatio="xMidYMid meet" fill="currentColor"><path d="M11.053 1.514 5.373 7.194 2.433 4.254.803 5.884l4.57 4.57 7.31-7.31-1.63-1.63Zm3.84 0-7.31 7.31-.21-.21.21.21-1.63-1.63 7.31-7.31 1.63 1.63Z"></path></svg>
+                              </div>
+                            )}
+                         </div>
+                      </div>
                    </div>
                 </div>
-             </motion.div>
-           ))}
-        </div>
+              );
+            })
+          )}
+       </div>
 
-        {/* Input Matrix */}
-        <div className="p-8 bg-white border-t border-slate-100">
-           <div className="flex flex-col md:flex-row gap-4">
-              <input
-                type="text"
-                placeholder="Phone (Node ID)"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full md:w-1/3 bg-slate-100/50 border-slate-200 rounded-2xl px-5 py-4 text-sm font-black text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
-              />
-              <div className="flex-1 relative flex items-center">
-                 <input
-                   type="text"
-                   placeholder="Enter transmission payload..."
-                   value={message}
-                   onChange={(e) => setMessage(e.target.value)}
-                   onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                   className="w-full bg-slate-100/50 border-slate-200 rounded-2xl px-5 py-4 pr-32 text-sm font-black text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
-                 />
-                 <button
-                   onClick={sendMessage}
-                   disabled={!phone || !message}
-                   className="absolute right-2 h-10 px-6 rounded-xl bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 transition-all flex items-center gap-2"
-                 >
-                    Send Signal
-                    <FiSend className="h-3 w-3" />
-                 </button>
-              </div>
-           </div>
-           <p className="mt-4 text-[9px] font-black text-slate-300 uppercase tracking-widest text-center">Neural Link V4.2 Core Emulation</p>
-        </div>
-      </div>
+       {/* Input Area */}
+       <footer className="bg-[#f0f2f5] px-6 py-4 flex gap-4 items-center z-10">
+          <div className="flex-1 bg-white rounded-xl shadow-sm px-5 py-3 flex items-center border border-transparent focus-within:border-emerald-100 transition-all">
+             <input
+               type="text"
+               placeholder={phone ? "Type a message..." : "Enter phone above to begin..."}
+               value={message}
+               onChange={(e) => setMessage(e.target.value)}
+               onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+               disabled={!phone}
+               className="flex-1 bg-transparent text-[15px] text-gray-700 outline-none"
+             />
+          </div>
+          <button
+             onClick={sendMessage}
+             disabled={!phone || !message.trim()}
+             className={`h-12 w-12 rounded-full flex items-center justify-center transition-all ${
+               message.trim() ? 'bg-[#00a884] shadow-lg active:scale-90 hover:bg-[#009173]' : 'bg-gray-400 cursor-not-allowed'
+             }`}
+          >
+             <FiSend className="h-5 w-5 text-white" />
+          </button>
+       </footer>
     </div>
   );
 };

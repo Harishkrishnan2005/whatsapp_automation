@@ -8,6 +8,7 @@ import { getDateRangePayload } from '../utils/dateRange';
 const ORDER_STATUSES = ['Pending', 'Confirmed', 'Cancelled', 'Delivered', 'Return Requested', 'Returned'];
 const PAYMENT_STATUSES = ['Pending', 'Paid', 'Failed', 'Refunded'];
 const PAYMENT_TYPES = ['COD', 'ONLINE'];
+const REFUND_STATUSES = ['NONE', 'REQUESTED', 'PROCESSED', 'REJECTED'];
 
 const normalizePaymentStatus = (status, paymentType) => {
   if (status === 'Received') return 'Paid';
@@ -100,6 +101,15 @@ const Orders = () => {
       fetchOrders();
     } catch (error) {
       console.error('Error assigning order:', error);
+    }
+  };
+
+  const updateRefundStatus = async (id, refundStatus) => {
+    try {
+      await api.put(`/orders/${id}/refund-status`, { refundStatus });
+      fetchOrders();
+    } catch (error) {
+      console.error('Error updating refund status:', error);
     }
   };
 
@@ -234,6 +244,13 @@ const Orders = () => {
                          }`}>
                            Order: {orderStatus}
                          </span>
+                         {order.refundStatus && order.refundStatus !== 'NONE' && (
+                            <span className={`inline-flex px-3 py-1 rounded-md text-[8px] font-black uppercase tracking-[0.15em] border ${
+                              order.refundStatus === 'REQUESTED' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-blue-50 text-blue-600 border-blue-100'
+                            }`}>
+                              Refund: {order.refundStatus}
+                            </span>
+                         )}
                       </div>
                     </td>
                     <td className="px-8 py-6 text-right">
@@ -254,6 +271,15 @@ const Orders = () => {
                              >
                                 {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                              </select>
+                             {order.refundStatus && order.refundStatus !== 'NONE' && (
+                                <select 
+                                  value={order.refundStatus} 
+                                  onChange={(e) => updateRefundStatus(order._id, e.target.value)}
+                                  className="bg-rose-500 text-white text-[9px] font-black uppercase tracking-widest rounded-lg px-3 py-1.5 border-none outline-none cursor-pointer"
+                                >
+                                   {REFUND_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                              )}
                           </div>
                        </div>
                     </td>

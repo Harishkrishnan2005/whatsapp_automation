@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { FiCalendar, FiUser, FiCheckCircle, FiXCircle, FiClock, FiUsers, FiFilter } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiCalendar, FiUser, FiCheckCircle, FiXCircle, FiClock, FiUsers, FiFilter, FiEdit2, FiActivity, FiX } from 'react-icons/fi';
 import api from '../../utils/api';
 import useAnalyticsStore from '../../store/analyticsStore';
 import { getDateRangePayload } from '../../utils/dateRange';
@@ -10,6 +10,9 @@ const AppointmentManagement = () => {
   const [appointments, setAppointments] = useState([]);
   const [staffUsers, setStaffUsers] = useState([]);
   const [clientPage, setClientPage] = useState(1);
+  const [editingApt, setEditingApt] = useState(null);
+  const [rescheduleData, setRescheduleData] = useState({ date: '', time: '' });
+  
   const clientLimit = 10;
   const dateRange = useAnalyticsStore((state) => state.dateRange);
   const searchQuery = useAnalyticsStore((state) => state.searchQuery);
@@ -52,6 +55,22 @@ const AppointmentManagement = () => {
     }
   };
 
+  const handleReschedule = async (e) => {
+    e.preventDefault();
+    if (!editingApt) return;
+    try {
+      await api.put(`/appointments/${editingApt._id}/status`, { 
+        status: 'RESCHEDULED',
+        date: rescheduleData.date,
+        time: rescheduleData.time
+      });
+      setEditingApt(null);
+      fetchAppointments();
+    } catch (error) {
+      console.error('Error rescheduling:', error);
+    }
+  };
+
   const assignStaff = async (id, assignedTo) => {
     try {
       await api.put(`/appointments/${id}/assign`, { assignedTo });
@@ -62,21 +81,24 @@ const AppointmentManagement = () => {
   };
 
   const getStatusVariant = (status) => {
-    if (status === 'Confirmed') return 'delivered';
-    if (status === 'Cancelled') return 'error';
-    if (status === 'Completed') return 'success';
-    return 'pending';
+    switch(status) {
+      case 'BOOKED': return 'delivered';
+      case 'RESCHEDULED': return 'pending';
+      case 'CANCELLED': return 'error';
+      case 'COMPLETED': return 'success';
+      default: return 'pending';
+    }
   };
 
   const stats = useMemo(() => {
     return appointments.reduce(
       (acc, apt) => {
         acc.total += 1;
-        if (apt.status === 'Confirmed') acc.confirmed += 1;
-        if (apt.status === 'Pending') acc.pending += 1;
+        if (apt.status === 'BOOKED' || apt.status === 'RESCHEDULED') acc.active += 1;
+        if (apt.status === 'COMPLETED') acc.completed += 1;
         return acc;
       },
-      { total: 0, confirmed: 0, pending: 0 }
+      { total: 0, active: 0, completed: 0 }
     );
   }, [appointments]);
 
@@ -89,8 +111,8 @@ const AppointmentManagement = () => {
     <div className="space-y-10 animate-fade-in pb-10">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Appointment Ledger</h1>
-          <p className="mt-2 text-slate-500 font-medium tracking-tight">Synchronized scheduling and enterprise resource allocation matrix.</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Booking Control</h1>
+          <p className="mt-2 text-slate-500 font-medium tracking-tight">Manage appointments, reschedule slots, and assign service specialists.</p>
         </div>
         <div className="flex items-center gap-6 bg-white px-6 py-4 rounded-[1.5rem] border border-slate-200/60 shadow-sm">
           <div className="flex -space-x-4">
@@ -101,8 +123,8 @@ const AppointmentManagement = () => {
             ))}
           </div>
           <div className="text-left border-l border-slate-100 pl-6">
-             <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none">Resource Pool</p>
-             <p className="text-sm font-black text-slate-900 mt-1 uppercase leading-none">{staffUsers.length} Specialists</p>
+             <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none">Specialist Pool</p>
+             <p className="text-sm font-black text-slate-900 mt-1 uppercase leading-none">{staffUsers.length} Staff</p>
           </div>
         </div>
       </header>
@@ -110,8 +132,8 @@ const AppointmentManagement = () => {
       <section className="grid gap-6 sm:grid-cols-1 lg:grid-cols-3">
         {[
           { label: 'Total Volume', val: stats.total, icon: FiCalendar, col: 'blue' },
-          { label: 'Confirmed Nodes', val: stats.confirmed, icon: FiCheckCircle, col: 'emerald' },
-          { label: 'Pending Review', val: stats.pending, icon: FiClock, col: 'indigo' },
+          { label: 'Active Sessions', val: stats.active, icon: FiActivity, col: 'indigo' },
+          { label: 'Resolved Nodes', val: stats.completed, icon: FiCheckCircle, col: 'emerald' },
         ].map((s, i) => (
           <motion.div 
             key={i} 
@@ -131,118 +153,100 @@ const AppointmentManagement = () => {
         ))}
       </section>
 
-      <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden flex flex-col min-h-[650px]">
+      <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden flex flex-col min-h-[600px]">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/30">
-                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Stakeholder Node</th>
-                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Scheduling Space</th>
-                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Allocation Logic</th>
-                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Resolution State</th>
-                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Utility</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Customer Node</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Service Protocol</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Temporal Slot</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Staff Owner</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">State</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {visibleAppointments.map((apt) => (
                 <tr key={apt._id} className="group hover:bg-slate-50 transition-colors duration-300">
                   <td className="px-10 py-7">
-                    <div className="flex items-center gap-5">
-                      <div className="h-12 w-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-sm ring-4 ring-white shadow-xl shadow-slate-900/10 group-hover:scale-110 transition-transform duration-500">
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-xs">
                         {apt.customerId?.name ? apt.customerId.name[0].toUpperCase() : '?'}
                       </div>
                       <div>
-                        <p className="text-base font-bold text-slate-900 tracking-tight leading-none group-hover:text-blue-600 transition-colors uppercase">{apt.customerId?.name || 'EXTERNAL AGENT'}</p>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">{apt.customerId?.phone}</p>
+                        <p className="text-sm font-bold text-slate-900 tracking-tight uppercase">{apt.customerId?.name || 'GUEST'}</p>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{apt.customerId?.phone}</p>
                       </div>
                     </div>
                   </td>
+                  <td className="px-10 py-7 text-[10px] font-black text-blue-600 uppercase tracking-widest">
+                    {apt.service || 'General'}
+                  </td>
                   <td className="px-10 py-7">
-                    <div className="flex items-center gap-3">
-                       <div className="h-2 w-2 rounded-full bg-blue-500" />
-                       <p className="text-sm font-black text-slate-900 uppercase tracking-tighter">{new Date(apt.date).toLocaleDateString()}</p>
-                    </div>
-                    <p className="text-[10px] font-black text-slate-400 mt-2 ml-5 uppercase tracking-widest bg-slate-100 w-fit px-2 py-0.5 rounded shadow-sm">{apt.timeSlot}</p>
+                    <p className="text-sm font-black text-slate-800 tracking-tighter uppercase">{new Date(apt.date).toLocaleDateString()}</p>
+                    <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase">{apt.time}</p>
                   </td>
                   <td className="px-10 py-7">
                     <select
                       value={apt.assignedTo?._id || ''}
                       onChange={(e) => assignStaff(apt._id, e.target.value)}
-                      className="w-full rounded-2xl border-slate-200 bg-slate-50 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-slate-600 focus:bg-white focus:ring-4 focus:ring-blue-500/5 outline-none transition-all cursor-pointer border hover:border-blue-500/20"
+                      className="rounded-xl border-slate-100 bg-slate-50 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-600 outline-none hover:bg-white transition-all border"
                     >
-                      <option value="">NODE: UNALLOCATED</option>
+                      <option value="">NODE: UNASSIGNED</option>
                       {staffUsers.map((s) => (
                         <option key={s._id} value={s._id}>{s.name.toUpperCase()}</option>
                       ))}
                     </select>
                   </td>
                   <td className="px-10 py-7">
-                    <Badge variant={getStatusVariant(apt.status)}>{apt.status.toUpperCase()}</Badge>
+                    <Badge variant={getStatusVariant(apt.status)}>{apt.status}</Badge>
                   </td>
                   <td className="px-10 py-7 text-right">
-                    <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
-                      {apt.status === 'Pending' ? (
-                        <>
-                          <button
-                            onClick={() => updateStatus(apt._id, 'Confirmed')}
-                            className="h-12 w-12 flex items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
-                            title="Authorize Node"
-                          >
-                            <FiCheckCircle className="h-6 w-6" />
-                          </button>
-                          <button
-                            onClick={() => updateStatus(apt._id, 'Cancelled')}
-                            className="h-12 w-12 flex items-center justify-center rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                            title="Abuse Reverse"
-                          >
-                            <FiXCircle className="h-6 w-6" />
-                          </button>
-                        </>
-                      ) : (
-                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Resolution Fixed</span>
-                      )}
+                    <div className="flex justify-end gap-2">
+                       <button onClick={() => { setEditingApt(apt); setRescheduleData({ date: new Date(apt.date).toISOString().split('T')[0], time: apt.time }); }} className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all"><FiEdit2 /></button>
+                       {apt.status !== 'CANCELLED' && (
+                         <button onClick={() => updateStatus(apt._id, 'CANCELLED')} className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-all"><FiXCircle /></button>
+                       )}
+                       {apt.status !== 'COMPLETED' && (
+                         <button onClick={() => updateStatus(apt._id, 'COMPLETED')} className="p-2 rounded-lg bg-slate-50 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-all"><FiCheckCircle /></button>
+                       )}
                     </div>
                   </td>
                 </tr>
               ))}
-              {visibleAppointments.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="py-24 text-center opacity-30 select-none">
-                    <div className="flex flex-col items-center">
-                      <FiCalendar className="h-20 w-20 mb-6 text-slate-300" />
-                      <p className="font-black uppercase tracking-[0.3em] text-sm text-slate-400">Ledger Buffer Empty</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
+      </div>
 
-        {appointments.length > clientLimit && (
-          <div className="mt-auto px-10 py-8 border-t border-slate-100 flex items-center justify-between bg-slate-50/20">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Slot {((clientPage - 1) * clientLimit) + 1} — {Math.min(clientPage * clientLimit, appointments.length)} of {appointments.length} Resolution Nodes
-            </p>
-            <div className="flex gap-3">
-              <button
-                disabled={clientPage === 1}
-                onClick={() => setClientPage(p => p - 1)}
-                className="btn-secondary h-12 px-6 text-[10px] uppercase font-black tracking-widest"
-              >
-                Previous
-              </button>
-              <button
-                disabled={clientPage >= Math.ceil(appointments.length / clientLimit)}
-                onClick={() => setClientPage(p => p + 1)}
-                className="btn-primary h-12 px-8 text-[10px] uppercase font-black tracking-widest shadow-none"
-              >
-                Next Node
-              </button>
-            </div>
+      {/* Reschedule Modal */}
+      <AnimatePresence>
+        {editingApt && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setEditingApt(null)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
+             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative bg-white w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl">
+                <button onClick={() => setEditingApt(null)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-900"><FiX /></button>
+                <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-8">Reschedule Protocol</h3>
+                
+                <form onSubmit={handleReschedule} className="space-y-6">
+                   <div>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 block mb-2">New Target Date</label>
+                      <input type="date" value={rescheduleData.date} onChange={e => setRescheduleData({...rescheduleData, date: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-500/5 transition-all" required />
+                   </div>
+                   <div>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 block mb-2">Temporal Window (Time)</label>
+                      <input type="time" value={rescheduleData.time} onChange={e => setRescheduleData({...rescheduleData, time: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-500/5 transition-all" required />
+                   </div>
+                   
+                   <button type="submit" className="w-full py-5 rounded-[1.5rem] bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all mt-6">
+                      Execute Re-scheduling
+                   </button>
+                </form>
+             </motion.div>
           </div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 };

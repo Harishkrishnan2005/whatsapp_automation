@@ -1,5 +1,6 @@
 import axios from 'axios';
 import Business from '../models/Business.js';
+import usageService from './usageService.js';
 
 class WhatsAppService {
   constructor() {
@@ -23,6 +24,12 @@ class WhatsAppService {
    */
   async sendTextMessage(businessId, to, text) {
     try {
+      // 1. Quota Check
+      const hasQuota = await usageService.canSendMessages(businessId);
+      if (!hasQuota) {
+        throw new Error('LIMIT_REACHED: Monthly message quota exceeded');
+      }
+
       const config = await this.getConfig(businessId);
       const { phoneNumberId, accessToken } = config;
 
@@ -45,6 +52,9 @@ class WhatsAppService {
         }
       );
 
+      // 2. Increment usage count
+      await usageService.incrementMessages(businessId);
+
       return response.data;
     } catch (error) {
       console.error('[WhatsAppService] sendTextMessage error:', error.response?.data || error.message);
@@ -57,6 +67,12 @@ class WhatsAppService {
    */
   async sendTemplateMessage(businessId, to, templateName, languageCode = 'en_US', components = []) {
     try {
+      // 1. Quota Check
+      const hasQuota = await usageService.canSendMessages(businessId);
+      if (!hasQuota) {
+        throw new Error('LIMIT_REACHED: Monthly message quota exceeded');
+      }
+
       const config = await this.getConfig(businessId);
       const { phoneNumberId, accessToken } = config;
 
@@ -83,6 +99,9 @@ class WhatsAppService {
         }
       );
 
+      // 2. Increment usage count
+      await usageService.incrementMessages(businessId);
+
       return response.data;
     } catch (error) {
       console.error('[WhatsAppService] sendTemplateMessage error:', error.response?.data || error.message);
@@ -95,6 +114,12 @@ class WhatsAppService {
    */
   async sendInteractiveMessage(businessId, to, interactiveData) {
     try {
+      // 1. Quota Check
+      const hasQuota = await usageService.canSendMessages(businessId);
+      if (!hasQuota) {
+        throw new Error('LIMIT_REACHED: Monthly message quota exceeded');
+      }
+
       const config = await this.getConfig(businessId);
       const { phoneNumberId, accessToken } = config;
 
@@ -116,6 +141,9 @@ class WhatsAppService {
           },
         }
       );
+
+      // 2. Increment usage count
+      await usageService.incrementMessages(businessId);
 
       return response.data;
     } catch (error) {

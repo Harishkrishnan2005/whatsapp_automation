@@ -18,6 +18,8 @@ import {
   FiLogOut,
   FiShield,
   FiCreditCard,
+  FiAlertCircle,
+  FiClock,
 } from 'react-icons/fi';
 
 const Sidebar = ({ open, onClose }) => {
@@ -37,9 +39,11 @@ const Sidebar = ({ open, onClose }) => {
           { path: '/customers', label: 'Customers', icon: FiUsers },
           { path: '/admin/appointments', label: 'Appointments', icon: FiCalendar },
           { path: '/admin/chatbot', label: 'Chatbot Settings', icon: FiMessageCircle },
+          { path: '/admin/simulation-chat', label: 'Management', icon: FiMessageCircle },
           { path: '/analytics', label: 'Reports', icon: FiBarChart2 },
           { path: '/admin/staff', label: 'Manage Staff', icon: FiUserCheck },
           { path: '/admin/advanced-analytics', label: 'Detailed Reports', icon: FiTrendingUp },
+          { path: '/admin/support', label: 'Support Desk', icon: FiMessageCircle },
           { path: '/pricing', label: 'Billing', icon: FiCreditCard },
         ]
       : [
@@ -50,7 +54,9 @@ const Sidebar = ({ open, onClose }) => {
           { path: '/products', label: 'Products', icon: FiPackage },
           { path: '/analytics', label: 'Reports', icon: FiBarChart2 },
           { path: '/admin/chatbot', label: 'Chatbot Settings', icon: FiMessageCircle },
+          { path: '/admin/simulation-chat', label: 'Management', icon: FiMessageCircle },
           { path: '/admin/staff', label: 'Manage Staff', icon: FiUserCheck },
+          { path: '/admin/support', label: 'Support Desk', icon: FiMessageCircle },
           { path: '/pricing', label: 'Billing', icon: FiCreditCard },
         ];
 

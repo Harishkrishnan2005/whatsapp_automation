@@ -17,6 +17,8 @@ export const COLLECTIONS = {
   CHAT_SESSIONS: 'chat_sessions',
   SUBSCRIPTIONS: 'subscriptions',
   USAGE: 'usage',
+  SUPPORT_TICKETS: 'support_tickets',
+  FEEDBACKS: 'feedbacks',
 };
 
 export default COLLECTIONS;

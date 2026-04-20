@@ -69,23 +69,29 @@ const Subscriptions = () => {
                   <FiCreditCard className="h-7 w-7" />
                </div>
                <div className="flex flex-col items-end">
-                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none">Plan Segment</p>
-                  <p className="text-sm font-black text-slate-900 mt-2 uppercase tracking-tight">{sub.plan}</p>
-               </div>
+                   <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none">Plan Segment</p>
+                   <p className="text-sm font-black text-slate-900 mt-2 uppercase tracking-tight">{sub.plan}</p>
+                   <p className="text-[10px] font-black text-blue-600 mt-1 uppercase">₹{sub.monthlyPrice}/mo</p>
+                </div>
             </div>
 
             <div className="space-y-2">
                <p className="text-5xl font-black text-slate-900 tracking-tighter group-hover:text-blue-600 transition-colors">{sub.businessCount}</p>
-               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <FiLayers className="h-3 w-3" />
-                  Active Infrastructure Nodes
-               </p>
+               <div className="flex flex-col gap-1 mt-1">
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <FiLayers className="h-3 w-3" />
+                    Active Infrastructure Nodes
+                 </p>
+                 <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">
+                    Plan Revenue: ₹{sub.revenue.toLocaleString()}
+                 </p>
+               </div>
             </div>
 
             <div className="mt-10 pt-8 border-t border-slate-50 flex items-center justify-between">
               <div className="flex items-center gap-2 text-slate-400 font-black text-[9px] uppercase tracking-widest">
                  <FiActivity className="h-3 w-3" />
-                 Last Updated: {new Date(sub.lastUpdated).toLocaleDateString()}
+                 Latest Expiry: {sub.expiryDate ? new Date(sub.expiryDate).toLocaleDateString() : 'N/A'}
               </div>
               <FiCheckCircle className="text-emerald-500 h-5 w-5" />
             </div>

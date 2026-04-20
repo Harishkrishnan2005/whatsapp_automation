@@ -101,8 +101,9 @@ class ChatbotEngine {
 
       if (!resolvedBusinessId) throw new Error('Invalid businessId');
 
-      const business = await Business.findById(resolvedBusinessId).select('category').lean();
-      const category = business?.category || 'ecommerce';
+      const business = await Business.findById(resolvedBusinessId).select('category businessType').lean();
+      let category = (business?.businessType || business?.category || 'ecommerce').toLowerCase();
+      if (category === 'e_commerce') category = 'ecommerce'; // Standardize mapping
 
       const normalizedPhone = String(phone).trim();
       const normalizedMessage = normalize(message);
@@ -114,10 +115,17 @@ class ChatbotEngine {
           phone: normalizedPhone,
           businessId: resolvedBusinessId,
           currentNode: 'start',
+          mode: 'BOT',
         });
         
         // Track flow start
         this.trackEvent(resolvedBusinessId, null, 'flow_start', { phone: normalizedPhone });
+      }
+
+      // If in HUMAN mode, stop chatbot processing
+      if (session.mode === 'HUMAN') {
+        console.log(`[ChatbotEngine] Session ${phone} is in HUMAN mode. Bypassing bot.`);
+        return null;
       }
 
       const graphFlow = await ChatbotFlow.findOne({
@@ -186,9 +194,9 @@ class ChatbotEngine {
         await session.save();
         const finalResponse = actionHandler.interpolate(responseText || defaultReply, session.context);
 
-        // Increment usage
-        const usageReport = await usageService.incrementMessages(resolvedBusinessId);
-        if (usageReport?.isExceeded) {
+        // Check usage
+        const hasQuota = await usageService.canSendMessages(resolvedBusinessId);
+        if (!hasQuota) {
           return { response: '⚠️ Monthly message limit reached. Upgrade plan.', text: '⚠️ Monthly message limit reached. Upgrade plan.', type: 'text', products: [] };
         }
 
@@ -210,17 +218,20 @@ class ChatbotEngine {
         this.trackEvent(resolvedBusinessId, session.customerId, 'flow_drop_off', { step: session.currentNode });
         const fallbackReply = await actionHandler.getSystemReply(resolvedBusinessId, 'invalid_input', defaultReply, session.context);
         
-        // Increment usage for fallback as well
-        await usageService.incrementMessages(resolvedBusinessId);
+        // Check usage
+        const hasQuota = await usageService.canSendMessages(resolvedBusinessId);
+        if (!hasQuota) {
+          return { response: '⚠️ Monthly message limit reached. Upgrade plan.', text: '⚠️ Monthly message limit reached. Upgrade plan.', type: 'text', products: [] };
+        }
         
         return { response: fallbackReply, text: fallbackReply, type: 'text', products: [] };
       }
 
       const reply = await this.buildLegacyReply({ flow, session, message, phone, businessId: resolvedBusinessId });
       
-      // Increment usage for legacy reply
-      const legacyUsageReport = await usageService.incrementMessages(resolvedBusinessId);
-      if (legacyUsageReport?.isExceeded) {
+      // Check usage
+      const hasQuota = await usageService.canSendMessages(resolvedBusinessId);
+      if (!hasQuota) {
         return { response: '⚠️ Monthly message limit reached. Upgrade plan.', text: '⚠️ Monthly message limit reached. Upgrade plan.', type: 'text', products: [] };
       }
       

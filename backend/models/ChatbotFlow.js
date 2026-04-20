@@ -25,21 +25,7 @@ const chatbotFlowSchema = new mongoose.Schema({
   },
   action: {
     type: String,
-    enum: [
-      'NONE',
-      'SHOW_PRODUCTS',
-      'CREATE_ORDER',
-      'PROCESS_PAYMENT',
-      'CANCEL_ORDER',
-      'RETURN_ORDER',
-      'SAVE_NAME',
-      'SAVE_PRODUCT',
-      'BOOK_APPOINTMENT',
-      'CREATE_FEEDBACK',
-      'START_SUPPORT',
-      'CREATE_SUPPORT',
-    ],
-    default: 'NONE',
+    default: 'JUST_SEND_REPLY',
   },
   nodes: [
     {
@@ -90,7 +76,6 @@ const chatbotFlowSchema = new mongoose.Schema({
   category: {
     type: String,
     enum: ['booking', 'ecommerce'],
-    required: true,
     index: true,
   },
 }, {

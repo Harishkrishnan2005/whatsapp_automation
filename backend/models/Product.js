@@ -59,6 +59,16 @@ const productSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  rating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5,
+  },
+  numReviews: {
+    type: Number,
+    default: 0,
+  },
   specifications: {
     type: [specificationSchema],
     default: [],

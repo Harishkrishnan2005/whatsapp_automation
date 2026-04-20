@@ -10,5 +10,6 @@ router.use(requireRole('super_admin'));
 router.get('/dashboard', SuperAdminController.getDashboard);
 router.get('/businesses', SuperAdminController.getBusinesses);
 router.get('/subscriptions', SuperAdminController.getSubscriptions);
+router.put('/update-subscription', SuperAdminController.updateBusinessSubscription);
 
 export default router;

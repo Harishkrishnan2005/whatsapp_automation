@@ -2,8 +2,9 @@ import Campaign from '../models/Campaign.js';
 import Customer from '../models/Customer.js';
 import Message from '../models/Message.js';
 import Product from '../models/Product.js';
-import WhatsAppService from './WhatsAppService.js';
+import WhatsAppService from './whatsappService.js';
 import buildTenantScope from '../utils/tenantScope.js';
+import usageService from './usageService.js';
 
 class CampaignService {
   /**
@@ -19,6 +20,12 @@ class CampaignService {
     
     const customers = await Customer.find(query).select('_id phone name').lean();
     if (customers.length === 0) throw new Error('No customers found for the selected audience.');
+
+    // Quota Check
+    const hasQuota = await usageService.canSendMessages(businessId, customers.length);
+    if (!hasQuota) {
+      throw new Error(`Insufficient message quota. Your campaign requires ${customers.length} messages but you have reached your plan limit.`);
+    }
 
     // 2. Create Campaign Record
     const campaign = await Campaign.create({

@@ -114,6 +114,11 @@ const orderSchema = new mongoose.Schema({
     enum: ['Pending', 'Confirmed', 'Cancelled', 'Delivered', 'Return Requested', 'Returned'],
     default: 'Pending',
   },
+  refundStatus: {
+    type: String,
+    enum: ['NONE', 'REQUESTED', 'PROCESSED', 'REJECTED'],
+    default: 'NONE',
+  },
   status: {
     type: String,
     enum: ['Pending', 'Confirmed', 'Cancelled', 'Delivered', 'Return Requested', 'Returned'],

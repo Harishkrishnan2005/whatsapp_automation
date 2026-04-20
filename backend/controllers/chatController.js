@@ -62,11 +62,47 @@ class ChatController {
     }
   }
 
+  // Get all chats for simulation (Returns array directly)
+  async getAllChatsForSimulation(req, res) {
+    try {
+      const { page = 1, limit = 50 } = req.query;
+      const result = await ChatService.getAllChats(req.businessId, parseInt(page), parseInt(limit));
+      res.json(result.chats);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  // Get messages for simulation (Returns array directly as requested)
+  async getMessagesForSimulation(req, res) {
+    try {
+      const { id } = req.params;
+      const { page = 1, limit = 100 } = req.query;
+      const result = await ChatService.getMessages(req.businessId, id, parseInt(page), parseInt(limit));
+      res.json(result.messages);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  // Send message for simulation (Uses chatId as specified)
+  async sendMessageForSimulation(req, res) {
+    try {
+      const { chatId, message } = req.body;
+      if (!chatId || !message) {
+        return res.status(400).json({ message: 'chatId and message are required' });
+      }
+      const newMessage = await ChatService.sendMessage(req.businessId, chatId, message, 'admin');
+      res.status(201).json(newMessage);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
   // Search customers
   async searchCustomers(req, res) {
     try {
       const { q } = req.query;
-
       if (!q) {
         return res.status(400).json({ message: 'Search query is required' });
       }

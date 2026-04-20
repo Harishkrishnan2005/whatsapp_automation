@@ -1,7 +1,8 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { PLAN_CONFIG } from '../config/plans.js';
 
-const ProtectedRoute = ({ children, requiredRole, allowedBusinessTypes }) => {
+const ProtectedRoute = ({ children, requiredRole, allowedBusinessTypes, requiredFeature }) => {
   const { user, loginType } = useAuth();
 
   // Check if user is authenticated
@@ -20,6 +21,15 @@ const ProtectedRoute = ({ children, requiredRole, allowedBusinessTypes }) => {
       return <Navigate to="/chat" />;
     }
     return <Navigate to="/" />;
+  }
+
+  // Check if feature is allowed for user's plan
+  if (requiredFeature && user.role === 'admin') {
+    const plan = user.plan || 'FREE';
+    const config = PLAN_CONFIG[plan];
+    if (config && !config[requiredFeature]) {
+      return <Navigate to="/pricing" state={{ featureLocked: requiredFeature }} />;
+    }
   }
 
   if (Array.isArray(allowedBusinessTypes) && allowedBusinessTypes.length > 0) {

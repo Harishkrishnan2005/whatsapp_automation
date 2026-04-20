@@ -119,6 +119,13 @@ const Analytics = () => {
           <p className="mt-2 text-slate-500 font-medium">Enterprise performance synchronization and business logic visualization.</p>
         </div>
         <div className="flex items-center gap-4">
+           <button 
+             onClick={() => window.location.assign('/admin/advanced-analytics')}
+             className="h-12 px-8 rounded-2xl bg-blue-600/10 text-blue-600 border border-blue-600/20 text-[10px] uppercase font-black tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-lg shadow-blue-500/5 group"
+           >
+              <FiTrendingUp className="inline-block mr-2 h-4 w-4 group-hover:scale-125 transition-transform" />
+              Advanced Insights
+           </button>
            <button onClick={fetchDashboardAnalytics} disabled={loading} className="btn-secondary h-12 px-6 flex items-center gap-2 group">
               <FiRefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
               <span className="text-[10px] uppercase font-black">Sync Ledger</span>

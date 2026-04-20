@@ -15,7 +15,7 @@ export const PLAN_CONFIG = {
     allowCampaigns: false,
     allowAutomation: true,
     allowAdvancedAnalytics: false,
-    price: 999 // In INR for example
+    price: 999
   },
   PRO: {
     maxFlows: 15,

@@ -22,17 +22,31 @@ const StaffManagement = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
+  const [usage, setUsage] = useState({ staffCount: 0, maxUsers: null });
+  const [subscription, setSubscription] = useState(null);
 
   useEffect(() => {
     fetchStaff();
+    fetchSubscription();
   }, []);
 
   const fetchStaff = async () => {
     try {
       const response = await api.get('/auth/staff');
       setStaff(response.data);
+      setUsage(prev => ({ ...prev, staffCount: response.data.length }));
     } catch (error) {
       console.error('Error fetching staff:', error);
+    }
+  };
+
+  const fetchSubscription = async () => {
+    try {
+      const response = await api.get('/subscription/status');
+      setSubscription(response.data);
+      setUsage(prev => ({ ...prev, maxUsers: response.data.limits.maxUsers }));
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
     }
   };
 
@@ -86,23 +100,45 @@ const StaffManagement = () => {
     <div className="space-y-10 animate-fade-in pb-10">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Staff Team</h1>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none uppercase italic">Staff Team</h1>
           <p className="mt-2 text-slate-500 font-medium tracking-tight">Add and manage your team members and their permissions.</p>
         </div>
-        <button
-          onClick={() => {
-            setShowForm(!showForm);
-            setFormSuccess('');
-            if (showForm) {
-              setFormData(initialFormData);
-              setFormError('');
-            }
-          }}
-          className={`btn-primary px-10 h-14 rounded-2xl flex items-center gap-3 transition-all ${showForm ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/20' : 'shadow-blue-500/20'}`}
-        >
-          {showForm ? <FiX className="h-5 w-5" /> : <FiUserPlus className="h-5 w-5" />}
-          <span className="text-[10px] font-black uppercase tracking-widest">{showForm ? 'Cancel' : 'Add Staff Member'}</span>
-        </button>
+        <div className="flex items-center gap-4">
+          <div className="bg-white px-5 py-3 rounded-2xl border border-slate-200/60 shadow-sm flex flex-col items-center">
+             <div className="flex items-center justify-between gap-4 mb-1.5 w-full">
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Seats Used</p>
+               <p className="text-[10px] font-black text-blue-600 leading-none">
+                 {usage.staffCount} / {usage.maxUsers === Infinity || usage.maxUsers === null ? '∞' : usage.maxUsers}
+               </p>
+             </div>
+             <div className="h-1 w-24 bg-slate-100 rounded-full overflow-hidden border border-slate-50">
+               <div 
+                 className="h-full bg-blue-600 transition-all duration-1000"
+                 style={{ width: `${Math.min(100, (usage.staffCount / (usage.maxUsers || 1)) * 100)}%` }}
+               />
+             </div>
+          </div>
+          <button 
+            onClick={() => window.location.assign('/pricing')}
+            className="h-14 px-6 rounded-2xl bg-white border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all"
+          >
+            Upgrade
+          </button>
+          <button
+            onClick={() => {
+              setShowForm(!showForm);
+              setFormSuccess('');
+              if (showForm) {
+                setFormData(initialFormData);
+                setFormError('');
+              }
+            }}
+            className={`btn-primary px-10 h-14 rounded-2xl flex items-center gap-3 transition-all ${showForm ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/20' : 'shadow-blue-500/20'}`}
+          >
+            {showForm ? <FiX className="h-5 w-5" /> : <FiUserPlus className="h-5 w-5" />}
+            <span className="text-[10px] font-black uppercase tracking-widest">{showForm ? 'Cancel' : 'Add Staff Member'}</span>
+          </button>
+        </div>
       </header>
 
       <AnimatePresence>

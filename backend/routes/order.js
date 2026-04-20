@@ -20,6 +20,7 @@ router.post('/:id/approve-return', isAdmin, OrderController.approveReturn);
 // Backward-compatible admin update routes
 router.put('/:id/status', OrderController.updateOrderStatus);
 router.put('/:id/payment-status', OrderController.updatePaymentStatus);
+router.put('/:id/refund-status', isAdmin, OrderController.updateRefundStatus);
 router.put('/:id/assign', isAdmin, OrderController.assignOrder);
 
 export default router;

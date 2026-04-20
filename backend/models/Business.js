@@ -54,6 +54,7 @@ const businessSchema = new mongoose.Schema({
       enum: ['ACTIVE', 'EXPIRED'],
       default: 'ACTIVE',
     },
+    startDate: { type: Date, default: Date.now },
     expiryDate: { type: Date },
   },
   razorpayConfig: {

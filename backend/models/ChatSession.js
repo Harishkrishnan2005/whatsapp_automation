@@ -24,6 +24,11 @@ const chatSessionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: {},
     },
+    mode: {
+      type: String,
+      enum: ['BOT', 'HUMAN'],
+      default: 'BOT',
+    },
   },
   {
     timestamps: true,

@@ -1,37 +1,54 @@
 import { useState, useEffect } from 'react';
-import { FiCheck, FiZap, FiTarget, FiBox, FiActivity } from 'react-icons/fi';
+import { useLocation } from 'react-router-dom';
+import { FiCheck, FiZap, FiTarget, FiBox, FiActivity, FiX, FiUsers, FiHeadphones, FiAlertCircle } from 'react-icons/fi';
 import api from '../../utils/api';
 import { useAuth } from '../../context/AuthContext';
+import { PLAN_CONFIG } from '../../config/plans';
 
-const PLAN_FEATURES = {
-  FREE: [
-    { label: '1 Automated Flow', icon: FiBox },
-    { label: '100 Messages Limit', icon: FiZap },
-    { label: 'Basic Reports', icon: FiActivity },
-  ],
-  BASIC: [
-    { label: '5 Automated Flows', icon: FiBox },
-    { label: '1,000 Messages Limit', icon: FiZap },
-    { label: 'Full Automation Access', icon: FiTarget },
-  ],
-  PRO: [
-    { label: '15 Automated Flows', icon: FiBox },
-    { label: '10,000 Messages Limit', icon: FiZap },
-    { label: 'Marketing Campaigns', icon: FiTarget },
-    { label: 'Advanced Analytics', icon: FiActivity },
-  ],
-  ENTERPRISE: [
-    { label: 'Unlimited Flows', icon: FiBox },
-    { label: 'Unlimited Messages', icon: FiZap },
-    { label: 'Full System Access', icon: FiTarget },
-    { label: 'Dedicated Support', icon: FiCheck },
-  ],
+const FEATURES_LIST = [
+  { id: 'maxFlows', label: 'Automated Flows', icon: FiBox, isLimit: true },
+  { id: 'maxMessages', label: 'Monthly Messages', icon: FiZap, isLimit: true },
+  { id: 'maxUsers', label: 'Staff Users', icon: FiUsers, isLimit: true },
+  { id: 'allowCampaigns', label: 'Marketing Campaigns', icon: FiTarget },
+  { id: 'allowAutomation', label: 'Custom Automation', icon: FiZap },
+  { id: 'allowAdvancedAnalytics', label: 'Advanced Analytics', icon: FiActivity },
+  { id: 'prioritySupport', label: 'Priority Support', icon: FiHeadphones },
+];
+
+const getFeatureValue = (plan, feature) => {
+  const config = PLAN_CONFIG[plan];
+  if (!config) return null;
+
+  const value = config[feature.id];
+  
+  if (feature.isLimit) {
+    return value === Infinity ? 'Unlimited' : value;
+  }
+  
+  return value ? 'Enabled' : 'Not Included';
+};
+
+const isFeatureEnabled = (plan, feature) => {
+  const config = PLAN_CONFIG[plan];
+  if (!config) return false;
+  
+  const value = config[feature.id];
+  if (feature.id === 'prioritySupport') return plan === 'ENTERPRISE'; // Manual override for non-config features
+  
+  if (feature.isLimit) {
+    return value > 0;
+  }
+  return !!value;
 };
 
 const Pricing = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [loadingPlan, setLoadingPlan] = useState(null);
   const [subscription, setSubscription] = useState(null);
+  
+  const featureLocked = location.state?.featureLocked;
+  const lockedFeatureLabel = FEATURES_LIST.find(f => f.id === featureLocked)?.label || featureLocked;
 
   useEffect(() => {
     fetchSubscription();
@@ -98,6 +115,18 @@ const Pricing = () => {
           Scale your business with automated WhatsApp communication. High performance guaranteed.
         </p>
       </header>
+      
+      {featureLocked && (
+        <div className="max-w-4xl mx-auto bg-amber-50 border border-amber-200 p-6 rounded-3xl flex items-center gap-4 text-amber-800 animate-bounce">
+          <div className="h-12 w-12 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0">
+            <FiAlertCircle className="h-6 w-6" />
+          </div>
+          <div>
+            <h4 className="font-black uppercase text-xs tracking-widest">Upgrade Required</h4>
+            <p className="text-sm font-medium">The feature <span className="font-black italic underline">"{lockedFeatureLabel}"</span> is not included in your current plan. Please upgrade to continue.</p>
+          </div>
+        </div>
+      )}
 
       {subscription && (
         <div className="max-w-4xl mx-auto bg-blue-600 rounded-[2.5rem] p-10 text-white shadow-2xl shadow-blue-500/20 relative overflow-hidden">
@@ -109,7 +138,7 @@ const Pricing = () => {
                   <h2 className="text-4xl font-black italic uppercase">{subscription.plan}</h2>
                   <span className="px-4 py-1.5 rounded-full bg-white/20 text-[10px] font-black uppercase tracking-widest">{subscription.status}</span>
                 </div>
-                <p className="mt-4 text-blue-100/60 font-medium">Valid until: {new Date(subscription.expiryDate).toLocaleDateString()}</p>
+                <p className="mt-4 text-blue-100/60 font-medium">Valid until: {subscription.expiryDate ? new Date(subscription.expiryDate).toLocaleDateString() : 'Active'}</p>
              </div>
              <div className="w-full md:w-64 space-y-4">
                 <div className="flex justify-between text-xs font-bold mb-1">
@@ -141,14 +170,33 @@ const Pricing = () => {
             </div>
 
             <div className="flex-1 space-y-4 mb-10">
-              {PLAN_FEATURES[plan].map((feature, idx) => (
-                <div key={idx} className="flex items-center gap-3">
-                  <div className="h-6 w-6 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-                    <feature.icon className="h-3 w-3" />
+              {FEATURES_LIST.map((feature, idx) => {
+                const enabled = isFeatureEnabled(plan, feature);
+                const value = getFeatureValue(plan, feature);
+                
+                return (
+                  <div key={idx} className={`flex items-center justify-between gap-3 ${enabled ? 'opacity-100' : 'opacity-40'}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`h-6 w-6 rounded-lg flex items-center justify-center transition-colors ${enabled ? 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white' : 'bg-slate-100 text-slate-400'}`}>
+                        <feature.icon className="h-3 w-3" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className={`text-[11px] font-black uppercase tracking-tight ${enabled ? 'text-slate-700' : 'text-slate-400'}`}>
+                          {feature.label}
+                        </span>
+                        {feature.isLimit && enabled && (
+                          <span className="text-[10px] font-bold text-blue-600/70 -mt-0.5">{value} included</span>
+                        )}
+                      </div>
+                    </div>
+                    {enabled ? (
+                      <FiCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                    ) : (
+                      <FiX className="h-3.5 w-3.5 text-slate-300 shrink-0" />
+                    )}
                   </div>
-                  <span className="text-sm font-bold text-slate-600">{feature.label}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <button

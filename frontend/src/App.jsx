@@ -23,6 +23,8 @@ import ChatManagement from './pages/admin/ChatManagement';
 import AppointmentManagement from './pages/admin/AppointmentManagement';
 import AdvancedAnalytics from './pages/admin/AdvancedAnalytics';
 import Pricing from './pages/admin/Pricing';
+import SimulationChat from './pages/admin/SimulationChat';
+import SupportTickets from './pages/admin/SupportTickets';
 import StaffChat from './pages/staff/StaffChat';
 import StaffBookings from './pages/staff/StaffBookings';
 import StaffDashboard from './pages/staff/StaffDashboard';
@@ -157,7 +159,7 @@ function AppShell() {
             <Route
               path="/campaigns"
               element={
-                <ProtectedRoute requiredRole="admin">
+                <ProtectedRoute requiredRole="admin" requiredFeature="allowCampaigns">
                   {isEcommerce ? <Campaigns /> : <Navigate to="/dashboard" />}
                 </ProtectedRoute>
               }
@@ -205,6 +207,14 @@ function AppShell() {
               }
             />
             <Route
+              path="/admin/simulation-chat"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <SimulationChat />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/admin/appointments"
               element={
                 <ProtectedRoute requiredRole="admin">
@@ -215,8 +225,16 @@ function AppShell() {
             <Route
               path="/admin/advanced-analytics"
               element={
-                <ProtectedRoute requiredRole="admin">
+                <ProtectedRoute requiredRole="admin" requiredFeature="allowAdvancedAnalytics">
                   <AdvancedAnalytics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/support"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <SupportTickets />
                 </ProtectedRoute>
               }
             />

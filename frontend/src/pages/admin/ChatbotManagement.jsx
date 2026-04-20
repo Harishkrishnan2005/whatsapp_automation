@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FiMessageCircle, FiPlus, FiTerminal, FiActivity } from 'react-icons/fi';
+import { FiMessageCircle, FiPlus, FiTerminal, FiActivity, FiZap } from 'react-icons/fi';
 import api from '../../utils/api';
 
 const initialForm = {
@@ -7,9 +7,47 @@ const initialForm = {
   reply: '',
   step: '',
   nextStep: '',
-  action: 'NONE',
+  action: 'JUST_SEND_REPLY',
   isActive: true,
 };
+
+const ecommerceActions = [
+  "JUST_SEND_REPLY",
+  "SAVE_NAME",
+  "SAVE_USER_DETAILS",
+  "SAVE_ADDRESS",
+  "SHOW_PRODUCTS",
+  "SELECT_PRODUCT",
+  "SAVE_QUANTITY",
+  "SHOW_CART",
+  "CREATE_ORDER",
+  "ORDER_CONFIRMATION",
+  "PROCESS_PAYMENT",
+  "VERIFY_PAYMENT",
+  "CANCEL_ORDER",
+  "REQUEST_REFUND",
+  "START_SUPPORT",
+  "CREATE_SUPPORT",
+  "CREATE_FEEDBACK"
+];
+
+const bookingActions = [
+  "JUST_SEND_REPLY",
+  "SAVE_NAME",
+  "SAVE_USER_DETAILS",
+  "SHOW_SERVICES",
+  "SAVE_SERVICE",
+  "SAVE_DATE",
+  "SAVE_TIME",
+  "CHECK_AVAILABILITY",
+  "BOOK_APPOINTMENT",
+  "CANCEL_BOOKING",
+  "RESCHEDULE_BOOKING",
+  "GET_BOOKINGS",
+  "START_SUPPORT",
+  "CREATE_SUPPORT",
+  "CREATE_FEEDBACK"
+];
 
 const ChatbotManagement = () => {
   const [flows, setFlows] = useState([]);
@@ -20,13 +58,35 @@ const ChatbotManagement = () => {
   const [form, setForm] = useState(initialForm);
   const [editing, setEditing] = useState(null);
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('info'); // 'info' | 'error'
+  const [usage, setUsage] = useState({ flowsCreated: 0, maxFlows: null });
+  const [businessType, setBusinessType] = useState('');
+  const [availableActions, setAvailableActions] = useState([]);
+
+  const fetchBusiness = async () => {
+    try {
+      const res = await api.get('/business/me');
+      setBusinessType(res.data.businessType || 'BOOKING');
+    } catch (err) {
+      console.error('Failed to fetch business type', err);
+    }
+  };
 
   const fetchFlows = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/chatbot');
-      setFlows(response.data);
-      setTotal(response.data.length);
+      const [flowsRes, usageRes] = await Promise.all([
+        api.get('/chatbot'),
+        api.get('/usage').catch(() => null),
+      ]);
+      setFlows(flowsRes.data);
+      setTotal(flowsRes.data.length);
+      if (usageRes?.data) {
+        setUsage({
+          flowsCreated: usageRes.data.flowsCreated ?? 0,
+          maxFlows: usageRes.data.maxFlows ?? null,
+        });
+      }
     } catch (error) {
       console.error('Failed to fetch flows', error);
     } finally {
@@ -35,8 +95,17 @@ const ChatbotManagement = () => {
   };
 
   useEffect(() => {
+    fetchBusiness();
     fetchFlows();
   }, []);
+
+  useEffect(() => {
+    if (businessType === 'E_COMMERCE') {
+      setAvailableActions(ecommerceActions);
+    } else if (businessType === 'BOOKING') {
+      setAvailableActions(bookingActions);
+    }
+  }, [businessType]);
 
   const clientTotalPages = Math.max(1, Math.ceil(flows.length / clientLimit));
   const visibleFlows = flows.slice((clientPage - 1) * clientLimit, clientPage * clientLimit);
@@ -51,21 +120,25 @@ const ChatbotManagement = () => {
     e.preventDefault();
     if (!form.trigger.trim() || !form.reply.trim() || !form.step.trim() || !form.nextStep.trim()) {
       setMessage('Required fields missing');
+      setMessageType('error');
       return;
     }
     try {
       if (editing) {
         await api.put(`/chatbot/${editing._id}`, form);
         setMessage('Node updated');
+        setMessageType('info');
       } else {
         await api.post('/chatbot', form);
         setMessage('Node activated');
+        setMessageType('info');
       }
       resetForm();
       fetchFlows();
     } catch (error) {
       console.error('Save failed', error);
       setMessage(error?.response?.data?.message || 'Synchronization error');
+      setMessageType('error');
     }
   };
 
@@ -76,7 +149,7 @@ const ChatbotManagement = () => {
       reply: flow.reply,
       step: flow.step,
       nextStep: flow.nextStep,
-      action: flow.action,
+      action: flow.action === 'NONE' ? 'JUST_SEND_REPLY' : flow.action,
       isActive: flow.isActive ?? true,
     });
     setMessage('');
@@ -105,12 +178,34 @@ const ChatbotManagement = () => {
     <div className="space-y-10 animate-fade-in pb-10">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Chatbot Settings</h1>
-          <p className="mt-1 text-slate-500 font-medium">Create automated chat paths for your customers.</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none uppercase italic">Chatbot Settings</h1>
+          <p className="mt-2 text-slate-500 font-medium">Create automated chat paths for your customers.</p>
         </div>
-        <div className="bg-white px-5 py-3 rounded-2xl border border-slate-200/60 shadow-sm">
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Settings</p>
-           <p className="text-sm font-bold text-slate-900 mt-1">{total} Responses Active</p>
+        <div className="flex items-center gap-4">
+          <div className="bg-white px-5 py-3 rounded-2xl border border-slate-200/60 shadow-sm flex flex-col items-center">
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Active Nodes</p>
+             <p className="text-sm font-bold text-slate-900 leading-none">{total} Active</p>
+          </div>
+          <div className="bg-white px-5 py-3 rounded-2xl border border-slate-200/60 shadow-sm flex flex-col items-center">
+             <div className="flex items-center justify-between gap-4 mb-1.5 w-full">
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Flow Quota</p>
+               <p className="text-[10px] font-black text-blue-600 leading-none">
+                 {usage.flowsCreated} / {usage.maxFlows === Infinity || usage.maxFlows === null ? '∞' : usage.maxFlows}
+               </p>
+             </div>
+             <div className="h-1 w-24 bg-slate-100 rounded-full overflow-hidden border border-slate-50">
+               <div 
+                 className="h-full bg-blue-600 transition-all duration-1000"
+                 style={{ width: `${Math.min(100, (usage.flowsCreated / (usage.maxFlows || 1)) * 100)}%` }}
+               />
+             </div>
+          </div>
+          <button 
+            onClick={() => window.location.assign('/pricing')}
+            className="h-12 px-6 rounded-2xl bg-blue-600 text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all"
+          >
+            Upgrade
+          </button>
         </div>
       </header>
 
@@ -172,17 +267,23 @@ const ChatbotManagement = () => {
 
               <div>
                 <label className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Bot Action</label>
-                <select
-                  value={form.action}
-                  onChange={(e) => setForm({ ...form, action: e.target.value })}
-                  className="mt-3 w-full rounded-xl border-slate-200 bg-slate-100/30 px-4 py-3 text-xs font-black uppercase tracking-tight text-slate-600 outline-none focus:bg-white transition-all cursor-pointer"
-                >
-                  <option value="NONE">Just Send Reply</option>
-                  <option value="SHOW_PRODUCTS">Show Products</option>
-                  <option value="CREATE_ORDER">Create Order</option>
-                  <option value="BOOK_APPOINTMENT">Book Appointment</option>
-                  <option value="SAVE_NAME">Ask for Name</option>
-                </select>
+                {businessType ? (
+                  <select
+                    value={form.action}
+                    onChange={(e) => setForm({ ...form, action: e.target.value })}
+                    className="mt-3 w-full rounded-xl border-slate-200 bg-slate-100/30 px-4 py-3 text-xs font-black uppercase tracking-tight text-slate-600 outline-none focus:bg-white transition-all cursor-pointer"
+                  >
+                    {availableActions.map((action) => (
+                      <option key={action} value={action}>
+                        {action === 'JUST_SEND_REPLY' ? 'Just Send Reply' : action.replace(/_/g, ' ')}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="mt-3 p-3 rounded-xl bg-slate-100 text-[10px] font-black uppercase text-slate-400 animate-pulse">
+                    Initializing Actions...
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 pt-2">
@@ -229,7 +330,7 @@ const ChatbotManagement = () => {
                       </td>
                       <td className="px-8 py-6">
                         <span className="inline-flex px-3 py-1 rounded-lg bg-blue-50 border border-blue-100 text-[9px] font-black text-blue-600 uppercase tracking-widest shadow-sm shadow-blue-900/5">
-                           {flow.action === 'NONE' ? 'REPLY' : flow.action}
+                           {flow.action === 'JUST_SEND_REPLY' || flow.action === 'NONE' ? 'REPLY' : flow.action}
                         </span>
                       </td>
                       <td className="px-8 py-6">

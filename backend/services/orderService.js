@@ -485,6 +485,22 @@ class OrderService {
       { new: true }
     );
   }
+
+  async updateRefundStatus(businessId, id, refundStatus) {
+    const validRefundStatuses = ['NONE', 'REQUESTED', 'PROCESSED', 'REJECTED'];
+    if (!validRefundStatuses.includes(refundStatus)) {
+      throw new Error('Invalid refund status');
+    }
+
+    const order = await Order.findOneAndUpdate(
+      { _id: id, businessId },
+      { refundStatus },
+      { new: true }
+    );
+
+    if (!order) throw new Error('Order not found');
+    return order;
+  }
 }
 
 export default new OrderService();

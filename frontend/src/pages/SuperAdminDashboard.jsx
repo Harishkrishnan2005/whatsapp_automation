@@ -59,7 +59,7 @@ const SuperAdminDashboard = () => {
         {[
           { label: 'Registered Entities', value: stats.totalBusinesses, sub: 'Managed Businesses', color: 'blue' },
           { label: 'Network Ingress', value: stats.totalCustomers, sub: 'Consolidated Clients', color: 'indigo' },
-          { label: 'Process Resolution', value: stats.totalOrders, sub: 'Total Ledger Entries', color: 'slate' },
+          { label: 'Total Revenue', value: stats.totalRevenue ? `₹${stats.totalRevenue.toLocaleString()}` : '₹0', sub: 'Gross Subscription Yield', color: 'emerald' },
         ].map((m, i) => (
           <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-slate-200/60 shadow-sm relative overflow-hidden group hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300">
              <div className="relative z-10">

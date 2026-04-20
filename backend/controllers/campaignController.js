@@ -3,38 +3,40 @@ import CampaignService from '../services/campaignService.js';
 class CampaignController {
   async createCampaign(req, res) {
     try {
-      const { message, audience, type, productIds, productOffers } = req.body;
-      const campaign = await CampaignService.createCampaign(
-        req.businessId,
+      const { message, audience, type, productIds, templateName, scheduledAt } = req.body;
+      const campaign = await CampaignService.createCampaign(req.businessId, {
         message,
         audience,
-        type || 'TEXT',
-        productIds || [],
-        productOffers || []
-      );
+        type: type || 'TEXT',
+        productIds,
+        templateName,
+        scheduledAt
+      });
       res.status(201).json(campaign);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      const status = error.message.includes('quota') ? 403 : 500;
+      res.status(status).json({ message: error.message });
     }
   }
 
   async createProductCampaign(req, res) {
     try {
-      const { message, audience, productIds, productOffers } = req.body;
+      const { message, audience, productIds, templateName, scheduledAt } = req.body;
       if (!productIds || productIds.length === 0) {
         return res.status(400).json({ message: 'At least one product must be selected' });
       }
-      const campaign = await CampaignService.createCampaign(
-        req.businessId,
+      const campaign = await CampaignService.createCampaign(req.businessId, {
         message,
         audience,
-        'PRODUCT',
+        type: 'PRODUCT',
         productIds,
-        productOffers || []
-      );
+        templateName,
+        scheduledAt
+      });
       res.status(201).json(campaign);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      const status = error.message.includes('quota') ? 403 : 500;
+      res.status(status).json({ message: error.message });
     }
   }
 

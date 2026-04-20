@@ -35,6 +35,10 @@ import notesRoutes from './routes/notes.js';
 import dashboardRoutes from './routes/dashboard.js';
 import subscriptionRoutes from './routes/subscription.js';
 import publicRoutes from './routes/public.js';
+import simulationChatRoutes from './routes/simulationChat.js';
+import supportTicketRoutes from './routes/supportTicket.js';
+import businessRoutes from './routes/business.js';
+import usageRoutes from './routes/usage.js';
 // Import middleware
 import { authenticateToken } from './middlewares/auth.js';
 import { apiLimiter, authLimiter, webhookLimiter } from './middlewares/rateLimit.js';
@@ -115,7 +119,11 @@ app.use('/api/quick-replies', authenticateToken, quickReplyRoutes);
 app.use('/api/products', authenticateToken, productRoutes);
 app.use('/api/notifications', authenticateToken, notificationRoutes);
 app.use('/api/chat-management', authenticateToken, chatRoutes);
+app.use('/api/chat', authenticateToken, simulationChatRoutes);
 app.use('/api/subscription', authenticateToken, subscriptionRoutes);
+app.use('/api/support', authenticateToken, supportTicketRoutes);
+app.use('/api/business', authenticateToken, businessRoutes);
+app.use('/api/usage', authenticateToken, usageRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

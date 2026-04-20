@@ -29,6 +29,12 @@ export const createSubscription = async (req, res) => {
       return res.status(400).json({ message: 'Invalid plan selected' });
     }
 
+    // Check if current business already has an active paid subscription
+    const currentBusiness = await Business.findById(businessId).select('subscription');
+    if (currentBusiness?.subscription?.plan !== 'FREE' && currentBusiness?.subscription?.status === 'ACTIVE') {
+      return res.status(400).json({ message: 'You already have an active subscription. Only one active paid plan is allowed per email/business.' });
+    }
+
     const planDetails = PLAN_CONFIG[plan];
     
     // Create Razorpay order
@@ -100,7 +106,8 @@ export const verifyPayment = async (req, res) => {
     await Business.findByIdAndUpdate(businessId, {
       'subscription.plan': subscription.plan,
       'subscription.status': 'ACTIVE',
-      'subscription.expiryDate': subscription.endDate
+      'subscription.expiryDate': subscription.endDate,
+      'subscription.startDate': subscription.startDate || new Date()
     });
 
     // Reset Usage Tracking
@@ -129,7 +136,7 @@ export const getSubscriptionStatus = async (req, res) => {
     res.status(200).json({
       plan: business.subscription.plan,
       status: business.subscription.status,
-      expiryDate: business.subscription.expiryDate,
+      expiryDate: business.subscription.expiryDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       usage: usage || { messagesUsed: 0, flowsCreated: 0 },
       limits: PLAN_CONFIG[business.subscription.plan]
     });

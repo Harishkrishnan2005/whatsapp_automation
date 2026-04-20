@@ -11,18 +11,18 @@ const appointmentSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  timeSlot: {
+  time: {
+    type: String,
+    required: true,
+  },
+  service: {
     type: String,
     required: true,
   },
   status: {
     type: String,
-    enum: ['Pending', 'Confirmed', 'Cancelled'],
-    default: 'Pending',
-  },
-  assignedTo: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    enum: ['BOOKED', 'CANCELLED', 'RESCHEDULED', 'COMPLETED'],
+    default: 'BOOKED',
   },
   businessId: {
     type: mongoose.Schema.Types.ObjectId,

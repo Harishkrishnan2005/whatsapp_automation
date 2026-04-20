@@ -55,6 +55,7 @@ class AuthService {
       businessId: businessId?._id || businessId,
       businessType: user.businessType,
       plan: businessId?.subscription?.plan || 'FREE',
+      subscriptionStatus: businessId?.subscription?.status || 'ACTIVE',
     };
   }
 

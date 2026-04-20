@@ -13,6 +13,7 @@ const initialForm = {
   unitType: 'unit',
   category: '',
   image: '',
+  imageFile: null,
   redirectUrl: '',
   specifications: [{ label: '', value: '' }],
   isActive: true,
@@ -75,11 +76,11 @@ const Products = () => {
     if (!file) return;
 
     setSelectedImageName(file.name);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setForm((prev) => ({ ...prev, image: reader.result }));
-    };
-    reader.readAsDataURL(file);
+    setForm((prev) => ({ 
+      ...prev, 
+      imageFile: file,
+      image: URL.createObjectURL(file) 
+    }));
   };
 
   const addSpecification = () => {
@@ -111,21 +112,18 @@ const Products = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
-      const mrp = Number(form.mrp);
-      const offerPercentage = Number(form.offerPercentage) || 0;
+      const mrpNum = Number(form.mrp);
+      const offerPercentageNum = Number(form.offerPercentage) || 0;
 
-      if (isNaN(mrp) || mrp <= 0) {
+      if (isNaN(mrpNum) || mrpNum <= 0) {
         setMessage('Please enter a valid MRP greater than 0.');
+        setLoading(false);
         return;
       }
 
-      if (isNaN(offerPercentage) || offerPercentage < 0 || offerPercentage > 100) {
-        setMessage('Please enter a valid offer percentage between 0 and 100.');
-        return;
-      }
-
-      const offerPrice = mrp - (mrp * (offerPercentage / 100));
+      const offerPrice = mrpNum - (mrpNum * (offerPercentageNum / 100));
       const specifications = form.specifications
         .map((spec) => ({
           label: spec.label.trim(),
@@ -133,24 +131,32 @@ const Products = () => {
         }))
         .filter((spec) => spec.label && spec.value);
 
-      const payload = {
-        name: form.name,
-        mrp,
-        offerPercentage,
-        offerPrice,
-        unitType: form.unitType,
-        category: form.category,
-        image: form.image,
-        redirectUrl: form.redirectUrl,
-        specifications,
-        isActive: form.isActive,
+      const formData = new FormData();
+      formData.append('name', form.name);
+      formData.append('mrp', mrpNum);
+      formData.append('offerPercentage', offerPercentageNum);
+      formData.append('offerPrice', offerPrice);
+      formData.append('unitType', form.unitType);
+      formData.append('category', form.category);
+      formData.append('redirectUrl', form.redirectUrl);
+      formData.append('isActive', form.isActive);
+      formData.append('specifications', JSON.stringify(specifications));
+
+      if (form.imageFile) {
+        formData.append('image', form.imageFile);
+      } else {
+        formData.append('image', form.image);
+      }
+
+      const config = {
+        headers: { 'Content-Type': 'multipart/form-data' }
       };
 
       if (editing) {
-        await api.put(`/products/${editing._id}`, payload);
+        await api.put(`/products/${editing._id}`, formData, config);
         setMessage('Product updated successfully');
       } else {
-        await api.post('/products', payload);
+        await api.post('/products', formData, config);
         setMessage('Product added successfully');
       }
       resetForm();
@@ -158,6 +164,8 @@ const Products = () => {
     } catch (error) {
       console.error('Unable to save product', error);
       setMessage(error?.response?.data?.message || 'Unable to save product. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 

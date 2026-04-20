@@ -78,14 +78,21 @@ const Businesses = () => {
                </div>
                <div className="flex items-center gap-3 text-slate-400 font-black text-[9px] uppercase tracking-widest">
                   <FiCalendar className="h-4 w-4" />
-                  <span>Created: {new Date(business.createdAt).toLocaleDateString()}</span>
+                  <div className="flex flex-col gap-1">
+                    <span>Created: {new Date(business.createdAt).toLocaleDateString()}</span>
+                    <span className="text-rose-500">
+                      Expires: {business.subscription?.expiryDate 
+                        ? new Date(business.subscription.expiryDate).toLocaleDateString() 
+                        : new Date(new Date(business.createdAt).getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                    </span>
+                  </div>
                </div>
             </div>
 
             <div className="mt-8 pt-6 border-t border-slate-50 flex items-center justify-between">
               <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-lg shadow-sm">
                  <FiBox className="h-3 w-3 text-white" />
-                 <span className="text-[9px] font-black text-white uppercase tracking-widest">{business.plan || 'Free'}</span>
+                 <span className="text-[9px] font-black text-white uppercase tracking-widest">{business.subscription?.plan || 'Free'}</span>
               </div>
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-slate-600 transition-colors">{business.businessType}</span>
             </div>

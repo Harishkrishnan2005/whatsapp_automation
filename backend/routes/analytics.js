@@ -3,13 +3,15 @@ import AnalyticsController from '../controllers/analyticsController.js';
 import { authenticateToken, isAdmin } from '../middlewares/authorization.js';
 import { businessContext } from '../middlewares/bussinessContext.js';
 
+import { checkPlanFeature } from '../middlewares/planMiddleware.js';
+
 const router = express.Router();
 
 // Basic analytics
 router.get('/', authenticateToken, businessContext, AnalyticsController.getAnalytics);
 
 // Advanced analytics - admin only
-router.get('/advanced', authenticateToken, businessContext, isAdmin, AnalyticsController.getAdvancedAnalytics);
+router.get('/advanced', authenticateToken, businessContext, isAdmin, checkPlanFeature('allowAdvancedAnalytics'), AnalyticsController.getAdvancedAnalytics);
 
 // Dashboard analytics - admin only
 router.get('/dashboard', authenticateToken, businessContext, isAdmin, AnalyticsController.getDashboardAnalytics);
