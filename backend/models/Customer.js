@@ -55,6 +55,20 @@ const customerSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed,
     default: {},
   },
+  email: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    default: '',
+  },
+  tags: {
+    type: [String],
+    default: [],
+  },
+  lastInteraction: {
+    type: Date,
+    default: Date.now,
+  },
   businessId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Business',

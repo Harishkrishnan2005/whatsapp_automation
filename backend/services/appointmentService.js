@@ -6,8 +6,8 @@ import { buildCreatedAtFilter, buildSearchRegex } from '../utils/queryFilters.js
 
 class AppointmentService {
   // Create appointment
-  async createAppointment(customerId, date, timeSlot, assignedTo = null, businessId) {
-    const appointment = await Appointment.create({ customerId, date, timeSlot, assignedTo, businessId });
+  async createAppointment(customerId, date, time, assignedTo = null, businessId, service = 'General') {
+    const appointment = await Appointment.create({ customerId, date, time, assignedTo, businessId, service });
     await CustomerStatusService.syncStatusForCustomer(customerId, businessId);
     return appointment;
   }
@@ -18,11 +18,11 @@ class AppointmentService {
     const safeLimit = Math.min(200, Math.max(1, Number(limit) || 10));
     const skip = (safePage - 1) * safeLimit;
     let query = { ...buildTenantScope(businessId) };
-    const createdAt = buildCreatedAtFilter(filters);
+    const dateFilter = buildCreatedAtFilter(filters);
     const searchRegex = buildSearchRegex(filters.search);
 
-    if (createdAt) {
-      query.createdAt = createdAt;
+    if (dateFilter) {
+      query.date = dateFilter;
     }
 
     if (user.role === 'staff') {
@@ -46,7 +46,7 @@ class AppointmentService {
         (apt) =>
           searchRegex.test(String(apt?.customerId?.name || '')) ||
           searchRegex.test(String(apt?.customerId?.phone || '')) ||
-          searchRegex.test(String(apt?.timeSlot || '')) ||
+          searchRegex.test(String(apt?.time || '')) ||
           searchRegex.test(String(apt?.status || ''))
       );
 
@@ -104,12 +104,12 @@ class AppointmentService {
 
   // Approve appointment
   async approveAppointment(appointmentId) {
-    return await this.updateAppointmentStatus(appointmentId, 'approved');
+    return await this.updateAppointmentStatus(appointmentId, 'BOOKED');
   }
 
   // Reject appointment
   async rejectAppointment(appointmentId) {
-    return await this.updateAppointmentStatus(appointmentId, 'rejected');
+    return await this.updateAppointmentStatus(appointmentId, 'CANCELLED');
   }
 
   // Get available time slots (simplified)

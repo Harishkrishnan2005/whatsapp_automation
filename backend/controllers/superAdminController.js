@@ -4,6 +4,7 @@ import Customer from '../models/Customer.js';
 import Order from '../models/Order.js';
 import Subscription from '../models/Subscription.js';
 import { PLAN_CONFIG } from '../config/plans.js';
+import logger from '../utils/logger.js';
 
 class SuperAdminController {
   async getDashboard(req, res) {
@@ -16,6 +17,42 @@ class SuperAdminController {
         User.countDocuments({ role: 'staff' }),
       ]);
 
+      // Advanced Subscription Analytics
+      const [analytics] = await Subscription.aggregate([
+        {
+          $facet: {
+            totalRevenue: [
+              { $match: { paymentStatus: 'PAID' } },
+              { $group: { _id: null, total: { $sum: '$price' } } }
+            ],
+            mrr: [
+              { $match: { paymentStatus: 'PAID', status: 'ACTIVE' } },
+              { $group: { _id: null, total: { $sum: '$price' } } }
+            ],
+            planWise: [
+              {
+                $group: {
+                  _id: '$plan',
+                  activeBusinesses: { $addToSet: '$businessId' },
+                  revenue: { 
+                    $sum: { 
+                      $cond: [{ $eq: ['$paymentStatus', 'PAID'] }, '$price', 0] 
+                    } 
+                  }
+                }
+              },
+              {
+                $project: {
+                  plan: '$_id',
+                  activeBusinesses: { $size: '$activeBusinesses' },
+                  revenue: 1
+                }
+              }
+            ]
+          }
+        }
+      ]);
+
       const subscriptions = await Business.aggregate([
         {
           $group: {
@@ -25,10 +62,7 @@ class SuperAdminController {
         },
       ]);
 
-      const [revenueData] = await Subscription.aggregate([
-        { $match: { paymentStatus: 'PAID' } },
-        { $group: { _id: null, total: { $sum: { $toDouble: '$price' } } } }
-      ]);
+      logger.debug('[SuperAdmin] Dashboard Analytics:', analytics);
 
       return res.json({
         totalBusinesses,
@@ -37,7 +71,9 @@ class SuperAdminController {
         totalAdmins,
         totalStaff,
         subscriptions,
-        totalRevenue: revenueData?.total || 0,
+        totalRevenue: analytics?.totalRevenue[0]?.total || 0,
+        mrr: analytics?.mrr[0]?.total || 0,
+        planWiseStats: analytics?.planWise || []
       });
     } catch (error) {
       console.error('[SuperAdmin] getDashboard error:', error);
@@ -84,13 +120,24 @@ class SuperAdminController {
 
       const revenueMap = new Map(planRevenue.map(p => [p._id, p.total]));
 
-      const activePlans = plans.map((plan) => ({
-        plan: plan._id,
-        businessCount: plan.totalBusinesses,
-        expiryDate: plan.latestExpiry,
-        revenue: revenueMap.get(plan._id) || 0,
-        monthlyPrice: PLAN_CONFIG[plan._id]?.price || 0,
-      }));
+      const activePlans = plans.map((plan) => {
+        const expiryDate = plan.latestExpiry;
+        let daysRemaining = null;
+
+        if (expiryDate) {
+          const diffTime = new Date(expiryDate) - new Date();
+          daysRemaining = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+        }
+
+        return {
+          plan: plan._id || 'FREE',
+          businessCount: plan.totalBusinesses,
+          expiryDate: expiryDate,
+          daysRemaining: daysRemaining,
+          revenue: revenueMap.get((plan._id || 'FREE').toUpperCase()) || 0,
+          monthlyPrice: PLAN_CONFIG[plan._id]?.price || 0,
+        };
+      });
 
       return res.json({ subscriptions: activePlans });
     } catch (error) {

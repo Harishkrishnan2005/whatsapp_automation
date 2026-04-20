@@ -1,4 +1,5 @@
 import AuthService from '../services/authService.js';
+import LoggingService from '../services/loggingService.js';
 
 class AuthController {
   async registerAdmin(req, res) {
@@ -21,6 +22,17 @@ class AuthController {
     try {
       const { email, password } = req.body;
       const result = await AuthService.login(email, password);
+      
+      await LoggingService.log({
+        businessId: result.user.businessId,
+        userId: result.user.id,
+        action: 'LOGIN',
+        resourceType: 'USER',
+        resourceId: result.user.id,
+        details: { email },
+        req
+      });
+
       res.json(result);
     } catch (error) {
       res.status(400).json({ message: error.message });
@@ -41,6 +53,17 @@ class AuthController {
     try {
       const { email, password } = req.body;
       const result = await AuthService.login(email, password, 'admin');
+      
+      await LoggingService.log({
+        businessId: result.user.businessId,
+        userId: result.user.id,
+        action: 'LOGIN',
+        resourceType: 'USER',
+        resourceId: result.user.id,
+        details: { role: 'admin' },
+        req
+      });
+
       res.json(result);
     } catch (error) {
       res.status(400).json({ message: error.message });
@@ -51,6 +74,17 @@ class AuthController {
     try {
       const { email, password } = req.body;
       const result = await AuthService.login(email, password, 'staff');
+      
+      await LoggingService.log({
+        businessId: result.user.businessId,
+        userId: result.user.id,
+        action: 'LOGIN',
+        resourceType: 'USER',
+        resourceId: result.user.id,
+        details: { role: 'staff' },
+        req
+      });
+
       res.json(result);
     } catch (error) {
       res.status(400).json({ message: error.message });

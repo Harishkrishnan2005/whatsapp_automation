@@ -31,7 +31,15 @@ const StaffBookings = () => {
         limit: '10',
       });
       if (from) params.set('from', from);
-      if (to) params.set('to', to);
+      if (to) {
+        if (dateRange?.preset === 'last_7_days' || !dateRange?.preset || dateRange?.preset === 'today') {
+           const future = new Date();
+           future.setFullYear(future.getFullYear() + 1);
+           params.set('to', future.toISOString().split('T')[0]);
+        } else {
+           params.set('to', to);
+        }
+      }
       if (searchQuery) params.set('search', searchQuery);
 
       const response = await api.get(`/appointments?${params.toString()}`);
@@ -82,9 +90,9 @@ const StaffBookings = () => {
   };
 
   const getStatusVariant = (status) => {
-    if (status === 'Confirmed') return 'delivered';
-    if (status === 'Cancelled') return 'error';
-    if (status === 'Completed') return 'success';
+    if (status === 'BOOKED') return 'delivered';
+    if (status === 'CANCELLED') return 'error';
+    if (status === 'COMPLETED') return 'success';
     return 'pending';
   };
 
@@ -126,7 +134,7 @@ const StaffBookings = () => {
                        <FiClock className="text-blue-500 h-4 w-4" />
                        <p className="text-sm font-black text-slate-900 uppercase tracking-tighter">{new Date(booking.date).toLocaleDateString()}</p>
                     </div>
-                    <p className="text-[10px] font-black text-slate-400 mt-2 ml-7 uppercase tracking-widest bg-slate-100 w-fit px-2 py-0.5 rounded shadow-sm">{booking.timeSlot}</p>
+                    <p className="text-[10px] font-black text-slate-400 mt-2 ml-7 uppercase tracking-widest bg-slate-100 w-fit px-2 py-0.5 rounded shadow-sm">{booking.time}</p>
                   </td>
                   <td className="px-10 py-7">
                     <Badge variant={getStatusVariant(booking.status)}>{booking.status.toUpperCase()}</Badge>
@@ -136,14 +144,14 @@ const StaffBookings = () => {
                        {booking.status === 'Pending' && (
                          <>
                            <button
-                             onClick={() => updateStatus(booking._id, 'Confirmed')}
+                             onClick={() => updateStatus(booking._id, 'BOOKED')}
                              className="h-10 w-10 flex items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
                              title="Authorize"
                            >
                              <FiCheckCircle className="h-5 w-5" />
                            </button>
                            <button
-                             onClick={() => updateStatus(booking._id, 'Cancelled')}
+                             onClick={() => updateStatus(booking._id, 'CANCELLED')}
                              className="h-10 w-10 flex items-center justify-center rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
                              title="Abuse Reverse"
                            >

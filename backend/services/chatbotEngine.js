@@ -2,21 +2,197 @@ import mongoose from 'mongoose';
 import ChatbotFlow from '../models/ChatbotFlow.js';
 import ChatSession from '../models/ChatSession.js';
 import Business from '../models/Business.js';
-import actionHandler from './actionHandler.js';
 import AnalyticsEvent from '../models/AnalyticsEvent.js';
+import actionHandler from './actionHandler.js';
+import chatbotSeederService from './chatbotSeederService.js';
 import usageService from './usageService.js';
 
-const normalize = (text) => String(text || '').toLowerCase().trim();
-const defaultReply = 'Sorry, I did not understand that. Please try again.';
-const splitTriggers = (value) =>
-  String(value || '')
-    .split(/[,\n]/)
-    .map((item) => normalize(item))
-    .filter(Boolean);
+const DEFAULT_REPLY = 'No flow configured. Please contact admin.';
+
+const normalizeText = (value) => String(value || '').trim().toLowerCase();
+
+const normalizeBusinessCategory = (value) => {
+  const raw = normalizeText(value);
+  if (raw === 'e_commerce' || raw === 'e-commerce') return 'ecommerce';
+  if (raw === 'booking') return 'booking';
+  return 'ecommerce';
+};
+
+const inferSemanticStepAlias = (stepName) => {
+  const normalized = normalizeText(stepName);
+  if (!normalized) return null;
+  if (normalized === 'main_menu' || normalized === 'options' || normalized.includes('menu')) return 'menu';
+  if (normalized.includes('service')) return 'ask_service';
+  if (normalized.includes('name')) return 'ask_name';
+  if (normalized.includes('age')) return 'ask_age';
+  if (normalized.includes('date')) return 'ask_date';
+  if (normalized.includes('time')) return 'ask_time';
+  return null;
+};
 
 class ChatbotEngine {
+  normalizeAwaitingField(fieldName) {
+    const normalized = normalizeText(fieldName);
+    if (!normalized) return null;
+    if (normalized === 'user_details') return 'age';
+    if (normalized === 'upi' || normalized === 'upi_id') return 'upiId';
+    return normalized;
+  }
+
+  async getBusinessContext(businessId) {
+    const business = await Business.findById(businessId)
+      .select('category businessType')
+      .lean();
+
+    return {
+      business,
+      category: normalizeBusinessCategory(
+        business?.businessType || business?.category || 'ecommerce'
+      ),
+    };
+  }
+
+  async getOrCreateSession(phone, businessId) {
+    const normalizedPhone = String(phone || '').trim();
+
+    // ─── Phase 2: Resolve Customer ───
+    let customer = await Customer.findOne({ phone: normalizedPhone, businessId });
+    if (!customer) {
+      customer = await Customer.create({ phone: normalizedPhone, businessId, status: 'new' });
+    }
+    customer.lastInteraction = new Date();
+    await customer.save();
+
+    let session = await ChatSession.findOne({
+      phone: normalizedPhone,
+      businessId,
+    });
+
+    if (!session) {
+      session = await ChatSession.create({
+        phone: normalizedPhone,
+        businessId,
+        customerId: customer._id,
+        currentStep: 'start',
+        awaitingField: null,
+        collectedData: {},
+        context: {},
+        mode: 'BOT',
+      });
+    } else if (!session.customerId) {
+      session.customerId = customer._id;
+      await session.save();
+    }
+
+    return { session, customer };
+  }
+
+  parseTriggers(triggerValue) {
+    const raw = String(triggerValue || '').trim();
+    if (!raw) return [];
+    if (raw === '*') return ['*'];
+
+    return raw
+      .split(/[,\n]/)
+      .map((trigger) => normalizeText(trigger))
+      .filter(Boolean);
+  }
+
+  triggerMatches(flow, normalizedMessage) {
+    const triggers = this.parseTriggers(flow?.trigger);
+    if (triggers.includes('*')) return true;
+    return triggers.includes(normalizedMessage);
+  }
+
+  findStepFlow(flows, currentStep, normalizedMessage) {
+    const stepFlows = flows.filter((flow) => normalizeText(flow.step) === normalizeText(currentStep));
+
+    const exactMatch = stepFlows.find((flow) => {
+      const triggers = this.parseTriggers(flow.trigger);
+      return !triggers.includes('*') && triggers.includes(normalizedMessage);
+    });
+
+    if (exactMatch) return exactMatch;
+
+    return stepFlows.find((flow) => this.parseTriggers(flow.trigger).includes('*')) || null;
+  }
+
+  findFlowWithAliases(flows, currentStep, normalizedMessage) {
+    const directMatch = this.findStepFlow(flows, currentStep, normalizedMessage);
+    if (directMatch) return directMatch;
+
+    const aliasStep = inferSemanticStepAlias(currentStep);
+    if (aliasStep && aliasStep !== normalizeText(currentStep)) {
+      return this.findStepFlow(flows, aliasStep, normalizedMessage);
+    }
+
+    return null;
+  }
+
+  inferAwaitingField(flow, stepName = '') {
+    const action = String(flow?.action || '').trim().toUpperCase();
+    if (action.startsWith('SAVE_')) {
+      const inferred = action
+        .replace(/^SAVE_/, '')
+        .toLowerCase();
+
+      return this.normalizeAwaitingField(inferred);
+    }
+
+    const normalizedStep = normalizeText(stepName);
+    if (normalizedStep.startsWith('ask_')) {
+      return this.normalizeAwaitingField(normalizedStep.replace(/^ask_/, ''));
+    }
+
+    return null;
+  }
+
+  async getSystemFallback(businessId, vars = {}) {
+    const fallbackFlow = await ChatbotFlow.findOne({
+      businessId,
+      step: 'system',
+      trigger: 'fallback',
+      isActive: true,
+    }).lean();
+
+    const invalidInputFlow = await ChatbotFlow.findOne({
+      businessId,
+      step: 'system',
+      trigger: 'invalid_input',
+      isActive: true,
+    }).lean();
+
+    const replyTemplate =
+      fallbackFlow?.reply ||
+      invalidInputFlow?.reply ||
+      DEFAULT_REPLY;
+
+    return actionHandler.interpolate(replyTemplate, vars);
+  }
+
+  async logDebug({ businessId, phone, currentStep, message, matchedFlow, actionExecuted, nextStep, collectedData }) {
+    console.log('[ChatbotEngine]', {
+      businessId: String(businessId),
+      phone,
+      currentStep,
+      message,
+      matchedFlow: matchedFlow
+        ? {
+            id: String(matchedFlow._id),
+            step: matchedFlow.step,
+            trigger: matchedFlow.trigger,
+          }
+        : null,
+      actionExecuted,
+      nextStep,
+      collectedData,
+    });
+  }
+
   async trackEvent(businessId, customerId, eventType, data = {}) {
     try {
+      if (!mongoose.Types.ObjectId.isValid(businessId)) return;
+
       await AnalyticsEvent.create({
         businessId,
         customerId,
@@ -24,223 +200,212 @@ class ChatbotEngine {
         eventData: data,
         source: 'chatbot',
       });
-    } catch (err) {
-      console.error('[Analytics] Failed to track event:', err.message);
+    } catch (error) {
+      console.error('[ChatbotEngine] Analytics event failed:', error.message);
     }
-  }
-
-  async buildLegacyReply({ flow, session, message, phone, businessId }) {
-    console.log('[DEBUG] Executing buildLegacyReply for flow:', flow._id, 'Action:', flow.action);
-    const normalizedMessage = normalize(message);
-    const triggers = splitTriggers(flow.trigger || '');
-
-    const isMatched = triggers.includes('*') || triggers.includes(normalizedMessage);
-
-    if (!isMatched) {
-      return { response: defaultReply, text: defaultReply, type: 'text', products: [] };
-    }
-
-    if (!session.context) session.context = {};
-
-    let responseText = String(flow.reply || '').trim();
-    let responseType = 'text';
-    let products = [];
-
-    if (flow.action && flow.action !== 'NONE') {
-      const actionResult = await actionHandler.executeAction(flow.action, {
-        message,
-        phone,
-        businessId,
-        session,
-      });
-
-      if (actionResult) {
-        if (actionResult.text) responseText = actionResult.text;
-        if (actionResult.type) responseType = actionResult.type;
-        if (actionResult.products) products = actionResult.products;
-        if (actionResult.contextDelta) {
-          session.context = { ...(session.context || {}), ...actionResult.contextDelta };
-          session.markModified('context');
-        }
-        
-        // Track conversions for specific actions
-        if (['CREATE_ORDER', 'BOOK_APPOINTMENT'].includes(flow.action)) {
-          this.trackEvent(businessId, session.customerId, 'conversion', { action: flow.action });
-        }
-      }
-    }
-
-    const nextStep = String(flow.nextStep || 'start').trim();
-    session.currentNode = nextStep;
-    await session.save();
-
-    // Track step reach
-    this.trackEvent(businessId, session.customerId, 'flow_step_reach', { 
-      step: flow.step, 
-      nextStep: nextStep,
-      flowId: flow._id 
-    });
-
-    const interpolatedReply = actionHandler.interpolate(responseText, session.context || {});
-
-    return {
-      response: interpolatedReply || defaultReply,
-      text: interpolatedReply || defaultReply,
-      type: responseType || 'text',
-      products: products || [],
-    };
   }
 
   async chatbotEngine({ message, phone, businessId }) {
     try {
-      if (!businessId) throw new Error('businessId is required');
-
-      const resolvedBusinessId = mongoose.Types.ObjectId.isValid(String(businessId))
-        ? new mongoose.Types.ObjectId(String(businessId))
-        : null;
-
-      if (!resolvedBusinessId) throw new Error('Invalid businessId');
-
-      const business = await Business.findById(resolvedBusinessId).select('category businessType').lean();
-      let category = (business?.businessType || business?.category || 'ecommerce').toLowerCase();
-      if (category === 'e_commerce') category = 'ecommerce'; // Standardize mapping
-
-      const normalizedPhone = String(phone).trim();
-      const normalizedMessage = normalize(message);
-
-      let session = await ChatSession.findOne({ phone: normalizedPhone, businessId: resolvedBusinessId });
-
-      if (!session) {
-        session = await ChatSession.create({
-          phone: normalizedPhone,
-          businessId: resolvedBusinessId,
-          currentNode: 'start',
-          mode: 'BOT',
-        });
-        
-        // Track flow start
-        this.trackEvent(resolvedBusinessId, null, 'flow_start', { phone: normalizedPhone });
+      if (!businessId) {
+        throw new Error('businessId is required');
       }
 
-      // If in HUMAN mode, stop chatbot processing
+      const resolvedBusinessId = mongoose.Types.ObjectId.isValid(businessId)
+        ? new mongoose.Types.ObjectId(businessId)
+        : businessId;
+
+      const normalizedMessage = normalizeText(message);
+      const { session, customer } = await this.getOrCreateSession(phone, resolvedBusinessId);
+
       if (session.mode === 'HUMAN') {
-        console.log(`[ChatbotEngine] Session ${phone} is in HUMAN mode. Bypassing bot.`);
         return null;
       }
 
-      const graphFlow = await ChatbotFlow.findOne({
+      const { category } = await this.getBusinessContext(resolvedBusinessId);
+      const currentStep = session.currentStep || 'start';
+
+      await chatbotSeederService.ensureCoreFlowCoverage(resolvedBusinessId, category);
+
+      const flows = await ChatbotFlow.find({
         businessId: resolvedBusinessId,
         category,
         isActive: true,
-        'nodes.0': { $exists: true },
-      }).sort({ updatedAt: -1, createdAt: -1 }).lean();
+      }).lean();
 
-      if (graphFlow) {
-        const currentNode = graphFlow.nodes.find((node) => node.id === session.currentNode)
-          || graphFlow.nodes.find((node) => node.type === 'start')
-          || graphFlow.nodes[0];
+      let matchedFlow = null;
+      let previousStep = currentStep;
+      let actionExecuted = 'NONE';
 
-        const exactEdge = graphFlow.edges.find(e => String(e.source) === String(currentNode?.id) && splitTriggers(e.label).includes(normalizedMessage));
-        const partialEdge = graphFlow.edges.find(e => String(e.source) === String(currentNode?.id) && splitTriggers(e.label).some(t => normalizedMessage.includes(t)));
-        const wildcardEdge = graphFlow.edges.find(e => String(e.source) === String(currentNode?.id) && splitTriggers(e.label).includes('*'));
+      const dataSnapshot = JSON.parse(JSON.stringify(session.collectedData || {}));
+      const contextSnapshot = JSON.parse(JSON.stringify(session.context || {}));
+      const awaitingFieldSnapshot = session.awaitingField;
 
-        const matchedEdge = exactEdge || partialEdge || wildcardEdge;
+      if (session.awaitingField) {
+        const awaitingField = session.awaitingField;
+        session.collectedData = { ...(session.collectedData || {}), [awaitingField]: String(message || '').trim() };
+        session.context = { ...(session.context || {}), [awaitingField]: String(message || '').trim() };
+        session.awaitingField = null;
+        session.markModified('collectedData');
+        session.markModified('context');
 
-        const nextNode = matchedEdge
-          ? graphFlow.nodes.find((node) => node.id === matchedEdge.target)
-          : graphFlow.nodes.find((node) => node.type === 'fallback');
+        matchedFlow = this.findFlowWithAliases(flows, currentStep, '*');
+      } else {
+        matchedFlow = this.findFlowWithAliases(flows, currentStep, normalizedMessage);
+      }
 
-        if (!nextNode) {
-          const errorReply = await actionHandler.getSystemReply(resolvedBusinessId, 'invalid_input', defaultReply, session.context);
-          this.trackEvent(resolvedBusinessId, session.customerId, 'flow_drop_off', { step: session.currentNode });
-          return { response: errorReply, text: errorReply, type: 'text', products: [] };
+      if (!matchedFlow) {
+        const hasCurrentStepFlows = flows.some(
+          (flow) => normalizeText(flow.step) === normalizeText(currentStep)
+        );
+        const aliasStep = inferSemanticStepAlias(currentStep);
+        const hasAliasFlows = aliasStep
+          ? flows.some((flow) => normalizeText(flow.step) === aliasStep)
+          : false;
+
+        if (!hasCurrentStepFlows && !hasAliasFlows) {
+          session.currentStep = 'start';
+          session.awaitingField = null;
+          session.markModified('currentStep');
         }
 
-        session.currentNode = nextNode.id;
-        
-        // Track step reach
-        this.trackEvent(resolvedBusinessId, session.customerId, 'flow_step_reach', { 
-          nodeId: nextNode.id, 
-          nodeType: nextNode.type,
-          flowId: graphFlow._id 
+        const fallbackMessage = await this.getSystemFallback(resolvedBusinessId, {
+          ...(session.context || {}),
+          ...(session.collectedData || {}),
         });
 
-        let responseText = nextNode.data?.message || '';
-        let responseType = nextNode.data?.type || 'text';
-        let products = [];
-
-        if (nextNode.data?.action && nextNode.data.action !== 'NONE') {
-          const actionResult = await actionHandler.executeAction(nextNode.data.action, {
-            message,
-            phone,
-            businessId: resolvedBusinessId,
-            session,
-          });
-
-          if (actionResult) {
-            if (actionResult.text) responseText = actionResult.text;
-            if (actionResult.type) responseType = actionResult.type;
-            if (actionResult.products) products = actionResult.products;
-            if (actionResult.contextDelta) {
-              session.context = { ...(session.context || {}), ...actionResult.contextDelta };
-              session.markModified('context');
-            }
-            if (['CREATE_ORDER', 'BOOK_APPOINTMENT'].includes(nextNode.data.action)) {
-              this.trackEvent(resolvedBusinessId, session.customerId, 'conversion', { action: nextNode.data.action });
-            }
-          }
-        }
+        await this.logDebug({
+          businessId: resolvedBusinessId,
+          phone,
+          currentStep,
+          message,
+          matchedFlow: null,
+          actionExecuted: 'NONE',
+          nextStep: (hasCurrentStepFlows || hasAliasFlows) ? currentStep : 'start',
+          collectedData: session.collectedData || {},
+        });
 
         await session.save();
-        const finalResponse = actionHandler.interpolate(responseText || defaultReply, session.context);
 
-        // Check usage
-        const hasQuota = await usageService.canSendMessages(resolvedBusinessId);
-        if (!hasQuota) {
-          return { response: '⚠️ Monthly message limit reached. Upgrade plan.', text: '⚠️ Monthly message limit reached. Upgrade plan.', type: 'text', products: [] };
-        }
-
-        return { response: finalResponse, text: finalResponse, type: responseType, products: products };
+        return {
+          response: fallbackMessage,
+          text: fallbackMessage,
+          type: 'text',
+          products: [],
+          payment: null,
+        };
       }
 
-      // Legacy Mode
-      const flows = await ChatbotFlow.find({ businessId: resolvedBusinessId, category, isActive: true }).sort({ updatedAt: -1, createdAt: -1 }).lean();
+      let actionResult = { success: true };
+      actionExecuted = String(matchedFlow.action || 'NONE').toUpperCase();
 
-      const stepExactMatch = flows.find(f => f.step === session.currentNode && splitTriggers(f.trigger).includes(normalizedMessage));
-      const startMatch = (session.currentNode !== 'start') 
-        ? flows.find(f => f.step === 'start' && splitTriggers(f.trigger).includes(normalizedMessage)) 
-        : null;
-      const stepWildcardMatch = flows.find(f => f.step === session.currentNode && splitTriggers(f.trigger).includes('*'));
-
-      const flow = stepExactMatch || startMatch || stepWildcardMatch;
-
-      if (!flow) {
-        this.trackEvent(resolvedBusinessId, session.customerId, 'flow_drop_off', { step: session.currentNode });
-        const fallbackReply = await actionHandler.getSystemReply(resolvedBusinessId, 'invalid_input', defaultReply, session.context);
-        
-        // Check usage
-        const hasQuota = await usageService.canSendMessages(resolvedBusinessId);
-        if (!hasQuota) {
-          return { response: '⚠️ Monthly message limit reached. Upgrade plan.', text: '⚠️ Monthly message limit reached. Upgrade plan.', type: 'text', products: [] };
-        }
-        
-        return { response: fallbackReply, text: fallbackReply, type: 'text', products: [] };
+      if (actionExecuted && actionExecuted !== 'NONE' && actionExecuted !== 'JUST_SEND_REPLY') {
+        actionResult = await actionHandler.executeAction(actionExecuted, {
+          message,
+          phone: String(phone || '').trim(),
+          businessId: resolvedBusinessId,
+          session,
+          customer, // Ensure customer is passed to actions
+        });
       }
 
-      const reply = await this.buildLegacyReply({ flow, session, message, phone, businessId: resolvedBusinessId });
-      
-      // Check usage
+      if (actionResult?.success === false) {
+        session.currentStep = previousStep;
+        session.awaitingField = awaitingFieldSnapshot;
+        session.collectedData = dataSnapshot;
+        session.context = contextSnapshot;
+        session.markModified('collectedData');
+        session.markModified('context');
+
+        await this.logDebug({
+          businessId: resolvedBusinessId,
+          phone,
+          currentStep: previousStep,
+          message,
+          matchedFlow,
+          actionExecuted,
+          nextStep: previousStep,
+          collectedData: session.collectedData || {},
+        });
+
+        await session.save();
+
+        return {
+          response: actionResult.text || actionResult.error || DEFAULT_REPLY,
+          text: actionResult.text || actionResult.error || DEFAULT_REPLY,
+          type: actionResult.type || 'text',
+          products: actionResult.products || [],
+          payment: actionResult.payment || null,
+        };
+      }
+
+      const nextStep = String(actionResult?.nextStep || matchedFlow.nextStep || previousStep || 'start').trim();
+      session.currentStep = nextStep;
+
+      const nextWildcardFlow = this.findStepFlow(flows, nextStep, '*');
+      session.awaitingField = actionResult?.awaitingField || this.inferAwaitingField(nextWildcardFlow, nextStep);
+
+      let replyText =
+        actionResult?.text ||
+        matchedFlow.reply ||
+        (await this.getSystemFallback(resolvedBusinessId, {
+          ...(session.context || {}),
+          ...(session.collectedData || {}),
+        }));
+
+      replyText = actionHandler.interpolate(replyText, {
+        ...(session.context || {}),
+        ...(session.collectedData || {}),
+      });
+
       const hasQuota = await usageService.canSendMessages(resolvedBusinessId);
       if (!hasQuota) {
-        return { response: '⚠️ Monthly message limit reached. Upgrade plan.', text: '⚠️ Monthly message limit reached. Upgrade plan.', type: 'text', products: [] };
+        return {
+          response: 'Monthly message limit reached. Please upgrade your plan.',
+          text: 'Monthly message limit reached. Please upgrade your plan.',
+          type: 'text',
+          products: [],
+          payment: null,
+        };
       }
-      
-      return reply;
-    } catch (err) {
-      return { response: 'Something went wrong', text: 'Something went wrong', type: 'text', products: [] };
+
+      await this.logDebug({
+        businessId: resolvedBusinessId,
+        phone,
+        currentStep: previousStep,
+        message,
+        matchedFlow,
+        actionExecuted,
+        nextStep,
+        collectedData: session.collectedData || {},
+      });
+
+      await this.trackEvent(resolvedBusinessId, session.customerId, 'flow_step_reach', {
+        step: nextStep,
+        flowId: matchedFlow._id,
+        category,
+      });
+
+      await session.save();
+
+      return {
+        response: replyText,
+        text: replyText,
+        type: actionResult?.type || 'text',
+        products: actionResult?.products || [],
+        payment: actionResult?.payment || null,
+      };
+    } catch (error) {
+      console.error('[ChatbotEngine] Fatal error:', error);
+      return {
+        response: 'Internal system error.',
+        text: 'Internal system error.',
+        type: 'text',
+        products: [],
+        payment: null,
+      };
     }
   }
 }
 
 export default new ChatbotEngine();
-

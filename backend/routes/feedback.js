@@ -1,5 +1,5 @@
 import express from 'express';
-import CustomerController from '../controllers/customerController.js';
+import FeedbackController from '../controllers/feedbackController.js';
 import { authenticateToken } from '../middlewares/auth.js';
 import { businessContext } from '../middlewares/bussinessContext.js';
 
@@ -8,8 +8,7 @@ const router = express.Router();
 router.use(authenticateToken);
 router.use(businessContext);
 
-router.get('/', CustomerController.getCustomers);
-router.get('/:id', CustomerController.getCustomerById);
-router.put('/:id/status', CustomerController.updateCustomerStatus);
+router.get('/', FeedbackController.getFeedback);
+router.post('/', FeedbackController.createFeedback);
 
 export default router;

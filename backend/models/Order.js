@@ -24,6 +24,13 @@ const orderSchema = new mongoose.Schema({
     ref: 'Business',
     required: true,
   },
+  items: [
+    {
+      productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+      quantity: { type: Number, default: 1 },
+      price: { type: Number, default: 0 },
+    }
+  ],
   productId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Product',

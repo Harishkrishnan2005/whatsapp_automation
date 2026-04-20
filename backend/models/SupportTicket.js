@@ -28,6 +28,11 @@ const supportTicketSchema = new mongoose.Schema(
       enum: ['OPEN', 'IN_PROGRESS', 'RESOLVED'],
       default: 'OPEN',
     },
+    assignedTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
     replies: [
       {
         sender: {

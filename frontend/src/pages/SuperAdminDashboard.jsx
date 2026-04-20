@@ -55,16 +55,17 @@ const SuperAdminDashboard = () => {
         </div>
       </header>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {[
           { label: 'Registered Entities', value: stats.totalBusinesses, sub: 'Managed Businesses', color: 'blue' },
+          { label: 'Total Revenue', value: stats.totalRevenue ? `₹${stats.totalRevenue.toLocaleString()}` : '₹0', sub: 'Gross Life Yield', color: 'emerald' },
+          { label: 'Platform MRR', value: stats.mrr ? `₹${stats.mrr.toLocaleString()}` : '₹0', sub: 'Monthly Recurring', color: 'blue' },
           { label: 'Network Ingress', value: stats.totalCustomers, sub: 'Consolidated Clients', color: 'indigo' },
-          { label: 'Total Revenue', value: stats.totalRevenue ? `₹${stats.totalRevenue.toLocaleString()}` : '₹0', sub: 'Gross Subscription Yield', color: 'emerald' },
         ].map((m, i) => (
           <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-slate-200/60 shadow-sm relative overflow-hidden group hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300">
              <div className="relative z-10">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{m.label}</p>
-                <p className={`mt-4 text-4xl font-black text-slate-900 tracking-tighter`}>{m.value}</p>
+                <p className={`mt-4 text-3xl font-black text-slate-900 tracking-tighter`}>{m.value}</p>
                 <p className="text-[9px] font-bold text-slate-400 mt-2 uppercase tracking-tight">{m.sub}</p>
              </div>
              <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -74,6 +75,7 @@ const SuperAdminDashboard = () => {
         ))}
       </div>
 
+      {/* ... (Admin/Staff counts) */}
       <div className="grid gap-6 md:grid-cols-2">
         <div className="bg-white p-10 rounded-[3rem] border border-slate-200/60 shadow-sm flex items-center justify-between">
            <div className="space-y-1">
@@ -96,16 +98,19 @@ const SuperAdminDashboard = () => {
         <div className="relative z-10">
            <h2 className="text-xl font-black uppercase tracking-tight mb-10">Subscription Distribution</h2>
            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-             {stats.subscriptions.map((plan) => (
-               <div key={plan._id} className="bg-white/5 border border-white/10 p-8 rounded-[2rem] backdrop-blur-md group hover:bg-white/10 transition-all">
-                 <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-4">{plan._id}</p>
+             {stats.planWiseStats.map((plan) => (
+               <div key={plan.plan} className="bg-white/5 border border-white/10 p-8 rounded-[2rem] backdrop-blur-md group hover:bg-white/10 transition-all">
+                 <div className="flex justify-between items-start mb-4">
+                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]">{plan.plan}</p>
+                    <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">₹{plan.revenue?.toLocaleString()}</p>
+                 </div>
                  <div className="flex items-baseline gap-2">
-                    <p className="text-4xl font-black text-white">{plan.count}</p>
+                    <p className="text-4xl font-black text-white">{plan.activeBusinesses}</p>
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Active Licenses</span>
                  </div>
                </div>
              ))}
-             {stats.subscriptions.length === 0 && (
+             {stats.planWiseStats.length === 0 && (
                <div className="p-8 border border-white/5 bg-white/5 rounded-[2rem] text-center italic text-slate-600 font-bold uppercase tracking-widest text-[10px]">No active subscription metrics detected</div>
              )}
            </div>

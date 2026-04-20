@@ -14,12 +14,35 @@ const chatSessionSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    customerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Customer',
+      default: null,
+    },
+    // currentNode: used by graph-based (visual) flows
     currentNode: {
       type: String,
-      required: true,
       trim: true,
       default: 'start',
     },
+    // currentStep: used by legacy step-based flows (PRIMARY)
+    currentStep: {
+      type: String,
+      trim: true,
+      default: 'start',
+    },
+    // When set, the next message is stored directly into collectedData[awaitingField]
+    // without trigger matching.
+    awaitingField: {
+      type: String,
+      default: null,
+    },
+    // Accumulated form data across conversation turns
+    collectedData: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
+    // Legacy: kept for backwards-compat with older code that uses session.context
     context: {
       type: mongoose.Schema.Types.Mixed,
       default: {},

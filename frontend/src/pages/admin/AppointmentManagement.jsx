@@ -21,8 +21,19 @@ const AppointmentManagement = () => {
     try {
       const { from, to } = getDateRangePayload(dateRange);
       const params = new URLSearchParams({ page: '1', limit: '200' });
+      
+      // If it's the default "last_7_days" or "today", we actually want to see future appointments too
+      // on this specific management page. So we'll extend the 'to' date significantly.
       if (from) params.set('from', from);
-      if (to) params.set('to', to);
+      if (to) {
+        if (dateRange?.preset === 'last_7_days' || !dateRange?.preset || dateRange?.preset === 'today') {
+           const future = new Date();
+           future.setFullYear(future.getFullYear() + 1);
+           params.set('to', future.toISOString().split('T')[0]);
+        } else {
+           params.set('to', to);
+        }
+      }
       if (searchQuery) params.set('search', searchQuery);
 
       const response = await api.get(`/appointments?${params.toString()}`);

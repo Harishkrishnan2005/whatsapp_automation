@@ -37,6 +37,7 @@ import subscriptionRoutes from './routes/subscription.js';
 import publicRoutes from './routes/public.js';
 import simulationChatRoutes from './routes/simulationChat.js';
 import supportTicketRoutes from './routes/supportTicket.js';
+import feedbackRoutes from './routes/feedback.js';
 import businessRoutes from './routes/business.js';
 import usageRoutes from './routes/usage.js';
 // Import middleware
@@ -48,11 +49,14 @@ import seedDatabase from './utils/seed.js';
 import { checkExpirations } from './scripts/expiryCron.js';
 import usageService from './services/usageService.js';
 
+import logger from './utils/logger.js';
+import errorHandler from './middlewares/errorHandler.js';
+
 const app = express();
 
 // Global Middlewares
 app.use(cors());
-app.use(apiLimiter); // Protect everything with a moderate limit
+app.use(apiLimiter);
 
 // Custom body parsing for Razorpay
 app.use((req, res, next) => {
@@ -65,38 +69,26 @@ app.use((req, res, next) => {
 // Connect to MongoDB
 async function connectMongo() {
   const primaryUri = process.env.MONGO_URI;
-  const fallbackUri = process.env.MONGO_URI_FALLBACK;
-  const options = {};
+  const options = {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  };
 
   try {
     await mongoose.connect(primaryUri, options);
-    console.log('MongoDB connected');
+    logger.info('MongoDB connected successfully');
     seedDatabase(); 
     return;
   } catch (err) {
-    if (fallbackUri) {
-      try {
-        await mongoose.connect(fallbackUri, options);
-        console.log('MongoDB connected (fallback)');
-        seedDatabase();
-        return;
-      } catch (fErr) { console.error(fErr); }
-    }
-    console.error('MongoDB error:', err);
+    logger.error('MongoDB connection error:', err);
+    process.exit(1);
   }
 }
 
 connectMongo();
 
-/**
- * ROUTES
- * Security Strategy:
- * 1. Webhook: Higher rate limit, custom verification
- * 2. Auth: Strict rate limit for login/register
- * 3. Protected: require JWT (authenticateToken) + tenant filtering (businessContext manually in routes)
- */
-
-app.use('/api/public', publicRoutes);  // Landing page – no auth required
+// ROUTES ... (keeping existing routes)
+app.use('/api/public', publicRoutes);
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/webhook', webhookLimiter, webhookRoutes);
 
@@ -122,34 +114,34 @@ app.use('/api/chat-management', authenticateToken, chatRoutes);
 app.use('/api/chat', authenticateToken, simulationChatRoutes);
 app.use('/api/subscription', authenticateToken, subscriptionRoutes);
 app.use('/api/support', authenticateToken, supportTicketRoutes);
+app.use('/api/feedback', authenticateToken, feedbackRoutes);
 app.use('/api/business', authenticateToken, businessRoutes);
 app.use('/api/usage', authenticateToken, usageRoutes);
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  if (err?.type === 'entity.too.large') {
-    return res.status(413).json({ message: 'Request payload too large. Please upload a smaller image.' });
-  }
-  return res.status(err.status || 500).json({ message: err.message || 'Something went wrong!' });
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ message: `Route ${req.originalUrl} not found` });
 });
+
+// Error handling middleware
+app.use(errorHandler);
 
 const BASE_PORT = parseInt(process.env.PORT, 10) || 5000;
 
 const startServer = (port, maxAttempts = 10) => {
   const server = app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+    logger.info(`Server running on port ${port} in ${process.env.NODE_ENV || 'development'} mode`);
   });
 
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE' && maxAttempts > 0) {
       const nextPort = port + 1;
-      console.warn(`Port ${port} is in use, retrying on ${nextPort}...`);
+      logger.warn(`Port ${port} is in use, retrying on ${nextPort}...`);
       startServer(nextPort, maxAttempts - 1);
       return;
     }
 
-    console.error('Server startup error:', err);
+    logger.error('Server startup error:', err);
     process.exit(1);
   });
 };

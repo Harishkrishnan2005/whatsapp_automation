@@ -3,13 +3,14 @@ import AppointmentService from '../services/appointmentService.js';
 class AppointmentController {
   async createAppointment(req, res) {
     try {
-      const { customerId, date, timeSlot, assignedTo } = req.body;
+      const { customerId, date, timeSlot, time, assignedTo, service } = req.body;
       const appointment = await AppointmentService.createAppointment(
         customerId,
         date,
-        timeSlot,
+        timeSlot || time,
         assignedTo,
-        req.businessId
+        req.businessId,
+        service
       );
       res.status(201).json(appointment);
     } catch (error) {

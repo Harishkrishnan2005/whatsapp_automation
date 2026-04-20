@@ -96,7 +96,7 @@ const Sidebar = ({ open, onClose }) => {
   return (
     <>
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-gradient-to-b from-[#0f172a] to-[#1e293b] border-r border-slate-800 transition-transform duration-300 ease-in-out md:translate-x-0 flex flex-col ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-white border-r border-slate-200 transition-transform duration-300 ease-in-out md:translate-x-0 flex flex-col ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -106,8 +106,8 @@ const Sidebar = ({ open, onClose }) => {
                 <FiGrid className="h-5 w-5" />
               </div>
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Company Panel</span>
-                <span className="text-sm font-black tracking-tight text-white uppercase truncate max-w-[140px]">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Company Panel</span>
+                <span className="text-sm font-black tracking-tight text-slate-900 uppercase truncate max-w-[140px]">
                   {user?.businessName || user?.businessId?.businessName || 'Ematix Platform'}
                 </span>
               </div>
@@ -130,11 +130,11 @@ const Sidebar = ({ open, onClose }) => {
                   onClick={onClose}
                   className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${
                     active 
-                    ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20' 
-                    : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                    ? 'bg-blue-600/10 text-blue-600 shadow-sm' 
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                    }`}
                 >
-                  <Icon className={`h-5 w-5 transition-transform group-hover:scale-110 ${active ? 'text-white' : 'text-slate-500 group-hover:text-white'}`} />
+                  <Icon className={`h-5 w-5 transition-transform group-hover:scale-110 ${active ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
                   <span className="text-sm font-bold tracking-tight">{item.label}</span>
                 </Link>
               );
@@ -142,10 +142,10 @@ const Sidebar = ({ open, onClose }) => {
           </div>
         </nav>
 
-        <div className="p-6 mt-auto border-t border-slate-800 bg-black/10">
+        <div className="p-6 mt-auto border-t border-slate-100 bg-slate-50/50">
           <button 
             onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-white/5 border border-slate-800 text-slate-400 text-sm font-black uppercase tracking-widest hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/20 transition-all"
+            className="flex w-full items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-white border border-slate-200 text-slate-400 text-sm font-black uppercase tracking-widest hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all"
           >
             <FiLogOut className="h-4 w-4" />
             Sign Out

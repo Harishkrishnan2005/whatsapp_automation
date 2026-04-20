@@ -8,6 +8,7 @@ import CustomerStatusService from './customerStatusService.js';
 import PaymentService from './paymentService.js';
 import buildTenantScope from '../utils/tenantScope.js';
 import { buildCreatedAtFilter, buildSearchRegex } from '../utils/queryFilters.js';
+import LoggingService from './loggingService.js';
 
 const normalizePaymentType = (paymentType) => {
   if (String(paymentType || '').toUpperCase() === 'ONLINE' || String(paymentType || '').toUpperCase() === 'UPI') {
@@ -137,6 +138,7 @@ class OrderService {
       amount,
       price,
       quantity = 1,
+      items = [], // Added for Phase 2
       category,
       redirectUrl,
       paymentType,
@@ -153,17 +155,37 @@ class OrderService {
     if (!customerId) throw new Error('customerId is required');
 
     const normalizedPaymentType = normalizePaymentType(paymentType || orderData.paymentMethod);
-    const effectiveAmount = Number(finalPrice || amount || price || 0);
+    
+    // Prepare items array
+    let orderItems = [];
+    if (Array.isArray(items) && items.length > 0) {
+      orderItems = items.map(item => ({
+        productId: item.productId,
+        quantity: Number(item.quantity || 1),
+        price: Number(item.price || 0)
+      }));
+    } else if (productId || product) {
+      orderItems = [{
+        productId: productId || null,
+        quantity: Math.max(1, Number(quantity || 1)),
+        price: Number(price || amount || finalPrice || 0)
+      }];
+    }
+
+    const effectiveAmount = orderItems.length > 0 
+      ? orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+      : Number(finalPrice || amount || price || 0);
 
     const orderPayload = {
       orderId: this.generateOrderId(),
       businessId,
       customerId,
-      productId: productId || null,
-      product,
+      items: orderItems,
+      productId: productId || (orderItems[0]?.productId || null),
+      product: product || (orderItems[0]?.name || 'Product'),
       amount: effectiveAmount,
-      price: Number(price || effectiveAmount),
-      quantity: Math.max(1, Number(quantity || 1)),
+      price: Number(price || orderItems[0]?.price || effectiveAmount),
+      quantity: Math.max(1, Number(quantity || orderItems[0]?.quantity || 1)),
       category: category || 'General',
       redirectUrl: redirectUrl || '',
       paymentType: normalizedPaymentType,
@@ -229,6 +251,14 @@ class OrderService {
         console.error('[OrderService] Razorpay init failed:', paymentError);
       }
     }
+
+    await LoggingService.logSystem({
+      businessId,
+      action: 'ORDER_CREATED',
+      resourceType: 'ORDER',
+      resourceId: order._id,
+      details: { orderId: order.orderId, amount: order.amount }
+    });
 
     await CustomerStatusService.syncStatusForCustomer(order.customerId, businessId);
 
@@ -438,11 +468,23 @@ class OrderService {
       return null;
     }
 
-    return await Order.findOneAndUpdate(
+    const result = await Order.findOneAndUpdate(
       { _id: id, ...buildTenantScope(businessId) },
       { orderStatus, status: mapLegacyStatus(orderStatus) },
       { new: true }
     );
+
+    if (result) {
+      await LoggingService.logSystem({
+        businessId,
+        action: 'ORDER_UPDATED',
+        resourceType: 'ORDER',
+        resourceId: result._id,
+        details: { orderStatus }
+      });
+    }
+
+    return result;
   }
 
   async updatePaymentStatus(businessId, id, paymentStatus) {

@@ -89,9 +89,16 @@ const Subscriptions = () => {
             </div>
 
             <div className="mt-10 pt-8 border-t border-slate-50 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-slate-400 font-black text-[9px] uppercase tracking-widest">
-                 <FiActivity className="h-3 w-3" />
-                 Latest Expiry: {sub.expiryDate ? new Date(sub.expiryDate).toLocaleDateString() : 'N/A'}
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-slate-400 font-black text-[9px] uppercase tracking-widest">
+                   <FiActivity className="h-3 w-3" />
+                   Latest Expiry: {sub.expiryDate ? new Date(sub.expiryDate).toLocaleDateString() : 'N/A'}
+                </div>
+                {sub.daysRemaining !== null && (
+                  <div className={`text-[9px] font-black uppercase tracking-widest ${sub.daysRemaining <= 5 ? 'text-rose-500' : 'text-blue-500'}`}>
+                    Critical Window: {sub.daysRemaining} Days Remaining
+                  </div>
+                )}
               </div>
               <FiCheckCircle className="text-emerald-500 h-5 w-5" />
             </div>

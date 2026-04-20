@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import Business from '../models/Business.js';
+import Subscription from '../models/Subscription.js';
 import buildTenantScope from '../utils/tenantScope.js';
 import chatbotSeederService from './chatbotSeederService.js';
 
@@ -81,6 +82,17 @@ class AuthService {
       'subscription.plan': 'FREE',
       businessType,
       category,
+    });
+
+    // Create initial FREE subscription record for analytics
+    await Subscription.create({
+      businessId: business._id,
+      plan: 'FREE',
+      price: 0,
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 365 * 10 * 24 * 60 * 60 * 1000), // 10 years for free
+      paymentStatus: 'PAID',
+      razorpayOrderId: `FREE_INIT_${Date.now()}`
     });
 
     // Automatically seed chatbot flows based on category

@@ -12,5 +12,6 @@ router.get('/', SupportTicketController.getTickets);
 router.get('/:id', SupportTicketController.getTicketById);
 router.post('/:id/reply', isAdmin, SupportTicketController.replyToTicket);
 router.put('/:id/status', isAdmin, SupportTicketController.updateStatus);
+router.patch('/:id', isAdmin, SupportTicketController.updateStatus);
 
 export default router;

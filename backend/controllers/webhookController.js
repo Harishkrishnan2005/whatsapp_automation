@@ -131,16 +131,11 @@ class WebhookController {
       return res.status(400).json({ message: 'phone and message are required' });
     }
 
-    // Resolve businessId
-    let resolvedBusinessId = businessId;
-    if (!resolvedBusinessId) {
-      const business = await Business.findOne().select('_id').lean();
-      resolvedBusinessId = business?._id;
+    if (!businessId) {
+      return res.status(400).json({ message: 'businessId is required' });
     }
 
-    if (!resolvedBusinessId) {
-      return res.status(400).json({ message: 'No business context found' });
-    }
+    const resolvedBusinessId = businessId;
 
     const botResult = await chatbotEngine.chatbotEngine({
       phone: normalizedPhone,
@@ -236,4 +231,3 @@ class WebhookController {
 }
 
 export default new WebhookController();
-

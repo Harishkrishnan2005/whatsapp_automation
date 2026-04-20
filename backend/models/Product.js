@@ -25,6 +25,16 @@ const productSchema = new mongoose.Schema({
     min: 0,
     default: null,
   },
+  description: {
+    type: String,
+    trim: true,
+    default: '',
+  },
+  stock: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
   mrp: {
     type: Number,
     required: true,
