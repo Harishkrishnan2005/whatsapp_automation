@@ -1,4 +1,4 @@
-export default function ProductCard({ product, onBuyClick }) {
+export default function ProductCard({ product, onBuyClick, onAddToCart }) {
   const mrp = Number(product?.mrp ?? 0);
   const offerPrice = Number(product?.offerPrice ?? product?.price ?? mrp);
   const discountPercentage = Number(product?.offerPercentage ?? 0);
@@ -45,12 +45,20 @@ export default function ProductCard({ product, onBuyClick }) {
         )}
       </div>
 
-      <button
-        onClick={handleBuyClick}
-        className="mt-3 w-full rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-emerald-500"
-      >
-        Buy Now
-      </button>
+      <div className="mt-3 flex gap-2">
+        <button
+          onClick={() => onAddToCart && onAddToCart(product)}
+          className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:bg-blue-500 active:scale-95"
+        >
+          Add to Cart
+        </button>
+        <button
+          onClick={handleBuyClick}
+          className="flex-1 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:bg-emerald-500 active:scale-95"
+        >
+          Buy Now
+        </button>
+      </div>
 
       {product.redirectUrl && (
         <a

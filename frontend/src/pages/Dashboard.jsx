@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FiBox, FiCheckCircle, FiMessageCircle, FiShoppingCart, FiUsers, FiTrendingUp, FiActivity, FiCreditCard } from 'react-icons/fi';
+import { FiBox, FiCheckCircle, FiMessageCircle, FiShoppingCart, FiUsers, FiTrendingUp, FiActivity, FiCreditCard, FiCalendar } from 'react-icons/fi';
 import { motion } from 'framer-motion';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import Badge from '../components/ui/Badge';
 import api from '../utils/api';
 
@@ -48,11 +48,14 @@ const Dashboard = () => {
 
   const stats = useMemo(() => {
     const d = dashboardData || {};
+    const isBooking = d.category === 'booking';
+    const s = d.summary || {};
+    
     return [
       { id: 1, title: 'Total Customers', value: d.totalCustomers || 0, icon: FiUsers, color: 'blue' },
-      { id: 2, title: 'Total Orders', value: d.totalOrders || 0, icon: FiShoppingCart, color: 'blue' },
-      { id: 3, title: 'Conversion Rate', value: `${d.conversionRate || 0}%`, icon: FiTrendingUp, color: 'blue' },
-      { id: 4, title: 'Total Messages', value: d.totalMessages || 0, icon: FiActivity, color: 'blue' },
+      { id: 2, title: isBooking ? 'Total Appointments' : 'Total Orders', value: (isBooking ? d.totalAppointments : d.totalOrders) || 0, icon: isBooking ? FiCalendar : FiShoppingCart, color: 'blue' },
+      { id: 3, title: 'Conversion Rate', value: `${isBooking ? (s.conversionRate || 0) : (d.conversionRate || 0)}%`, icon: FiTrendingUp, color: 'emerald' },
+      { id: 4, title: isBooking ? 'Cancellation Rate' : 'Total Messages', value: isBooking ? `${s.cancelRate || 0}%` : (d.totalMessages || 0), icon: isBooking ? FiActivity : FiMessageCircle, color: isBooking ? 'rose' : 'blue' },
     ];
   }, [dashboardData]);
 
@@ -122,8 +125,12 @@ const Dashboard = () => {
         <div className="bg-white p-10 rounded-[3rem] border border-slate-200/60 shadow-sm relative overflow-hidden group">
           <header className="flex items-center justify-between mb-10">
             <div>
-              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Messaging Activity</h2>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Daily Message Count</p>
+              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+                {dashboardData?.category === 'booking' ? 'Booking Trends' : 'Messaging Activity'}
+              </h2>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                {dashboardData?.category === 'booking' ? 'Upcoming Bookings (Next 7 Days)' : 'Daily Message Count'}
+              </p>
             </div>
             <div className="h-12 w-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 shadow-sm">
               <FiActivity className="h-6 w-6" />
@@ -131,21 +138,50 @@ const Dashboard = () => {
           </header>
           <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={salesData}>
-                <defs>
-                  <linearGradient id="colorBlue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 900 }} />
-                <YAxis hide />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '1.5rem', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 900, textTransform: 'uppercase', fontSize: '10px' }}
-                />
-                <Area type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={4} fillOpacity={1} fill="url(#colorBlue)" />
-              </AreaChart>
+              {dashboardData?.category === 'booking' ? (
+                <BarChart data={dashboardData?.appointmentTrend || []} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis 
+                    dataKey="_id" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 900 }}
+                    tickFormatter={(str) => {
+                      const d = new Date(str);
+                      return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+                    }}
+                  />
+                  <YAxis hide />
+                  <Tooltip 
+                    cursor={{ fill: '#f8fafc' }}
+                    contentStyle={{ borderRadius: '1.5rem', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 900, textTransform: 'uppercase', fontSize: '10px' }}
+                  />
+                  <Legend 
+                    verticalAlign="top" 
+                    align="right" 
+                    iconType="circle"
+                    wrapperStyle={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', paddingBottom: '20px' }}
+                  />
+                  <Bar dataKey="confirmed" fill="#10b981" radius={[10, 10, 0, 0]} barSize={20} />
+                  <Bar dataKey="cancelled" fill="#ef4444" radius={[10, 10, 0, 0]} barSize={20} />
+                </BarChart>
+              ) : (
+                <AreaChart data={salesData}>
+                  <defs>
+                    <linearGradient id="colorBlue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 900 }} />
+                  <YAxis hide />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '1.5rem', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 900, textTransform: 'uppercase', fontSize: '10px' }}
+                  />
+                  <Area type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={4} fillOpacity={1} fill="url(#colorBlue)" />
+                </AreaChart>
+              )}
             </ResponsiveContainer>
           </div>
         </div>
@@ -228,7 +264,9 @@ const Dashboard = () => {
           <header className="flex items-center justify-between mb-10">
              <div>
                 <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">Identity Records</h2>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Latest Order Registry</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                  {dashboardData?.category === 'booking' ? 'Latest Appointment Registry' : 'Latest Order Registry'}
+                </p>
              </div>
              <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 shadow-sm">
                 <FiBox className="h-5 w-5" />
@@ -244,16 +282,16 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {(dashboardData?.recentOrders || []).slice(0, 5).map((order) => (
-                  <tr key={order._id} className="group hover:bg-slate-50 transition-colors duration-300">
+                {(dashboardData?.category === 'booking' ? dashboardData?.recentBookings : dashboardData?.recentOrders || []).slice(0, 5).map((item) => (
+                  <tr key={item._id} className="group hover:bg-slate-50 transition-colors duration-300">
                     <td className="py-6">
-                       <p className="text-sm font-black text-slate-900 tracking-tighter bg-slate-100 w-fit px-3 py-1 rounded-lg"># { (order.orderId || order._id).toString().slice(-6).toUpperCase() }</p>
+                       <p className="text-sm font-black text-slate-900 tracking-tighter bg-slate-100 w-fit px-3 py-1 rounded-lg"># { (item.orderId || item._id).toString().slice(-6).toUpperCase() }</p>
                     </td>
                     <td className="py-6">
-                       <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{getCustomerName(order.customerId)}</p>
+                       <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{getCustomerName(item.customerId)}</p>
                     </td>
                     <td className="py-6 text-right">
-                      <Badge variant={getStatusClass(getOrderStatus(order))}>{getOrderStatus(order)}</Badge>
+                      <Badge variant={getStatusClass(getOrderStatus(item))}>{getOrderStatus(item)}</Badge>
                     </td>
                   </tr>
                 ))}

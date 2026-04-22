@@ -7,7 +7,7 @@ import { businessContext } from '../middlewares/bussinessContext.js';
 const router = express.Router();
 router.use(authenticateToken);
 router.use(businessContext);
-router.use(checkBusinessType('E_COMMERCE'));
+router.use(checkBusinessType(['E_COMMERCE', 'BOOKING']));
 
 // Get all active chats - admin only
 router.get('/', isAdmin, ChatAssignmentController.getAllActiveChats);

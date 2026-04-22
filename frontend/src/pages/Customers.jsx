@@ -47,22 +47,24 @@ const Customers = () => {
   }, [dateRange, searchQuery]);
 
   const metrics = useMemo(() => {
-    const totalCustomers = customers.length;
-    const existingCustomers = customers.filter((c) => c.status === 'existing').length;
-    const totalOrders = customers.reduce((sum, c) => sum + Number(c.totalOrders || 0), 0);
-    const pendingPayments = customers.filter((c) => String(c.paymentStatus || '').toLowerCase().includes('pending')).length;
+    const totalCustomers = total;
+    const activeCustomers = customers.filter((c) => c.status === 'active' || c.status === 'converted').length;
+    const totalBookings = customers.reduce((sum, c) => sum + Number(c.totalBookings || 0), 0);
+    const convertedNodes = customers.filter((c) => c.status === 'converted').length;
 
-    return { totalCustomers, existingCustomers, totalOrders, pendingPayments };
-  }, [customers]);
+    return { totalCustomers, activeCustomers, totalBookings, convertedNodes };
+  }, [customers, total]);
 
   const handleViewDetails = async (customer) => {
-    setSelectedCustomer(customer);
     setShowDetails(true);
     try {
+      const customerResponse = await api.get(`/customers/${customer._id}`);
+      setSelectedCustomer(customerResponse.data || customer);
       const response = await api.get(`/notes/${customer._id}`);
       setNotes(response.data);
     } catch (error) {
       console.error('Error fetching notes:', error);
+      setSelectedCustomer(customer);
       setNotes([]);
     }
   };
@@ -107,9 +109,9 @@ const Customers = () => {
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
         {[
           { label: 'Active Cohort', value: metrics.totalCustomers, sub: 'Population (Current Frame)', icon: FiUsers, color: 'blue' },
-          { label: 'Verified Nodes', value: metrics.existingCustomers, sub: 'Conversion Baseline', icon: FiActivity, color: 'emerald' },
-          { label: 'Interaction Hits', value: metrics.totalOrders, sub: 'Aggregate Transaction Yield', icon: FiFilter, color: 'indigo' },
-          { label: 'Latency Nodes', value: metrics.pendingPayments, sub: 'Unresolved Settlements', icon: FiUser, color: 'rose' },
+          { label: 'Verified Nodes', value: metrics.activeCustomers, sub: 'Engagement Baseline', icon: FiActivity, color: 'emerald' },
+          { label: 'Interaction Hits', value: metrics.totalBookings, sub: 'Aggregate Booking Yield', icon: FiFilter, color: 'indigo' },
+          { label: 'Converted Nodes', value: metrics.convertedNodes, sub: 'Success Settlements', icon: FiUser, color: 'rose' },
         ].map((m, i) => (
           <div key={i} className="bg-white p-8 rounded-[2rem] border border-slate-200/60 shadow-sm flex flex-col justify-between h-40">
              <div className="flex justify-between items-start">
@@ -133,8 +135,9 @@ const Customers = () => {
               <tr className="border-b border-slate-100 bg-slate-50/30">
                 <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Identity Node</th>
                 <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Coordinate (Phone)</th>
-                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Resource Vector</th>
-                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">System State</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Bookings</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Last Activity</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Funnel Stage</th>
                 <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Utility</th>
               </tr>
             </thead>
@@ -156,11 +159,26 @@ const Customers = () => {
                     <p className="text-sm font-black text-slate-900 tracking-tighter bg-slate-50 w-fit px-3 py-1 rounded-lg border border-slate-100">{customer.phone}</p>
                   </td>
                   <td className="px-10 py-7">
-                    <p className="text-xs font-bold text-slate-500 max-w-[220px] truncate leading-none">{customer.address || 'LOC: UNDEFINED'}</p>
+                    <div className="text-xs font-black text-slate-900">{customer.totalBookings || 0} HITS</div>
+                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                      {customer.lastBookingDate ? new Date(customer.lastBookingDate).toLocaleDateString() : 'NO BOOKINGS'}
+                    </div>
                   </td>
                   <td className="px-10 py-7">
-                    <span className={`inline-flex px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest ${customer.status === 'existing' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-slate-100 text-slate-500 border border-slate-200/50'}`}>
-                      {customer.status}
+                    <div className="text-xs font-black text-slate-900">
+                      {customer.lastInteraction ? new Date(customer.lastInteraction).toLocaleDateString() : 'N/A'}
+                    </div>
+                    <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                      {customer.lastInteraction ? new Date(customer.lastInteraction).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                    </div>
+                  </td>
+                  <td className="px-10 py-7">
+                    <span className={`inline-flex px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest ${
+                      customer.status === 'converted' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 
+                      customer.status === 'active' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 
+                      'bg-slate-100 text-slate-500 border border-slate-200/50'
+                    }`}>
+                      {customer.dropStage || 'START'}
                     </span>
                   </td>
                   <td className="px-10 py-7 text-right">
@@ -220,12 +238,24 @@ const Customers = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-6">
                        <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Age Captured</p>
+                          <p className="text-sm font-black text-slate-900 mt-2 tracking-tighter">{selectedCustomer.age || 'NOT PROVIDED'}</p>
+                       </div>
+                       <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm">
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Financial Matrix</p>
                           <p className="text-sm font-black text-slate-900 mt-2 truncate uppercase tracking-tighter">{selectedCustomer.upiId || 'UNLINKED'}</p>
+                       </div>
+                       <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm col-span-2">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Address Captured By Chatbot</p>
+                          <p className="text-sm font-black text-slate-900 mt-2 tracking-tight">{selectedCustomer.address || 'NOT PROVIDED YET'}</p>
                        </div>
                        <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm">
                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Aggregate Hits</p>
                           <p className="text-sm font-black text-slate-900 mt-2 tracking-tighter">{selectedCustomer.totalOrders || 0} COMPLETED TRANSACTIONS</p>
+                       </div>
+                       <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Last Chat Step</p>
+                          <p className="text-sm font-black text-slate-900 mt-2 tracking-tighter uppercase">{selectedCustomer.dropStage || 'START'}</p>
                        </div>
                     </div>
                  </div>

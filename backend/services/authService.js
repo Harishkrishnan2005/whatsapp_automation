@@ -5,6 +5,7 @@ import Business from '../models/Business.js';
 import Subscription from '../models/Subscription.js';
 import buildTenantScope from '../utils/tenantScope.js';
 import chatbotSeederService from './chatbotSeederService.js';
+import { resolveBusinessPlan } from '../config/plans.js';
 
 const ADMIN_PERMISSIONS = [
   'manage_customers',
@@ -33,6 +34,7 @@ class AuthService {
   }
 
   buildUserResponse(user, businessId = user.businessId) {
+    const plan = resolveBusinessPlan(businessId);
     return {
       id: user._id,
       email: user.email,
@@ -42,20 +44,21 @@ class AuthService {
       businessId: businessId?._id || businessId,
       businessName: businessId?.name || user.businessName || null,
       businessType: user.businessType,
-      plan: businessId?.subscription?.plan || 'FREE',
+      plan,
       subscriptionStatus: businessId?.subscription?.status || 'ACTIVE',
       expiryDate: businessId?.subscription?.expiryDate || null,
     };
   }
 
   buildAccessTokenPayload(user, businessId = user.businessId) {
+    const plan = resolveBusinessPlan(businessId);
     return {
       id: user._id,
       email: user.email,
       role: user.role,
       businessId: businessId?._id || businessId,
       businessType: user.businessType,
-      plan: businessId?.subscription?.plan || 'FREE',
+      plan,
       subscriptionStatus: businessId?.subscription?.status || 'ACTIVE',
     };
   }
@@ -79,6 +82,7 @@ class AuthService {
     const business = await Business.create({
       name: businessName || `${name}'s Business`,
       email,
+      plan: 'FREE',
       'subscription.plan': 'FREE',
       businessType,
       category,
@@ -96,10 +100,8 @@ class AuthService {
     });
 
     // Automatically seed chatbot flows based on category
-    if (category === 'booking') {
-      await chatbotSeederService.seedBookingFlows(business._id);
-    } else {
-      await chatbotSeederService.seedEcommerceFlows(business._id);
+    if (category) {
+      await chatbotSeederService.seedForCategory(business._id, category);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -259,6 +261,45 @@ class AuthService {
 
   async getStaffUsers(businessId) {
     return await User.find({ role: 'staff', ...buildTenantScope(businessId) }).select('-password');
+  }
+
+  async updateStaff(staffId, updates, businessId) {
+    const filter = { _id: staffId, role: 'staff' };
+    if (businessId) {
+      filter.businessId = businessId;
+    }
+
+    const staff = await User.findOne(filter);
+    if (!staff) {
+      throw new Error('Staff member not found');
+    }
+
+    if (updates.email && updates.email !== staff.email) {
+      const existingUser = await User.findOne({ email: updates.email, _id: { $ne: staffId } });
+      if (existingUser) {
+        throw new Error('User already exists');
+      }
+      staff.email = updates.email;
+    }
+
+    if (typeof updates.name === 'string') staff.name = updates.name;
+    if (typeof updates.phone === 'string') staff.phone = updates.phone;
+    if (typeof updates.gender === 'string') staff.gender = updates.gender;
+    if (typeof updates.address === 'string') staff.address = updates.address;
+    if (typeof updates.isActive === 'boolean') staff.isActive = updates.isActive;
+    if (Array.isArray(updates.permissions)) staff.permissions = updates.permissions;
+    if (Object.prototype.hasOwnProperty.call(updates, 'dateOfBirth')) {
+      staff.dateOfBirth = updates.dateOfBirth ? new Date(updates.dateOfBirth) : null;
+    }
+    if (Object.prototype.hasOwnProperty.call(updates, 'dateOfJoining')) {
+      staff.dateOfJoining = updates.dateOfJoining ? new Date(updates.dateOfJoining) : null;
+    }
+    if (updates.password) {
+      staff.password = await bcrypt.hash(updates.password, 10);
+    }
+
+    await staff.save();
+    return await User.findById(staff._id).select('-password');
   }
 
   async updateStaffPermissions(staffId, permissions, businessId) {

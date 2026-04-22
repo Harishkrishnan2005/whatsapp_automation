@@ -10,7 +10,7 @@ router.use(businessContext);
 
 // Matches user specification
 router.get('/', ChatController.getAllChatsForSimulation);
-router.get('/:id', ChatController.getMessagesForSimulation); // We'll add this to controller
-router.post('/send', ChatController.sendMessageForSimulation); // We'll add this to controller
+router.get('/:id/messages', ChatController.getMessagesForSimulation);
+router.post('/send', ChatController.sendMessageForSimulation);
 
 export default router;

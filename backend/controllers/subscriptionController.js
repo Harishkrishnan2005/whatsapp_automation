@@ -4,6 +4,7 @@ import Subscription from '../models/Subscription.js';
 import Business from '../models/Business.js';
 import Usage from '../models/Usage.js';
 import { PLAN_CONFIG } from '../config/plans.js';
+import chatbotSeederService from '../services/chatbotSeederService.js';
 
 let razorpayInstance = null;
 
@@ -104,11 +105,14 @@ export const verifyPayment = async (req, res) => {
 
     // Update Business Plan
     await Business.findByIdAndUpdate(businessId, {
+      plan: subscription.plan,
       'subscription.plan': subscription.plan,
       'subscription.status': 'ACTIVE',
       'subscription.expiryDate': subscription.endDate,
       'subscription.startDate': subscription.startDate || new Date()
     });
+
+    await chatbotSeederService.seedFlowsForBusiness(businessId, subscription.plan);
 
     // Reset Usage Tracking
     await Usage.findOneAndUpdate(

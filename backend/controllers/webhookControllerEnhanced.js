@@ -16,7 +16,6 @@
 import ChatbotEngine from '../services/chatbotEngine.js';
 import SessionService from '../services/sessionService.js';
 import Customer from '../models/Customer.js';
-import Message from '../models/Message.js';
 import {
   resolveTenantBusinessId,
   registerPhoneNumberMapping,
@@ -24,7 +23,6 @@ import {
 } from '../services/webhookTenantResolver.js';
 import {
   buildTenantFilter,
-  validateOwnership,
 } from '../services/multiTenantService.js';
 
 /**
@@ -150,23 +148,7 @@ class WebhookController {
       }
 
       // ==================
-      // STEP 4: Log Incoming Message
-      // ==================
-      try {
-        await Message.create({
-          customerId: customer._id,
-          message: incomingText,
-          type: 'incoming',
-          senderType: 'customer',
-          businessId: resolvedBusinessId,
-        });
-      } catch (error) {
-        console.error('[Webhook] Failed to log incoming message:', error.message);
-        // Don't fail - continue processing
-      }
-
-      // ==================
-      // STEP 5: Process Through Chatbot Engine
+      // STEP 4: Process Through Chatbot Engine
       // ==================
       let botResult;
       try {
@@ -203,24 +185,7 @@ class WebhookController {
       }
 
       // ==================
-      // STEP 6: Log Outgoing Message
-      // ==================
-      try {
-        await Message.create({
-          customerId: customer._id,
-          message: botResult.response || botResult.text,
-          type: 'outgoing',
-          senderType: 'chatbot',
-          businessId: resolvedBusinessId,
-          products: Array.isArray(botResult.products) ? botResult.products : [],
-        });
-      } catch (error) {
-        console.error('[Webhook] Failed to log outgoing message:', error.message);
-        // Don't fail - response already processed
-      }
-
-      // ==================
-      // STEP 7: Build Response
+      // STEP 5: Build Response
       // ==================
       const responsePayload = {
         success: true,

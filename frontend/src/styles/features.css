@@ -1,0 +1,243 @@
+/* Feature Gating and Plan-based UI Styles */
+
+.feature-provider {
+  width: 100%;
+  height: 100%;
+}
+
+/* Feature Gate / Locked Feature */
+.feature-locked {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f5f5f5 0%, #efefef 100%);
+  border: 2px dashed #ddd;
+  border-radius: 12px;
+  min-height: 300px;
+}
+
+.feature-locked-content {
+  text-align: center;
+  max-width: 400px;
+}
+
+.lock-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.feature-locked h3 {
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.feature-locked p {
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.btn-upgrade {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-upgrade:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+}
+
+/* Plan Badge */
+.plan-badge {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.plan-badge.plan-free {
+  background: #10b981;
+  color: white;
+}
+
+.plan-badge.plan-basic {
+  background: #3b82f6;
+  color: white;
+}
+
+.plan-badge.plan-pro {
+  background: #f59e0b;
+  color: white;
+}
+
+.plan-badge.plan-enterprise {
+  background: #8b5cf6;
+  color: white;
+}
+
+.plan-name {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.plan-mode {
+  font-size: 0.625rem;
+  opacity: 0.9;
+  margin-top: 0.25rem;
+}
+
+/* Upgrade Prompt */
+.upgrade-prompt {
+  background: linear-gradient(135deg, #fff5e6 0%, #ffe8cc 100%);
+  border-left: 4px solid #f59e0b;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.upgrade-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.upgrade-prompt h3 {
+  color: #b45309;
+  margin-bottom: 0.5rem;
+}
+
+.upgrade-prompt p {
+  color: #92400e;
+  margin-bottom: 1rem;
+}
+
+.btn-upgrade-now {
+  background: #f59e0b;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-upgrade-now:hover {
+  background: #d97706;
+}
+
+/* UI Visibility */
+.ui-element-hidden {
+  display: none !important;
+}
+
+/* Alerts */
+.alert {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.alert-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border-left: 4px solid #dc2626;
+}
+
+.alert-success {
+  background: #dcfce7;
+  color: #15803d;
+  border-left: 4px solid #22c55e;
+}
+
+.alert-warning {
+  background: #fef3c7;
+  color: #92400e;
+  border-left: 4px solid #eab308;
+}
+
+.alert-info {
+  background: #dbeafe;
+  color: #1e40af;
+  border-left: 4px solid #3b82f6;
+}
+
+/* Common Buttons */
+.btn {
+  padding: 0.625rem 1.25rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  font-size: 0.875rem;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+/* Loader */
+.loader {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+.loader::after {
+  content: '';
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  margin-left: 8px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #6366f1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

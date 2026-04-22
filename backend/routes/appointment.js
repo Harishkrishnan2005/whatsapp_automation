@@ -15,6 +15,9 @@ router.post('/', AppointmentController.createAppointment);
 // Get appointments (paginated) - admin sees all, staff sees assigned
 router.get('/', AppointmentController.getAppointments);
 
+// Get specific appointment
+router.get('/:id', AppointmentController.getAppointmentById);
+
 // Get customer appointments
 router.get('/customer/:customerId', AppointmentController.getCustomerAppointments);
 
@@ -23,5 +26,8 @@ router.put('/:id/status', AppointmentController.updateAppointmentStatus);
 
 // Assign appointment to staff - admin only
 router.put('/:id/assign', isAdmin, AppointmentController.assignAppointment);
+
+// Add note to appointment
+router.post('/:id/notes', AppointmentController.addNote);
 
 export default router;

@@ -21,6 +21,39 @@ const mapLegacyPaymentMethod = (paymentType) => (paymentType === 'ONLINE' ? 'UPI
 const mapLegacyStatus = (orderStatus) => orderStatus;
 
 class OrderService {
+  async syncCustomerCommerceStats(customerId, businessId) {
+    if (!customerId || !businessId) return;
+
+    const tenantScope = buildTenantScope(businessId);
+    const customerOrders = await Order.find({
+      ...tenantScope,
+      customerId,
+    })
+      .select('amount finalPrice paymentStatus createdAt')
+      .lean();
+
+    const totalOrders = customerOrders.length;
+    const totalSpent = customerOrders.reduce((sum, order) => {
+      if (order.paymentStatus !== 'Paid') return sum;
+      return sum + Number(order.amount || order.finalPrice || 0);
+    }, 0);
+
+    const lastActivity = customerOrders.reduce((latest, order) => {
+      const createdAt = order.createdAt ? new Date(order.createdAt) : null;
+      if (!createdAt) return latest;
+      return !latest || createdAt > latest ? createdAt : latest;
+    }, null);
+
+    await Customer.findOneAndUpdate(
+      { _id: customerId, ...tenantScope },
+      {
+        totalOrders,
+        totalSpent,
+        ...(lastActivity ? { lastActivity } : {}),
+      }
+    );
+  }
+
   generateOrderId() {
     const stamp = new Date().toISOString().replace(/[-:TZ.]/g, '').slice(0, 14);
     const randomPart = crypto.randomBytes(6).toString('hex').toUpperCase();
@@ -68,6 +101,7 @@ class OrderService {
         { product: searchRegex },
         { orderId: searchRegex },
         { category: searchRegex },
+        { 'items.name': searchRegex },
       ];
     }
 
@@ -161,12 +195,14 @@ class OrderService {
     if (Array.isArray(items) && items.length > 0) {
       orderItems = items.map(item => ({
         productId: item.productId,
+        name: item.name || item.productName || 'Product',
         quantity: Number(item.quantity || 1),
         price: Number(item.price || 0)
       }));
     } else if (productId || product) {
       orderItems = [{
         productId: productId || null,
+        name: product || 'Product',
         quantity: Math.max(1, Number(quantity || 1)),
         price: Number(price || amount || finalPrice || 0)
       }];
@@ -260,6 +296,7 @@ class OrderService {
       details: { orderId: order.orderId, amount: order.amount }
     });
 
+    await this.syncCustomerCommerceStats(order.customerId, businessId);
     await CustomerStatusService.syncStatusForCustomer(order.customerId, businessId);
 
     return {
@@ -328,6 +365,7 @@ class OrderService {
       { new: true }
     );
 
+    await this.syncCustomerCommerceStats(updated.customerId, businessId);
     return updated;
   }
 
@@ -360,11 +398,17 @@ class OrderService {
       updatePayload.razorpayPaymentId = razorpayPaymentId;
     }
 
-    return await Order.findOneAndUpdate(
+    const updated = await Order.findOneAndUpdate(
       { businessId, razorpayOrderId },
       updatePayload,
       { new: true }
     );
+
+    if (updated) {
+      await this.syncCustomerCommerceStats(updated.customerId, businessId);
+    }
+
+    return updated;
   }
 
   async cancelOrder({ businessId, orderId, customerId = null, reason = '' }) {
@@ -392,6 +436,7 @@ class OrderService {
     };
 
     const updated = await Order.findByIdAndUpdate(order._id, updates, { new: true });
+    await this.syncCustomerCommerceStats(updated.customerId, businessId);
     return updated;
   }
 
@@ -428,6 +473,7 @@ class OrderService {
       { new: true }
     );
 
+    await this.syncCustomerCommerceStats(updated.customerId, businessId);
     return updated;
   }
 
@@ -454,7 +500,9 @@ class OrderService {
       updatePayload.razorpayRefundId = refund.id;
     }
 
-    return await Order.findByIdAndUpdate(order._id, updatePayload, { new: true });
+    const updated = await Order.findByIdAndUpdate(order._id, updatePayload, { new: true });
+    await this.syncCustomerCommerceStats(updated.customerId, businessId);
+    return updated;
   }
 
   async updateOrderStatus(businessId, id, orderStatus) {
@@ -470,7 +518,13 @@ class OrderService {
 
     const result = await Order.findOneAndUpdate(
       { _id: id, ...buildTenantScope(businessId) },
-      { orderStatus, status: mapLegacyStatus(orderStatus) },
+      {
+        orderStatus,
+        status: mapLegacyStatus(orderStatus),
+        ...(orderStatus === 'Delivered' && existingOrder.paymentType === 'COD'
+          ? { paymentStatus: 'Paid' }
+          : {}),
+      },
       { new: true }
     );
 
@@ -482,6 +536,7 @@ class OrderService {
         resourceId: result._id,
         details: { orderStatus }
       });
+      await this.syncCustomerCommerceStats(result.customerId, businessId);
     }
 
     return result;
@@ -509,11 +564,17 @@ class OrderService {
       updatePayload.status = 'Pending';
     }
 
-    return await Order.findOneAndUpdate(
+    const updated = await Order.findOneAndUpdate(
       { _id: id, ...buildTenantScope(businessId) },
       updatePayload,
       { new: true }
     );
+
+    if (updated) {
+      await this.syncCustomerCommerceStats(updated.customerId, businessId);
+    }
+
+    return updated;
   }
 
   async getOrderById(businessId, id) {

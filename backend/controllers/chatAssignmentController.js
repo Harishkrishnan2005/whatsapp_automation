@@ -13,7 +13,7 @@ class ChatAssignmentController {
 
   async getAssignedChats(req, res) {
     try {
-      const staffId = req.params.staffId || req.user.id;
+      const staffId = req.user?.role === 'staff' ? req.user.id : (req.params.staffId || req.user.id);
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
       const result = await ChatAssignmentService.getAssignedChats(staffId, page, limit, req.businessId);
@@ -49,10 +49,11 @@ class ChatAssignmentController {
     try {
       const { id } = req.params;
       const { notes } = req.body;
-      const assignment = await ChatAssignmentService.closeChat(id, notes, req.businessId);
+      const assignment = await ChatAssignmentService.closeChat(id, notes, req.businessId, req.user);
       res.json(assignment);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      const status = error.message.includes('Unauthorized') ? 403 : 500;
+      res.status(status).json({ message: error.message });
     }
   }
 

@@ -8,16 +8,19 @@ class ActionHandler {
   // ──────────────────────────────────────────────────────────────────────────
   // Template interpolation  e.g. "Hello {{name}}" → "Hello Alice"
   // ──────────────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────────
+  // Template interpolation  e.g. "Hello {{name}}" → "Hello Alice"
+  // ──────────────────────────────────────────────────────────────────────────
   interpolate(text, vars = {}) {
     let output = String(text || '');
-    for (const [key, value] of Object.entries(vars)) {
-      output = output.replace(
-        new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g'),
-        String(value ?? '')
-      );
-    }
-    return output;
+    // Task 4: SAFE VARIABLE REPLACEMENT
+    return output.replace(/{{(.*?)}}/g, (_, key) => {
+      const trimmedKey = key.trim();
+      return vars[trimmedKey] || "";
+    });
   }
+
+  // ... (getSystemReply and getBusinessType remain similar)
 
   // ──────────────────────────────────────────────────────────────────────────
   // Fetch a configurable system message from the DB (step='system')
@@ -38,9 +41,10 @@ class ActionHandler {
   }
 
   async getBusinessType(businessId) {
-    if (!businessId) return 'E_COMMERCE';
-    const business = await Business.findById(businessId).select('businessType').lean();
-    return business?.businessType || 'E_COMMERCE';
+    if (!businessId) return 'ecommerce';
+    const business = await Business.findById(businessId).select('businessType business_type').lean();
+    // Prefer business_type (lowercase) as requested by user, fallback to businessType
+    return (business?.business_type || business?.businessType || 'ecommerce').toLowerCase();
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -74,9 +78,10 @@ class ActionHandler {
     // ── 2. Cross-category guards ─────────────────────────────────────────────
     const ECOM_ONLY = new Set([
       'SHOW_PRODUCTS', 'SELECT_PRODUCT', 'SAVE_PRODUCT', 'SAVE_QUANTITY',
+      'ADD_TO_CART', 'CONTINUE_SHOPPING', 'CONFIRM_ORDER', 'VIEW_CART', 'REMOVE_FROM_CART', 'CLEAR_CART', 'CHECKOUT',
       'SHOW_CART', 'CREATE_ORDER', 'ORDER_CONFIRMATION', 'GET_ORDERS',
       'TRACK_ORDER', 'PROCESS_PAYMENT', 'VERIFY_PAYMENT', 'REQUEST_REFUND',
-      'SAVE_ADDRESS',
+      'SAVE_ADDRESS', 'START_ORDER_CONFIRMATION', 'SAVE_CART_ITEM_QUANTITY', 'SAVE_PAYMENT_METHOD',
     ]);
 
     const BOOKING_ONLY = new Set([
@@ -85,11 +90,11 @@ class ActionHandler {
       'RESCHEDULE_BOOKING', 'GET_BOOKINGS',
     ]);
 
-    if (businessType === 'BOOKING' && ECOM_ONLY.has(action)) {
-      return { text: 'This feature is only available for E-commerce businesses.' };
+    if (businessType === 'booking' && ECOM_ONLY.has(action)) {
+      return { success: false, text: 'This feature is only available for E-commerce businesses.' };
     }
-    if (businessType === 'E_COMMERCE' && BOOKING_ONLY.has(action)) {
-      return { text: 'This feature is only available for Booking businesses.' };
+    if (businessType === 'ecommerce' && BOOKING_ONLY.has(action)) {
+      return { success: false, text: 'This feature is only available for Booking businesses.' };
     }
 
     // ── 3. Dispatch ──────────────────────────────────────────────────────────
@@ -110,12 +115,23 @@ class ActionHandler {
 
       // Products
       case 'SHOW_PRODUCTS':      return chatbotActions.SHOW_PRODUCTS(actionData);
+      case 'BUY_NOW':
       case 'SELECT_PRODUCT':     return chatbotActions.SELECT_PRODUCT(actionData);
       case 'SAVE_PRODUCT':       return chatbotActions.SAVE_PRODUCT(actionData);
       case 'SAVE_QUANTITY':      return chatbotActions.SAVE_QUANTITY(actionData);
+      case 'ADD_TO_CART':        return chatbotActions.ADD_TO_CART(actionData);
+      case 'CONTINUE_SHOPPING':  return chatbotActions.CONTINUE_SHOPPING(actionData);
+      case 'CONFIRM_ORDER':      return chatbotActions.CONFIRM_ORDER(actionData);
 
       // Orders
-      case 'SHOW_CART':          return chatbotActions.SHOW_CART(actionData);
+      case 'SHOW_CART':
+      case 'VIEW_CART':          return chatbotActions.SHOW_CART(actionData);
+      case 'REMOVE_FROM_CART':   return chatbotActions.REMOVE_FROM_CART(actionData);
+      case 'CLEAR_CART':         return chatbotActions.CLEAR_CART(actionData);
+      case 'CHECKOUT':           return chatbotActions.CHECKOUT(actionData);
+      case 'START_ORDER_CONFIRMATION': return chatbotActions.START_ORDER_CONFIRMATION(actionData);
+      case 'SAVE_CART_ITEM_QUANTITY':  return chatbotActions.SAVE_CART_ITEM_QUANTITY(actionData);
+      case 'SAVE_PAYMENT_METHOD':      return chatbotActions.SAVE_PAYMENT_METHOD(actionData);
       case 'CREATE_ORDER':       return chatbotActions.CREATE_ORDER(actionData);
       case 'ORDER_CONFIRMATION': return chatbotActions.ORDER_CONFIRMATION(actionData);
       case 'GET_ORDERS':         return chatbotActions.GET_ORDERS(actionData);
@@ -148,12 +164,13 @@ class ActionHandler {
       case 'CREATE_FEEDBACK':    return chatbotActions.CREATE_FEEDBACK(actionData);
 
       default:
+        // Task 5: FIX ACTION HANDLER (Add default warning)
         if (String(action || '').startsWith('SAVE_')) {
           const fieldName = String(action).replace(/^SAVE_/, '');
           return chatbotActions.saveDynamicField({ ...actionData, fieldName });
         }
-        console.warn(`[ActionHandler] Action "${action}" is not implemented.`);
-        return { text: null, success: false };
+        console.warn("Unknown action:", action);
+        return { success: false, text: 'This step is not configured correctly. Please try again.' };
     }
   }
 }

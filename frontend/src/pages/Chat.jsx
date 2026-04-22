@@ -11,20 +11,50 @@ const Chat = () => {
   const chatContainerRef = useRef(null);
 
   useEffect(() => {
+    const fetchHistory = async () => {
+      if (!phone || phone.length < 10) return;
+      try {
+        const response = await api.get(`/chatbot/history?phone=${phone}`);
+        const history = response.data.map(m => ({
+          type: m.senderType === 'customer' ? 'user' : 'bot',
+          text: m.message,
+          response: m.message,
+          products: m.products || [],
+          createdAt: m.createdAt
+        }));
+        setChatHistory(history);
+      } catch (error) {
+        console.error('Error fetching history:', error);
+      }
+    };
+    fetchHistory();
+  }, [phone]);
+
+  useEffect(() => {
     if (chatContainerRef.current) {
         chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [chatHistory]);
 
-  const sendWebhookMessage = async (outgoingText) => {
-    if (!phone || !outgoingText) return;
+  const sendWebhookMessage = async (outgoingMessage) => {
+    if (!phone || !outgoingMessage) return;
+    
+    // Determine what text to show in the chat UI
+    const displayMessage = typeof outgoingMessage === 'object' && outgoingMessage.label 
+      ? outgoingMessage.label 
+      : (typeof outgoingMessage === 'object' ? JSON.stringify(outgoingMessage) : outgoingMessage);
+
     try {
       const response = await api.post('/chatbot/send', {
         phone,
-        message: outgoingText,
+        message: outgoingMessage,
       });
       const botPayload = { type: 'bot', ...response.data };
-      setChatHistory((prev) => [...prev, { type: 'user', text: outgoingText, createdAt: new Date() }, botPayload]);
+      setChatHistory((prev) => [
+        ...prev, 
+        { type: 'user', text: displayMessage, createdAt: new Date() }, 
+        botPayload
+      ]);
 
       if (response.data?.type === 'payment' && response.data?.payment) {
         openRazorpayPopup(response.data.payment);
@@ -36,7 +66,7 @@ const Chat = () => {
       const errorMsg = error?.response?.data?.message || 'Neural Link Error: Unable to process transmission.';
       setChatHistory((prev) => [
         ...prev,
-        { type: 'user', text: outgoingText, createdAt: new Date() },
+        { type: 'user', text: displayMessage, createdAt: new Date() },
         {
           type: 'bot',
           response: errorMsg,
@@ -152,6 +182,28 @@ const Chat = () => {
     return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const renderQuickReplies = (msg) => {
+    if (!msg?.products?.length) return null;
+
+    return (
+      <div className="mt-3 flex flex-wrap gap-2">
+        {msg.products.map((option, index) => (
+          <button
+            key={option.id || option.name || index}
+            onClick={() => sendWebhookMessage({
+              label: option.name,
+              action: option.action || (option.id === 'cod' || option.id === 'online' ? 'SAVE_PAYMENT_METHOD' : undefined),
+              payload: option.action ? {} : undefined
+            })}
+            className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+          >
+            {option.name}
+          </button>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-100px)] max-w-5xl mx-auto overflow-hidden bg-[#efeae2] border border-gray-300 rounded-2xl shadow-2xl relative">
        {/* WhatsApp Doodle Background */}
@@ -238,11 +290,25 @@ const Chat = () => {
                          </div>
 
                          {/* Products */}
-                         {!isUser && msg.products && msg.products.length > 0 && (
+                         {!isUser && msg.type === 'quick_reply' && renderQuickReplies(msg)}
+
+                         {!isUser && msg.products && msg.products.length > 0 && msg.type !== 'quick_reply' && (
                            <div className="mt-3 bg-gray-50 rounded-xl overflow-hidden mb-1 border border-gray-100">
                              <ProductCarousel 
                                products={msg.products} 
-                               onProductBuy={(p) => sendWebhookMessage(p?.name || '')} 
+                               onProductBuy={(p) => sendWebhookMessage({
+                                 label: p?.name,
+                                 action: 'BUY_NOW',
+                                 payload: { productId: p?._id || p?.id }
+                               })} 
+                               onAddToCart={(p) => sendWebhookMessage({
+                                 label: `Add to Cart: ${p?.name}`,
+                                 action: 'ADD_TO_CART',
+                                 payload: {
+                                   productId: p?._id || p?.id,
+                                   quantity: 1
+                                 }
+                               })}
                              />
                            </div>
                          )}

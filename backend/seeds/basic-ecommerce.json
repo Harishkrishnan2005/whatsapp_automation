@@ -1,0 +1,123 @@
+[
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "start",
+    "triggerKeywords": ["hi", "hello", "shop", "order", "menu", "start"],
+    "responseTemplate": "Welcome to our store! 🛍️\n\nType 'products' to see our catalog or type the product name to search.",
+    "nextStep": "browse",
+    "action": "NONE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "browse",
+    "triggerKeywords": ["products", "catalog", "items", "continue", "more", "shopping"],
+    "responseTemplate": "Here are our products! Select one to add to your cart.",
+    "nextStep": "select",
+    "action": "SHOW_PRODUCTS",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "select",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Adding to cart...",
+    "nextStep": "cart_decision",
+    "action": "SELECT_PRODUCT",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "get_quantity",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Got it! Adding to your cart...",
+    "nextStep": "cart_decision",
+    "action": "SAVE_QUANTITY",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "cart_decision",
+    "triggerKeywords": ["continue", "continue shopping", "more", "shop", "browse"],
+    "responseTemplate": "Great! Showing more products...",
+    "nextStep": "browse",
+    "action": "CONTINUE_SHOPPING",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "cart_decision",
+    "triggerKeywords": ["confirm", "checkout", "order", "confirm order", "done", "place order"],
+    "responseTemplate": "Perfect! Let's confirm your order...",
+    "nextStep": "confirm_quantities",
+    "action": "CONFIRM_ORDER",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "confirm_quantities",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Processing quantity confirmation...",
+    "nextStep": "confirm_quantities",
+    "action": "SAVE_CART_ITEM_QUANTITY",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "select_payment",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Processing payment selection...",
+    "nextStep": "finalize_order",
+    "action": "SAVE_PAYMENT_METHOD",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "finalize_order",
+    "triggerKeywords": ["confirm", "yes", "place order", "complete"],
+    "responseTemplate": "Creating your order...",
+    "nextStep": "start",
+    "action": "CREATE_ORDER",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "*",
+    "triggerKeywords": ["cart", "view cart", "show cart"],
+    "responseTemplate": "Fetching your cart...",
+    "nextStep": "*",
+    "action": "SHOW_CART",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "*",
+    "triggerKeywords": ["remove", "delete", "remove from cart"],
+    "responseTemplate": "Removing item...",
+    "nextStep": "*",
+    "action": "REMOVE_FROM_CART",
+    "isActive": true,
+    "isSystem": false
+  }
+]

@@ -1,217 +1,127 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import ChatbotFlow from '../models/ChatbotFlow.js';
+import Business from '../models/Business.js';
+import { resolvePlanName } from '../config/plans.js';
+import logger from '../utils/logger.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class ChatbotSeederService {
-  getBookingFlows(businessId) {
-    return [
-      {
-        businessId,
-        category: 'booking',
-        trigger: 'hi,hello,hey',
-        reply: 'Welcome to our booking service. How can I help you?\n1. Book Appointment\n2. View My Bookings\n3. Support',
-        step: 'start',
-        nextStep: 'menu',
-        action: 'NONE',
-        isActive: true,
-      },
-      {
-        businessId,
-        category: 'booking',
-        trigger: '1,book',
-        reply: 'Please provide the service you want to book.',
-        step: 'menu',
-        nextStep: 'ask_service',
-        action: 'NONE',
-        isActive: true,
-      },
-      {
-        businessId,
-        category: 'booking',
-        trigger: '2,view,bookings',
-        reply: 'Fetching your bookings...',
-        step: 'menu',
-        nextStep: 'start',
-        action: 'GET_BOOKINGS',
-        isActive: true,
-      },
-      {
-        businessId,
-        category: 'booking',
-        trigger: '3,support',
-        reply: 'Connecting you to support...',
-        step: 'menu',
-        nextStep: 'start',
-        action: 'START_SUPPORT',
-        isActive: true,
-      },
-      {
-        businessId,
-        category: 'booking',
-        trigger: '*',
-        reply: 'Please provide your name for the booking.',
-        step: 'ask_service',
-        nextStep: 'ask_name',
-        action: 'SAVE_SERVICE',
-        isActive: true,
-      },
-      {
-        businessId,
-        category: 'booking',
-        trigger: '*',
-        reply: 'Thanks {{name}}. Which date would you like to book? (YYYY-MM-DD)',
-        step: 'ask_name',
-        nextStep: 'ask_date',
-        action: 'SAVE_NAME',
-        isActive: true,
-      },
-      {
-        businessId,
-        category: 'booking',
-        trigger: '*',
-        reply: 'What time would you like? (HH:mm)',
-        step: 'ask_date',
-        nextStep: 'ask_time',
-        action: 'SAVE_DATE',
-        isActive: true,
-      },
-      {
-        businessId,
-        category: 'booking',
-        trigger: '*',
-        reply: 'Processing your booking...',
-        step: 'ask_time',
-        nextStep: 'start',
-        action: 'BOOK_APPOINTMENT',
-        isActive: true,
-      },
-      {
-        businessId,
-        category: 'booking',
-        trigger: 'fallback',
-        reply: 'I could not match that input. Let us start again. Say hi to continue.',
-        step: 'system',
-        nextStep: 'start',
-        action: 'NONE',
-        isActive: true,
-      },
-    ];
-  }
+  /**
+   * Seed chatbot flows for a business based on their plan
+   * @param {string} businessId 
+   * @param {string} plan 
+   */
+  async seedFlowsForBusiness(businessId, plan) {
+    try {
+      const business = await Business.findById(businessId);
+      if (!business) {
+        throw new Error(`Business not found for ID: ${businessId}`);
+      }
 
-  getEcommerceFlows(businessId) {
-    return [
-      {
+      const category = (business.category || 'ecommerce').toLowerCase();
+      const resolvedPlan = resolvePlanName(plan || business.plan || business.subscription?.plan || 'FREE');
+      
+      // 1. Delete existing non-system flows
+      await ChatbotFlow.deleteMany({
         businessId,
-        category: 'ecommerce',
-        trigger: 'hi,hello,hey',
-        reply: 'Welcome to our store. How can I help you?\n1. Store Products\n2. Track Order\n3. My Orders\n4. Support',
-        step: 'start',
-        nextStep: 'menu',
-        action: 'NONE',
-        isActive: true,
-      },
-      {
-        businessId,
-        category: 'ecommerce',
-        trigger: '1,products,store',
-        reply: 'Here are our available products:',
-        step: 'menu',
-        nextStep: 'menu',
-        action: 'SHOW_PRODUCTS',
-        isActive: true,
-      },
-      {
-        businessId,
-        category: 'ecommerce',
-        trigger: '2,track',
-        reply: 'Please enter your Order ID to track.',
-        step: 'menu',
-        nextStep: 'track_order',
-        action: 'NONE',
-        isActive: true,
-      },
-      {
-        businessId,
-        category: 'ecommerce',
-        trigger: '*',
-        reply: 'Checking your order status...',
-        step: 'track_order',
-        nextStep: 'menu',
-        action: 'TRACK_ORDER',
-        isActive: true,
-      },
-      {
-        businessId,
-        category: 'ecommerce',
-        trigger: '3,orders',
-        reply: 'Fetching your recent orders...',
-        step: 'menu',
-        nextStep: 'menu',
-        action: 'GET_ORDERS',
-        isActive: true,
-      },
-      {
-        businessId,
-        category: 'ecommerce',
-        trigger: '4,support',
-        reply: 'Connecting you to support...',
-        step: 'menu',
-        nextStep: 'start',
-        action: 'START_SUPPORT',
-        isActive: true,
-      },
-      {
-        businessId,
-        category: 'ecommerce',
-        trigger: 'fallback',
-        reply: 'I could not match that input. Let us start again. Say hi to continue.',
-        step: 'system',
-        nextStep: 'start',
-        action: 'NONE',
-        isActive: true,
-      },
-    ];
-  }
+        isSystem: false
+      });
 
-  getFlowsForCategory(businessId, category) {
-    return category === 'booking'
-      ? this.getBookingFlows(businessId)
-      : this.getEcommerceFlows(businessId);
-  }
+      // 2. Load seed JSON based on plan + category
+      let seedData = [];
+      const planLower = resolvedPlan.toLowerCase();
+      
+      // Map 'free' to 'basic' for seeding if dedicated free seeds don't exist
+      const sourcePlan = planLower === 'free' ? 'basic' : planLower;
+      const seedFileName = `${sourcePlan}-${category}.json`;
+      const seedPath = path.join(__dirname, '../seeds', seedFileName);
 
-  async upsertFlows(flows) {
-    for (const flow of flows) {
-      await ChatbotFlow.findOneAndUpdate(
-        {
-          businessId: flow.businessId,
-          category: flow.category,
-          step: flow.step,
-          trigger: flow.trigger,
-        },
-        { $setOnInsert: flow },
-        {
-          upsert: true,
-          new: true,
-          setDefaultsOnInsert: true,
+      if (fs.existsSync(seedPath)) {
+        const rawData = fs.readFileSync(seedPath, 'utf8');
+        seedData = JSON.parse(rawData);
+        
+        // If it was a FREE plan, we only seed the first flow to respect plan limits
+        if (planLower === 'free') {
+          seedData = seedData.slice(0, 1);
+          logger.info(`[SEEDER] FREE plan detected. Seeding only the first flow from ${seedFileName}`);
         }
-      );
+      } else {
+        logger.warn(`Seed file not found: ${seedFileName}. Defaulting to empty flows.`);
+      }
+
+      // 3. Prepare flows with businessId and isActive = true
+      const flowsToInsert = seedData.map(flow => ({
+        ...flow,
+        businessId,
+        category,
+        isActive: true,
+        isSystem: false
+      }));
+
+      // 4. Ensure system flows exist
+      const systemFlows = [
+        {
+          businessId,
+          category,
+          step: '*',
+          triggerKeywords: ['menu'],
+          responseTemplate: 'Main Menu:\nType "hi" to start over.',
+          nextStep: 'menu',
+          action: 'NONE',
+          isActive: true,
+          isSystem: true
+        },
+        {
+          businessId,
+          category,
+          step: 'system',
+          triggerKeywords: ['*'],
+          responseTemplate: 'We will respond within 24 hrs',
+          nextStep: 'start',
+          action: 'NONE',
+          isActive: true,
+          isSystem: true
+        }
+      ];
+
+      // Upsert system flows
+      for (const sysFlow of systemFlows) {
+        await ChatbotFlow.findOneAndUpdate(
+          { businessId, step: sysFlow.step, isSystem: true },
+          sysFlow,
+          { upsert: true, new: true }
+        );
+      }
+
+      // 5. Insert plan flows
+      if (flowsToInsert.length > 0) {
+        await ChatbotFlow.insertMany(flowsToInsert);
+      }
+
+      logger.info(`[SEEDER] Successfully seeded ${flowsToInsert.length} flows for business ${businessId} (${resolvedPlan})`);
+      return { success: true, count: flowsToInsert.length };
+    } catch (error) {
+      logger.error(`[SEEDER] Error seeding flows for business ${businessId}:`, error);
+      throw error;
     }
   }
 
-  async ensureCoreFlowCoverage(businessId, category) {
-    const flows = this.getFlowsForCategory(businessId, category);
-    await this.upsertFlows(flows);
-  }
-
-  async seedBookingFlows(businessId) {
-    await ChatbotFlow.deleteMany({ businessId, category: 'booking' });
-    await ChatbotFlow.insertMany(this.getBookingFlows(businessId));
-    console.log(`[SEEDER] Seeded booking flows for business: ${businessId}`);
-  }
-
-  async seedEcommerceFlows(businessId) {
-    await ChatbotFlow.deleteMany({ businessId, category: 'ecommerce' });
-    await ChatbotFlow.insertMany(this.getEcommerceFlows(businessId));
-    console.log(`[SEEDER] Seeded ecommerce flows for business: ${businessId}`);
+  /**
+   * Seed initial flows based on category (used during signup)
+   */
+  async seedForCategory(businessId, category = 'ecommerce') {
+    try {
+      // For new signups, we default to FREE plan which only has system flows
+      await this.seedFlowsForBusiness(businessId, 'FREE');
+    } catch (error) {
+       logger.error(`[SEEDER] Initial seeding failed:`, error);
+    }
   }
 }
 
 export default new ChatbotSeederService();
+

@@ -13,7 +13,6 @@ import COLLECTIONS from '../config/mongoCollections.js';
  */
 
 const sessionSchema = new mongoose.Schema({
-  // Core identifiers
   phone: {
     type: String,
     required: true,
@@ -26,33 +25,17 @@ const sessionSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
-
-  // Session state
-  step: {
+  currentStep: {
     type: String,
-    required: true,
     default: 'start',
-    trim: true,
   },
-
-  // Dynamic context storage
-  context: {
+  collectedData: {
     type: mongoose.Schema.Types.Mixed,
     default: {},
   },
-
-  // Last message for debugging
-  lastMessage: {
-    type: String,
-    default: '',
-    trim: true,
-  },
-
-  // Session expiry tracking
-  updatedAt: {
+  lastInteractionAt: {
     type: Date,
     default: Date.now,
-    index: true,
   },
 }, {
   timestamps: true,

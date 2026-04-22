@@ -3,10 +3,20 @@ import NoteService from '../services/noteService.js';
 class NoteController {
   async createNote(req, res) {
     try {
-      const { customerId, content } = req.body;
+      const { customerId, appointmentId, content } = req.body;
       const createdBy = req.user.id;
-      const note = await NoteService.createNote(customerId, content, createdBy, req.businessId);
+      const note = await NoteService.createNote(customerId, content, createdBy, req.businessId, appointmentId);
       res.status(201).json(note);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+
+  async getNotesByAppointment(req, res) {
+    try {
+      const { appointmentId } = req.params;
+      const notes = await NoteService.getNotesByAppointment(appointmentId, req.businessId);
+      res.json(notes);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }

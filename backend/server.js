@@ -40,6 +40,9 @@ import supportTicketRoutes from './routes/supportTicket.js';
 import feedbackRoutes from './routes/feedback.js';
 import businessRoutes from './routes/business.js';
 import usageRoutes from './routes/usage.js';
+import templatesRoutes from './routes/templates.js';
+import conversationRoutes from './routes/conversationRoutes.js';
+import cartRoutes from './routes/cart.js';
 // Import middleware
 import { authenticateToken } from './middlewares/auth.js';
 import { apiLimiter, authLimiter, webhookLimiter } from './middlewares/rateLimit.js';
@@ -117,6 +120,9 @@ app.use('/api/support', authenticateToken, supportTicketRoutes);
 app.use('/api/feedback', authenticateToken, feedbackRoutes);
 app.use('/api/business', authenticateToken, businessRoutes);
 app.use('/api/usage', authenticateToken, usageRoutes);
+app.use('/api/templates', authenticateToken, templatesRoutes);
+app.use('/api/conversations', authenticateToken, conversationRoutes);
+app.use('/api/cart', authenticateToken, cartRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -12,11 +12,15 @@ import {
   FiSend,
   FiTrendingUp,
   FiUsers,
+  FiActivity,
 } from 'react-icons/fi';
 import api from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
 const Analytics = () => {
+  const { user } = useAuth();
   const [analytics, setAnalytics] = useState(null);
+  const isBooking = user?.businessType === 'BOOKING' || analytics?.category === 'booking';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -100,17 +104,6 @@ const Analytics = () => {
 
   if (!analytics) return null;
 
-  const orderData = [
-    { name: 'Success', value: analytics.orders.success, color: '#2563eb' },
-    { name: 'Resolution Failed', value: analytics.orders.failed, color: '#cbd5e1' },
-  ];
-
-  const chartData = [
-    { name: 'Traffic', value: analytics.messages.total },
-    { name: 'Ledger', value: analytics.orders.total },
-    { name: 'Nodes', value: analytics.appointments.total },
-  ];
-
   return (
     <div className="space-y-10 animate-fade-in pb-10">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -142,99 +135,97 @@ const Analytics = () => {
           trend={5}
         />
         <StatCard
-          title="Aggregated Liquidity"
-          value={`Rs ${(analytics.revenue.total).toLocaleString()}`}
-          subtitle={`AOV Projection: Rs ${(analytics.revenue.averageOrderValue).toFixed(0)}`}
-          Icon={FiDollarSign}
+          title={isBooking ? "Confirmed Bookings" : "Total Revenue"}
+          value={isBooking ? analytics.summary.confirmedAppointments : `Rs ${(analytics.revenue.total).toLocaleString()}`}
+          subtitle={isBooking ? `${analytics.appointments.pending} Pending Confirmation` : `AOV Projection: Rs ${Number(analytics.revenue.averageOrderValue).toFixed(0)}`}
+          Icon={isBooking ? FiCalendar : FiDollarSign}
           trend={8}
         />
         <StatCard
-          title="Transaction Throughput"
-          value={analytics.orders.total}
-          subtitle={`${analytics.orders.successRate}% Conversion Resolution`}
-          Icon={FiPackage}
-          trend={3}
+          title={isBooking ? "Booking Conversion" : "Chat Conversion"}
+          value={`${analytics.summary.conversionRate}%`}
+          subtitle={isBooking ? `${analytics.summary.confirmedAppointments} Success / ${analytics.summary.totalSessions} Starts` : `${analytics.summary.sessionsCompleted} Orders / ${analytics.summary.sessionsStarted} Sessions`}
+          Icon={FiTrendingUp}
+          trend={analytics.summary.conversionRate > 20 ? 12 : -5}
         />
         <StatCard
-          title="Network Traffic (MSG)"
-          value={analytics.messages.total}
-          subtitle={`I/O: ${analytics.messages.incoming} IN / ${analytics.messages.outgoing} OUT`}
-          Icon={FiMessageCircle}
-          trend={12}
+          title={isBooking ? "Cancellation Rate" : "Refunded Amount"}
+          value={isBooking ? `${analytics.summary.cancelRate}%` : `Rs ${(analytics.revenue.refundedAmount || 0).toLocaleString()}`}
+          subtitle={isBooking ? `${analytics.summary.cancelledAppointments} Lost / ${analytics.summary.confirmedAppointments} Booked` : `${analytics.orders.cancelled} Cancelled / ${analytics.orders.returned} Returned`}
+          Icon={FiActivity}
+          trend={isBooking ? -analytics.summary.cancelRate : -(analytics.orders.returned || 0)}
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         <MetricGroup
-          title="Transaction Resolutions"
-          metrics={[
-            { label: 'Total Units', value: analytics.orders.total },
-            { label: 'Cleared', value: analytics.orders.success },
-            { label: 'Latent', value: analytics.orders.failed },
-            { label: 'Success Yield', value: `${analytics.orders.successRate}%` },
-            { label: 'Error Ratio', value: `${analytics.orders.failureRate}%` },
+          title={isBooking ? "Appointment Lifecycle" : "Transaction Resolutions"}
+          metrics={isBooking ? [
+            { label: 'Total Sessions', value: analytics.summary.totalSessions },
+            { label: 'Qualified Leads', value: analytics.summary.qualifiedLeads },
+            { label: 'Booking Attempts', value: analytics.summary.bookingAttempts },
+            { label: 'Confirmed', value: analytics.summary.confirmedAppointments },
+            { label: 'Cancelled', value: analytics.summary.cancelledAppointments },
+          ] : [
+            { label: 'Total Orders', value: analytics.orders.total },
+            { label: 'Delivered', value: analytics.orders.delivered },
+            { label: 'Cancelled', value: analytics.orders.cancelled },
+            { label: 'Returned', value: analytics.orders.returned },
+            { label: 'Online Payments', value: analytics.orders.onlinePaymentsCount },
+            { label: 'COD Payments', value: analytics.orders.codPaymentsCount },
           ]}
         />
         <MetricGroup
-          title="Network Utilization"
+          title="Efficiency Intelligence"
           metrics={[
-            { label: 'Total Traffic', value: analytics.messages.total },
-            { label: 'Ingress', value: analytics.messages.incoming },
-            { label: 'Egress', value: analytics.messages.outgoing },
-            { label: 'Ingress Ratio', value: `${((analytics.messages.incoming / analytics.messages.total) * 100 || 0).toFixed(1)}%` },
-            { label: 'Egress Ratio', value: `${((analytics.messages.outgoing / analytics.messages.total) * 100 || 0).toFixed(1)}%` },
+            { label: 'Conversion Yield', value: `${analytics.summary.conversionRate}%` },
+            { label: 'Drop-off Rate', value: `${analytics.summary.dropOffRate}%` },
+            { label: isBooking ? 'Cancellation Rate' : 'Paid Revenue', value: isBooking ? `${analytics.summary.cancelRate}%` : `Rs ${(analytics.revenue.total || 0).toLocaleString()}` },
+            { label: 'Avg Msgs/User', value: analytics.summary.avgMessagesPerUser },
+            { label: 'Traffic (Total Msgs)', value: analytics.messages.total },
           ]}
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
          <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm p-10 overflow-hidden">
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-10 text-center">Conversion Topology</h3>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={orderData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={80}
-                    outerRadius={110}
-                    paddingAngle={8}
-                    dataKey="value"
-                  >
-                    {orderData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', padding: '12px' }}
-                    itemStyle={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex justify-center gap-10 mt-6">
-                {orderData.map((d, i) => (
-                   <div key={i} className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full" style={{ backgroundColor: d.color }} />
-                      <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">{d.name}</span>
-                   </div>
-                ))}
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-10 text-center">Conversion Funnel</h3>
+            <div className="space-y-6">
+              {(analytics.funnel || []).map((step, idx) => (
+                <div key={idx} className="relative">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{step.label}</span>
+                    <span className="text-xs font-black text-blue-600">{step.count} users</span>
+                  </div>
+                  <div className="h-3 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100/50">
+                    <div 
+                      className="h-full bg-blue-600 rounded-full transition-all duration-1000"
+                      style={{ width: `${(step.count / (analytics.funnel[0]?.count || 1)) * 100}%` }}
+                    />
+                  </div>
+                  {idx > 0 && (
+                    <div className="absolute -top-4 right-0 text-[8px] font-bold text-rose-500 uppercase tracking-tighter">
+                      -{step.dropRate}% Drop
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
          </div>
 
          <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm p-10 overflow-hidden">
-            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-10 text-center">Activity Spectral Map</h3>
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-10 text-center">{isBooking ? 'Booking Performance Trend' : 'Order Performance Trend'}</h3>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData}>
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#94a3b8' }} dy={10} />
+                <BarChart data={analytics.appointmentTrend || []}>
+                  <XAxis dataKey="_id" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#94a3b8' }} dy={10} />
                   <Tooltip 
                     cursor={{ fill: '#f8fafc' }}
                     contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', padding: '12px' }}
                     itemStyle={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em' }}
                   />
-                  <Bar dataKey="value" fill="#2563eb" radius={[6, 6, 6, 6]} barSize={40} />
+                  <Bar dataKey="confirmed" fill="#10b981" radius={[6, 6, 0, 0]} barSize={20} name={isBooking ? 'Confirmed' : 'Delivered'} />
+                  <Bar dataKey="cancelled" fill="#ef4444" radius={[6, 6, 0, 0]} barSize={20} name={isBooking ? 'Cancelled' : 'Cancelled'} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -248,16 +239,16 @@ const Analytics = () => {
             <div className="space-y-2">
                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Client Ecosystem</p>
                <p className="text-3xl font-black">{analytics.customers.total}</p>
-               <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{((analytics.customers.existing / analytics.customers.total) * 100).toFixed(1)}% Core Retention</p>
+               <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{analytics.customers.total ? ((analytics.customers.existing / analytics.customers.total) * 100).toFixed(1) : '0.0'}% Core Retention</p>
             </div>
             <div className="space-y-2 border-l border-white/10 pl-12">
-               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Resolved Revenue</p>
-               <p className="text-3xl font-black">Rs {(analytics.revenue.total).toLocaleString()}</p>
-               <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Across {analytics.orders.total} Validations</p>
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{isBooking ? 'Scheduled Density' : 'Resolved Revenue'}</p>
+               <p className="text-3xl font-black">{isBooking ? analytics.appointments.total : `Rs ${(analytics.revenue.total).toLocaleString()}`}</p>
+               <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{isBooking ? `Across ${analytics.appointments.confirmed} Confirmations` : `Across ${analytics.orders.total} Orders`}</p>
             </div>
             <div className="space-y-2 border-l border-white/10 pl-12">
                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Interaction Density</p>
-               <p className="text-3xl font-black">{((analytics.messages.total / analytics.customers.total) * 100).toFixed(1)}%</p>
+               <p className="text-3xl font-black">{analytics.customers.total ? ((analytics.messages.total / analytics.customers.total) * 100).toFixed(1) : '0.0'}%</p>
                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{analytics.messages.total} Total Transmissions</p>
             </div>
          </div>

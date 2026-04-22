@@ -1,6 +1,10 @@
-import { PLAN_CONFIG } from '../config/plans.js';
+import { PLAN_CONFIG, getPlanConfig, resolveBusinessPlan } from '../config/plans.js';
+import logger from '../utils/logger.js';
+
 import Usage from '../models/Usage.js';
 import User from '../models/User.js';
+import ChatbotFlow from '../models/ChatbotFlow.js';
+import Business from '../models/Business.js';
 
 // Maps plan config keys → actual Usage model field names
 const USAGE_FIELD_MAP = {
@@ -8,9 +12,40 @@ const USAGE_FIELD_MAP = {
   maxMessages: 'messagesUsed',
 };
 
+/**
+ * Enforce flow limits per plan
+ * Counts only active, non-system flows
+ */
+export const checkFlowLimit = async (req, res, next) => {
+  try {
+    const businessId = req.businessId || req.user?.businessId;
+    const business = await Business.findById(businessId).select('plan subscription.plan').lean();
+    const plan = resolveBusinessPlan(business);
+    const config = getPlanConfig(plan);
+
+    const count = await ChatbotFlow.countDocuments({
+      businessId,
+      isActive: true,
+      isSystem: false,
+    });
+
+    if (config.maxFlows !== Infinity && count >= config.maxFlows) {
+      return res.status(403).json({
+        code: "FLOW_LIMIT_REACHED",
+        message: "Upgrade your plan to add more flows"
+      });
+    }
+
+    next();
+  } catch (error) {
+    logger.error('Flow limit check failed:', error);
+    res.status(500).json({ message: 'Internal server error while checking limits' });
+  }
+};
+
 export const checkPlanFeature = (feature) => {
+
   return (req, res, next) => {
-    // req.user is populated by authenticateToken
     const plan = req.user.plan || 'FREE';
     const status = req.user.subscriptionStatus || 'ACTIVE';
     const config = PLAN_CONFIG[plan];
@@ -24,7 +59,9 @@ export const checkPlanFeature = (feature) => {
        // But if for some reason status is EXPIRED, we treat it as FREE but maybe more restricted.
     }
 
-    if (!config[feature]) {
+    const featureEnabled = config?.features?.[feature]?.enabled ?? config?.[feature];
+
+    if (!featureEnabled) {
       return res.status(403).json({
         message: `Your current plan (${plan}) does not support this feature. Please upgrade.`,
         code: 'FEATURE_LOCKED'
@@ -69,9 +106,8 @@ export const checkUsageLimit = (limitType) => {
 
       next();
     } catch (error) {
-      console.error('Usage limit check failed', error);
+      logger.error('Usage limit check failed:', error);
       res.status(500).json({ message: 'Failed to verify usage limits' });
     }
   };
 };
-

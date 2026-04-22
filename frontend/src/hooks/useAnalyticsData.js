@@ -16,6 +16,18 @@ const buildSeries = (analytics) => {
 };
 
 const buildOrderSeries = (analytics) => {
+  const isBooking = analytics?.businessType === 'BOOKING';
+  if (isBooking) {
+    const booked = Number(analytics?.appointments?.booked || 0);
+    const completed = Number(analytics?.appointments?.completed || 0);
+    const total = Number(analytics?.appointments?.total || booked + completed);
+
+    return [
+      { name: 'Appointments', pending: booked, confirmed: completed },
+      { name: 'Projection', pending: Math.round(booked * 0.92), confirmed: Math.min(total, Math.round(completed * 1.08)) },
+    ];
+  }
+
   const pending = Number(analytics?.orders?.pending || 0);
   const confirmed = Number(analytics?.orders?.confirmed || 0);
   const total = Number(analytics?.orders?.total || pending + confirmed);
@@ -29,14 +41,19 @@ const buildOrderSeries = (analytics) => {
 const buildFunnel = (analytics) => {
   const totalMessages = Number(analytics?.messages?.total || 0);
   const incoming = Number(analytics?.messages?.incoming || 0);
-  const orders = Number(analytics?.orders?.total || 0);
-  const confirmed = Number(analytics?.orders?.confirmed || 0);
+  const isBooking = analytics?.businessType === 'BOOKING';
+  const transactions = isBooking
+    ? Number(analytics?.appointments?.total || 0)
+    : Number(analytics?.orders?.total || 0);
+  const confirmed = isBooking
+    ? Number(analytics?.appointments?.completed || 0)
+    : Number(analytics?.orders?.confirmed || 0);
 
   return [
     { id: 'messages', label: 'Total Messages', value: totalMessages },
     { id: 'incoming', label: 'Incoming Leads', value: incoming },
-    { id: 'orders', label: 'Orders', value: orders },
-    { id: 'confirmed', label: 'Confirmed Orders', value: confirmed },
+    { id: isBooking ? 'appointments' : 'orders', label: isBooking ? 'Appointments' : 'Orders', value: transactions },
+    { id: 'confirmed', label: isBooking ? 'Completed Appointments' : 'Confirmed Orders', value: confirmed },
   ];
 };
 

@@ -9,7 +9,7 @@ class CustomerStatusService {
     return activityCount > 1 ? 'existing' : 'new';
   }
 
-  async getActivityCountMap(customerIds, businessId) {
+  async getActivityCountMap(customerIds, businessId, category = 'ecommerce') {
     if (!customerIds?.length) {
       return new Map();
     }
@@ -25,16 +25,21 @@ class CustomerStatusService {
     const objectIds = normalizedIds.map((id) => new mongoose.Types.ObjectId(id));
 
     const tenantScope = buildTenantScope(businessId);
-    const [orderCounts, appointmentCounts] = await Promise.all([
-      Order.aggregate([
+    
+    let orderCounts = [];
+    let appointmentCounts = [];
+
+    if (category === 'booking') {
+      appointmentCounts = await Appointment.aggregate([
         { $match: { customerId: { $in: objectIds }, ...tenantScope } },
         { $group: { _id: '$customerId', count: { $sum: 1 } } },
-      ]),
-      Appointment.aggregate([
+      ]);
+    } else {
+      orderCounts = await Order.aggregate([
         { $match: { customerId: { $in: objectIds }, ...tenantScope } },
         { $group: { _id: '$customerId', count: { $sum: 1 } } },
-      ]),
-    ]);
+      ]);
+    }
 
     const map = new Map(normalizedIds.map((id) => [id, 0]));
 

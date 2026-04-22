@@ -27,6 +27,46 @@ const customerSchema = new mongoose.Schema({
     trim: true,
     default: '',
   },
+  totalOrders: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  totalSpent: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  lastActivity: {
+    type: Date,
+    default: Date.now,
+  },
+  cart: {
+    type: [
+      {
+        productId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Product',
+          default: null,
+        },
+        name: {
+          type: String,
+          trim: true,
+          default: '',
+        },
+        price: {
+          type: Number,
+          default: 0,
+        },
+        quantity: {
+          type: Number,
+          default: 1,
+          min: 1,
+        },
+      }
+    ],
+    default: [],
+  },
   status: {
     type: String,
     enum: ['new', 'existing'],

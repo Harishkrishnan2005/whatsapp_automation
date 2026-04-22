@@ -1,0 +1,134 @@
+[
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "start",
+    "triggerKeywords": ["hi", "hello", "menu", "book"],
+    "responseTemplate": "Welcome to our Enterprise Booking Concierge. How may we assist you?\n1. New Appointment\n2. View My Bookings\n3. Support Desk\n4. Feedback & Ratings",
+    "nextStep": "main_menu",
+    "action": "NONE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "main_menu",
+    "triggerKeywords": ["1", "new", "book"],
+    "responseTemplate": "Understood. Please start by telling us your full name for the reservation.",
+    "nextStep": "get_name",
+    "action": "NONE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "get_name",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Thank you, {{name}}. Which of our premium services would you like to schedule? (e.g., Executive Consultation, Site Audit)",
+    "nextStep": "get_service",
+    "action": "SAVE_NAME",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "get_service",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Service: {{service}}. Please specify your preferred date (DD/MM/YYYY).",
+    "nextStep": "get_date",
+    "action": "SAVE_SERVICE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "get_date",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Date: {{date}}. Please specify a preferred time (HH:mm 24h format).",
+    "nextStep": "get_time",
+    "action": "SAVE_DATE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "get_time",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Verifying {{service}} for {{date}} at {{time}}. Shall we confirm this entry? (yes/no)",
+    "nextStep": "confirm_booking",
+    "action": "SAVE_TIME",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "confirm_booking",
+    "triggerKeywords": ["yes", "y", "confirm"],
+    "responseTemplate": "Success! Your appointment is confirmed. Reference ID: {{appointmentId}}.",
+    "nextStep": "start",
+    "action": "BOOK_APPOINTMENT",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "main_menu",
+    "triggerKeywords": ["2", "view", "my bookings"],
+    "responseTemplate": "Fetching your scheduled appointments...",
+    "nextStep": "start",
+    "action": "GET_BOOKINGS",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "main_menu",
+    "triggerKeywords": ["3", "support"],
+    "responseTemplate": "Please detail your request or issue. Our dedicated support team is standing by.",
+    "nextStep": "submit_support",
+    "action": "NONE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "submit_support",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Priority ticket generated. We will connect with you shortly.",
+    "nextStep": "start",
+    "action": "CREATE_SUPPORT",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "main_menu",
+    "triggerKeywords": ["4", "feedback"],
+    "responseTemplate": "We value your input. Please share your feedback regarding our services.",
+    "nextStep": "submit_feedback",
+    "action": "NONE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "submit_feedback",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Feedback received. Thank you for helping us improve.",
+    "nextStep": "start",
+    "action": "CREATE_FEEDBACK",
+    "isActive": true,
+    "isSystem": false
+  }
+]

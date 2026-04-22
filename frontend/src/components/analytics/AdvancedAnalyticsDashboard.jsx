@@ -27,6 +27,7 @@ const AdvancedAnalyticsDashboard = () => {
   } = useAnalyticsData();
 
   const formatNumber = (value) => Number(value ?? 0).toLocaleString();
+  const isBooking = analytics?.businessType === 'BOOKING';
 
   const conversionData = useMemo(() => {
     if (!analytics) return [];
@@ -81,14 +82,14 @@ const AdvancedAnalyticsDashboard = () => {
         sparkline: [12, 16, 18, 20, 24, Number(analytics.customers?.conversionRate || 0)],
       },
       {
-        id: 'orders',
-        label: 'Total Orders',
-        value: analytics.orders?.total || 0,
+        id: isBooking ? 'appointments' : 'orders',
+        label: isBooking ? 'Total Appointments' : 'Total Orders',
+        value: isBooking ? (analytics.appointments?.total || 0) : (analytics.orders?.total || 0),
         trend: -1.4,
-        sparkline: [18, 16, 21, 19, 17, analytics.orders?.total || 0],
+        sparkline: [18, 16, 21, 19, 17, isBooking ? (analytics.appointments?.total || 0) : (analytics.orders?.total || 0)],
       },
     ];
-  }, [analytics, customerSeries]);
+  }, [analytics, customerSeries, isBooking]);
 
   if (loading && !analytics) {
     return (
@@ -144,7 +145,10 @@ const AdvancedAnalyticsDashboard = () => {
              </div>
           </ChartWrapper>
 
-          <ChartWrapper title="Operational Load" subtitle="Status-based distribution of system orders">
+          <ChartWrapper
+            title={isBooking ? 'Appointment Load' : 'Operational Load'}
+            subtitle={isBooking ? 'Status-based distribution of booked sessions' : 'Status-based distribution of system orders'}
+          >
              <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
                <Suspense fallback={chartSkeleton}>
                  <OrdersAnalyticsChart data={orderSeries} />
@@ -153,21 +157,23 @@ const AdvancedAnalyticsDashboard = () => {
           </ChartWrapper>
         </div>
 
-        <div className="space-y-8">
-          <RevenueIntelligenceCard
-            revenue={revenueSummary.current}
-            previous={revenueSummary.previous}
-            growth={revenueSummary.growth}
-            sparkline={revenueSummary.sparkline}
-          />
-          <ChartWrapper title="Yield Distribution" subtitle="System-wide conversion metrics">
-            <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200/60 shadow-sm">
-               <Suspense fallback={chartSkeleton}>
-                 <ConversionMixChart conversion={conversionData} />
-               </Suspense>
-            </div>
-          </ChartWrapper>
-        </div>
+        {!isBooking && (
+          <div className="space-y-8">
+            <RevenueIntelligenceCard
+              revenue={revenueSummary.current}
+              previous={revenueSummary.previous}
+              growth={revenueSummary.growth}
+              sparkline={revenueSummary.sparkline}
+            />
+            <ChartWrapper title="Yield Distribution" subtitle="System-wide conversion metrics">
+              <div className="bg-white p-6 rounded-[2.5rem] border border-slate-200/60 shadow-sm">
+                 <Suspense fallback={chartSkeleton}>
+                   <ConversionMixChart conversion={conversionData} />
+                 </Suspense>
+              </div>
+            </ChartWrapper>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
@@ -196,42 +202,44 @@ const AdvancedAnalyticsDashboard = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden flex flex-col">
-        <div className="px-8 py-6 border-b border-slate-100">
-           <h2 className="text-lg font-black text-slate-900">Campaign Logistics View</h2>
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Audit of out-bound communications</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/30">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Message Payload</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Transmission Sent</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Success Velocity</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {campaigns.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="px-8 py-16 text-center opacity-30 italic">No communication logs detected.</td>
+      {!isBooking && (
+        <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden flex flex-col">
+          <div className="px-8 py-6 border-b border-slate-100">
+             <h2 className="text-lg font-black text-slate-900">Campaign Logistics View</h2>
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Audit of out-bound communications</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/30">
+                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Message Payload</th>
+                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Transmission Sent</th>
+                  <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Success Velocity</th>
                 </tr>
-              ) : (
-                campaigns.map((c, idx) => (
-                  <tr key={idx} className="group hover:bg-slate-50 transition-colors">
-                    <td className="px-8 py-6 text-sm font-medium text-slate-600">{c.message}</td>
-                    <td className="px-8 py-6 text-sm font-black text-slate-900">{formatNumber(c.messagesSent)}</td>
-                    <td className="px-8 py-6 text-right">
-                       <span className="inline-flex px-3 py-1 rounded-lg bg-blue-50 border border-blue-100 text-[9px] font-black text-blue-600 uppercase tracking-widest">
-                         {c.successRate}% YIELD
-                       </span>
-                    </td>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {campaigns.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-8 py-16 text-center opacity-30 italic">No communication logs detected.</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  campaigns.map((c, idx) => (
+                    <tr key={idx} className="group hover:bg-slate-50 transition-colors">
+                      <td className="px-8 py-6 text-sm font-medium text-slate-600">{c.message}</td>
+                      <td className="px-8 py-6 text-sm font-black text-slate-900">{formatNumber(c.messagesSent)}</td>
+                      <td className="px-8 py-6 text-right">
+                         <span className="inline-flex px-3 py-1 rounded-lg bg-blue-50 border border-blue-100 text-[9px] font-black text-blue-600 uppercase tracking-widest">
+                           {c.successRate}% YIELD
+                         </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden flex flex-col">
           <div className="px-8 py-6 border-b border-slate-100">
@@ -268,7 +276,7 @@ const AdvancedAnalyticsDashboard = () => {
                          </div>
                       </td>
                       <td className="px-8 py-6 text-sm font-black text-slate-900">{formatNumber(e.messages)} MSG</td>
-                      <td className="px-8 py-6 text-sm font-black text-slate-900">{formatNumber(e.orders)} HIT</td>
+                      <td className="px-8 py-6 text-sm font-black text-slate-900">{formatNumber(isBooking ? e.appointments : e.orders)} HIT</td>
                       <td className="px-8 py-6 text-right">
                         <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${
                           String(e.status).toLowerCase() === 'existing'

@@ -5,7 +5,7 @@ import { authenticateToken, isAdmin } from '../middlewares/authorization.js';
 import { checkUsageLimit } from '../middlewares/planMiddleware.js';
 
 import validate from '../middlewares/validate.js';
-import { loginSchema, registerSchema, createStaffSchema } from '../validations/auth.validation.js';
+import { loginSchema, registerSchema, createStaffSchema, updateStaffSchema } from '../validations/auth.validation.js';
 
 const router = express.Router();
 
@@ -19,6 +19,7 @@ router.post('/refresh', AuthController.refresh);
 // Admin only
 router.post('/staff', authenticateToken, isAdmin, checkUsageLimit('maxUsers'), validate(createStaffSchema), AuthController.createStaff);
 router.get('/staff', authenticateToken, isAdmin, AuthController.getStaffUsers);
+router.put('/staff/:id', authenticateToken, isAdmin, validate(updateStaffSchema), AuthController.updateStaff);
 router.put('/staff/:id/permissions', authenticateToken, isAdmin, AuthController.updateStaffPermissions);
 router.delete('/staff/:id', authenticateToken, isAdmin, AuthController.deleteStaff);
 

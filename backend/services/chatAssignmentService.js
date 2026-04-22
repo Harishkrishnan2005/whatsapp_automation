@@ -1,19 +1,46 @@
 import ChatAssignment from '../models/ChatAssignment.js';
 import Notification from '../models/Notification.js';
 import Customer from '../models/Customer.js';
+import Conversation from '../models/Conversation.js';
 import buildTenantScope from '../utils/tenantScope.js';
 
 class ChatAssignmentService {
   // Assign chat to staff
   async assignChat(customerId, staffId, businessId) {
     const tenantScope = buildTenantScope(businessId);
+    const customer = await Customer.findOneAndUpdate(
+      { _id: customerId, ...tenantScope },
+      { assignedTo: staffId },
+      { new: true }
+    ).select('phone');
+
+    if (!customer) {
+      throw new Error('Customer not found');
+    }
+
     const existing = await ChatAssignment.findOne({
       customerId,
       ...tenantScope,
       status: { $ne: 'closed' },
     });
 
-    await Customer.findOneAndUpdate({ _id: customerId, ...tenantScope }, { assignedTo: staffId });
+    await Conversation.findOneAndUpdate(
+      { phone: String(customer.phone || '').trim(), ...tenantScope },
+      {
+        $setOnInsert: {
+          phone: String(customer.phone || '').trim(),
+          businessId,
+          customerId,
+        },
+        $set: {
+          customerId,
+          assignedStaffId: staffId,
+          status: 'active',
+          updatedAt: new Date(),
+        }
+      },
+      { upsert: true, new: true }
+    );
 
     if (existing) {
       existing.assignedTo = staffId;
@@ -52,12 +79,14 @@ class ChatAssignmentService {
   async getAssignedChats(staffId, page = 1, limit = 10, businessId) {
     const skip = (page - 1) * limit;
     const tenantScope = buildTenantScope(businessId);
-    const chats = await ChatAssignment.find({ assignedTo: staffId, ...tenantScope })
+    const chats = await Conversation.find({ assignedStaffId: staffId, status: { $ne: 'closed' }, ...tenantScope })
       .populate('customerId', 'name phone')
+      .populate('assignedStaffId', 'name email')
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 });
-    const total = await ChatAssignment.countDocuments({ assignedTo: staffId, ...tenantScope });
+      .sort({ updatedAt: -1 })
+      .lean();
+    const total = await Conversation.countDocuments({ assignedStaffId: staffId, status: { $ne: 'closed' }, ...tenantScope });
     return { chats, total, page, limit };
   }
 
@@ -65,32 +94,72 @@ class ChatAssignmentService {
   async getAllActiveChats(page = 1, limit = 10, businessId) {
     const skip = (page - 1) * limit;
     const tenantScope = buildTenantScope(businessId);
-    const chats = await ChatAssignment.find({ status: { $ne: 'closed' }, ...tenantScope })
+    const chats = await Conversation.find({ status: { $ne: 'closed' }, ...tenantScope })
       .populate('customerId', 'name phone')
-      .populate('assignedTo', 'name email')
+      .populate('assignedStaffId', 'name email')
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 });
-    const total = await ChatAssignment.countDocuments({ status: { $ne: 'closed' }, ...tenantScope });
+      .sort({ updatedAt: -1 })
+      .lean();
+    const total = await Conversation.countDocuments({ status: { $ne: 'closed' }, ...tenantScope });
     return { chats, total, page, limit };
   }
 
   // Transfer chat to different staff
   async transferChat(assignmentId, newStaffId, businessId) {
-    return await ChatAssignment.findOneAndUpdate(
+    const updatedAssignment = await ChatAssignment.findOneAndUpdate(
       { _id: assignmentId, ...buildTenantScope(businessId) },
       { assignedTo: newStaffId },
       { new: true }
     ).populate('customerId', 'name phone');
+
+    if (updatedAssignment?.customerId?.phone) {
+      await Conversation.findOneAndUpdate(
+        {
+          phone: String(updatedAssignment.customerId.phone || '').trim(),
+          ...buildTenantScope(businessId),
+        },
+        {
+          $set: {
+            customerId: updatedAssignment.customerId._id,
+            assignedStaffId: newStaffId,
+            status: 'active',
+            updatedAt: new Date(),
+          }
+        }
+      );
+    }
+
+    return updatedAssignment;
   }
 
   // Close chat
-  async closeChat(assignmentId, notes = '', businessId) {
-    return await ChatAssignment.findOneAndUpdate(
-      { _id: assignmentId, ...buildTenantScope(businessId) },
-      { status: 'closed', notes },
-      { new: true }
-    );
+  async closeChat(assignmentId, notes = '', businessId, user = null) {
+    const assignment = await ChatAssignment.findOne({ _id: assignmentId, ...buildTenantScope(businessId) });
+    if (!assignment) {
+      throw new Error('Chat assignment not found');
+    }
+
+    const userId = user?.id || user?._id;
+    if (user?.role === 'staff' && String(assignment.assignedTo || '') !== String(userId || '')) {
+      throw new Error('Unauthorized to close this conversation');
+    }
+
+    assignment.status = 'closed';
+    assignment.notes = notes;
+    await assignment.save();
+
+    if (assignment) {
+      const customer = await Customer.findOne({ _id: assignment.customerId, ...buildTenantScope(businessId) }).select('phone');
+      if (customer?.phone) {
+        await Conversation.findOneAndUpdate(
+          { phone: String(customer.phone || '').trim(), ...buildTenantScope(businessId) },
+          { $set: { status: 'closed', updatedAt: new Date() } }
+        );
+      }
+    }
+
+    return assignment;
   }
 
   // Admin take over chat

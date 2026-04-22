@@ -1,6 +1,7 @@
 import Usage from '../models/Usage.js';
 import Business from '../models/Business.js';
-import { PLAN_CONFIG } from '../config/plans.js';
+import ChatbotFlow from '../models/ChatbotFlow.js';
+import { getBusinessPlanConfig, resolveBusinessPlan } from '../config/plans.js';
 
 class UsageService {
   async incrementMessages(businessId) {
@@ -8,8 +9,8 @@ class UsageService {
       const business = await Business.findById(businessId).select('subscription');
       if (!business) return;
 
-      const plan = business.subscription.plan || 'FREE';
-      const limit = PLAN_CONFIG[plan].maxMessages;
+      const plan = resolveBusinessPlan(business);
+      const limit = getBusinessPlanConfig(business).maxMessages;
 
       const usage = await Usage.findOneAndUpdate(
         { businessId },
@@ -62,8 +63,7 @@ class UsageService {
       const business = await Business.findById(businessId).select('subscription');
       if (!business) return false;
 
-      const plan = business.subscription.plan || 'FREE';
-      const limit = PLAN_CONFIG[plan].maxMessages;
+      const limit = getBusinessPlanConfig(business).maxMessages;
 
       if (limit === Infinity) return true;
 
@@ -95,17 +95,30 @@ class UsageService {
 
   async getUsage(businessId) {
     try {
-      const business = await Business.findById(businessId).select('subscription').lean();
-      const plan = business?.subscription?.plan || 'FREE';
-      const config = PLAN_CONFIG[plan];
+      const business = await Business.findById(businessId).select('plan subscription.plan').lean();
+      const plan = resolveBusinessPlan(business);
+      const config = getBusinessPlanConfig(business);
 
       const usage = await Usage.findOne({ businessId }).lean();
       
+      const flowsCount = await ChatbotFlow.countDocuments({
+        businessId,
+        isActive: true,
+        isSystem: false,
+      });
+
+      const maxFlows = config.maxFlows;
+      const remainingFlows = maxFlows === Infinity ? Infinity : Math.max(0, maxFlows - flowsCount);
+
       return {
         messagesUsed: usage?.messagesUsed || 0,
         maxMessages: config.maxMessages,
-        flowsCreated: usage?.flowsCreated || 0,
-        maxFlows: config.maxFlows,
+        flowsCreated: flowsCount,
+        maxFlows: maxFlows,
+        remainingFlows: remainingFlows,
+        total: maxFlows,
+        used: flowsCount,
+        remaining: remainingFlows,
         resetDate: usage?.resetDate,
         plan
       };

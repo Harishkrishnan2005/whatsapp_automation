@@ -1,0 +1,57 @@
+[
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "start",
+    "triggerKeywords": ["hi", "hello", "start", "book"],
+    "responseTemplate": "Welcome to our booking assistant! What is your name?",
+    "nextStep": "get_name",
+    "action": "NONE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "get_name",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Nice to meet you, {{name}}! Which service do you need? (Haircut, Shave, Consultation)",
+    "nextStep": "get_service",
+    "action": "SAVE_NAME",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "get_service",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Great selection! Please provide a date (DD/MM/YYYY).",
+    "nextStep": "get_date",
+    "action": "SAVE_SERVICE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "get_date",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Perfect. Shall we confirm your booking for {{service}} on {{date}}? (Type 'yes' to confirm)",
+    "nextStep": "confirm",
+    "action": "SAVE_DATE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "confirm",
+    "triggerKeywords": ["yes", "confirm", "ok"],
+    "responseTemplate": "Confirmed! Your booking ID is registered. See you soon!",
+    "nextStep": "start",
+    "action": "BOOK_APPOINTMENT",
+    "isActive": true,
+    "isSystem": false
+  }
+]

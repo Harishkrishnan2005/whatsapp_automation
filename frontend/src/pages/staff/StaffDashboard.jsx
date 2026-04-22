@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiMessageSquare, FiCalendar, FiActivity, FiCheckCircle } from 'react-icons/fi';
+import { FiMessageSquare, FiCalendar, FiActivity, FiCheckCircle, FiClock } from 'react-icons/fi';
 import api from '../../utils/api';
 
 const StaffDashboard = () => {
@@ -27,10 +27,10 @@ const StaffDashboard = () => {
 
       <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          { label: 'Assigned Transmissions', val: dashboardData.assignedChatsCount ?? 0, icon: FiMessageSquare, col: 'blue' },
-          { label: "Today's Scheduling", val: dashboardData.todaysBookings ?? 0, icon: FiCalendar, col: 'emerald' },
-          { label: 'Pending Directives', val: 0, icon: FiActivity, col: 'indigo' },
-          { label: 'Resolution Rate', val: '0%', icon: FiCheckCircle, col: 'rose' },
+          { label: 'Total Assigned', val: dashboardData.totalAssigned ?? 0, icon: FiCalendar, col: 'blue' },
+          { label: "Today's Scheduling", val: dashboardData.todaysBookings ?? 0, icon: FiActivity, col: 'emerald' },
+          { label: 'Upcoming Slots', val: dashboardData.upcomingBookings ?? 0, icon: FiClock || FiCalendar, col: 'indigo' },
+          { label: 'Completed Resolution', val: dashboardData.completedBookings ?? 0, icon: FiCheckCircle, col: 'rose' },
         ].map((s, i) => (
           <motion.div 
             key={i} 
@@ -85,7 +85,7 @@ const StaffDashboard = () => {
                   <div>
                     <p className="text-base font-bold text-slate-900 leading-none group-hover:text-blue-600 transition-colors uppercase tracking-tighter">{booking.customerId?.name || 'EXTERNAL'}</p>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2 leading-none">
-                      {new Date(booking.date).toLocaleDateString()} • {booking.timeSlot}
+                      {new Date(booking.date).toLocaleDateString()} • {booking.time}
                     </p>
                   </div>
                 </div>

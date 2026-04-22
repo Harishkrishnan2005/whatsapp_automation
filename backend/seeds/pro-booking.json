@@ -1,0 +1,123 @@
+[
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "start",
+    "triggerKeywords": ["hi", "hello", "menu"],
+    "responseTemplate": "Welcome! How can we assist you today?\n1. New Appointment\n2. Support Ticket\n3. Leave Feedback",
+    "nextStep": "main_menu",
+    "action": "NONE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "main_menu",
+    "triggerKeywords": ["1", "book", "appointment"],
+    "responseTemplate": "Excellent. What is your full name?",
+    "nextStep": "get_name",
+    "action": "NONE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "get_name",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Which service for you, {{name}}? (e.g. Haircut, Spa, Massage)",
+    "nextStep": "get_service",
+    "action": "SAVE_NAME",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "get_service",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Service: {{service}}. Best date for this? (DD/MM/YYYY)",
+    "nextStep": "get_date",
+    "action": "SAVE_SERVICE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "get_date",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Date set: {{date}}. Preferred time? (HH:mm 24h format)",
+    "nextStep": "get_time",
+    "action": "SAVE_DATE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "get_time",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Almost done! Booking {{service}} on {{date}} at {{time}}. Confirm? (yes/no)",
+    "nextStep": "confirm",
+    "action": "SAVE_TIME",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "confirm",
+    "triggerKeywords": ["yes", "y", "confirm"],
+    "responseTemplate": "Booking successful! Your technician will meet you at {{time}} on {{date}}.",
+    "nextStep": "start",
+    "action": "BOOK_APPOINTMENT",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "main_menu",
+    "triggerKeywords": ["2", "support"],
+    "responseTemplate": "Please describe the issue you are facing.",
+    "nextStep": "create_support",
+    "action": "NONE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "create_support",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Support ticket created! A representative will contact you soon.",
+    "nextStep": "start",
+    "action": "CREATE_SUPPORT",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "main_menu",
+    "triggerKeywords": ["3", "feedback"],
+    "responseTemplate": "We'd love to hear from you. Please type your feedback below.",
+    "nextStep": "process_feedback",
+    "action": "NONE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "booking",
+    "step": "process_feedback",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Thank you for your valuable feedback!",
+    "nextStep": "start",
+    "action": "CREATE_FEEDBACK",
+    "isActive": true,
+    "isSystem": false
+  }
+]

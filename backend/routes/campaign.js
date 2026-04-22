@@ -9,9 +9,8 @@ const router = express.Router();
 
 router.use(authenticateToken);
 router.use(businessContext);
-router.use(checkBusinessType('E_COMMERCE'));
 router.use(isAdmin); // All campaign routes are admin-only
-router.use(checkPlanFeature('allowCampaigns'));
+router.use(checkPlanFeature('campaigns'));
 
 router.post('/', CampaignController.createCampaign);
 router.post('/product', CampaignController.createProductCampaign);

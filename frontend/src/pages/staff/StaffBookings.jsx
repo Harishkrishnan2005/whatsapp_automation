@@ -17,6 +17,10 @@ const StaffBookings = () => {
 
   useEffect(() => {
     fetchBookings();
+
+    // REAL-TIME SYNC: Synchronize with admin changes every 30s
+    const interval = setInterval(fetchBookings, 30000);
+    return () => clearInterval(interval);
   }, [page, dateRange, searchQuery]);
 
   useEffect(() => {
@@ -59,16 +63,11 @@ const StaffBookings = () => {
   };
 
   const openNotes = async (booking) => {
-    setSelectedBooking(booking);
-    setNewNote('');
     try {
-      const customerId = booking?.customerId?._id;
-      if (!customerId) {
-        setNotes([]);
-        return;
-      }
-      const response = await api.get(`/notes/${customerId}`);
-      setNotes(Array.isArray(response.data) ? response.data : []);
+      const response = await api.get(`/appointments/${booking._id}`);
+      setSelectedBooking(response.data);
+      setNotes(Array.isArray(response.data.notes) ? response.data.notes : []);
+      setNewNote('');
     } catch (error) {
       console.error('Error loading notes:', error);
       setNotes([]);
@@ -76,14 +75,14 @@ const StaffBookings = () => {
   };
 
   const addNote = async () => {
-    if (!selectedBooking?.customerId?._id || !newNote.trim()) return;
+    if (!selectedBooking?._id || !newNote.trim()) return;
     try {
-      await api.post('/notes', {
-        customerId: selectedBooking.customerId._id,
-        content: newNote.trim(),
+      const response = await api.post(`/appointments/${selectedBooking._id}/notes`, {
+        text: newNote.trim(),
       });
       setNewNote('');
-      openNotes(selectedBooking);
+      // Update local state with the new note array from response
+      setNotes(Array.isArray(response.data.notes) ? response.data.notes : []);
     } catch (error) {
       console.error('Error adding note:', error);
     }
@@ -263,23 +262,23 @@ const StaffBookings = () => {
                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">History Log</p>
                      <FiFileText className="text-slate-200 h-5 w-5" />
                   </header>
-                  {notes.map((note) => (
-                    <motion.div 
-                      layout
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      key={note._id} 
-                      className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-all group"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                         <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest">
-                            {new Date(note.createdAt).toLocaleString()}
-                         </p>
-                         <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] group-hover:text-slate-400 transition-colors">By: {note.createdBy?.name || 'OPERATIVE'}</p>
-                      </div>
-                      <p className="text-sm font-medium text-slate-700 leading-relaxed">{note.content}</p>
-                    </motion.div>
-                  ))}
+                      {notes.map((note) => (
+                        <motion.div 
+                          layout
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          key={note._id || Math.random()} 
+                          className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-all group"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                             <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest">
+                                {new Date(note.createdAt).toLocaleString()}
+                             </p>
+                             <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em] group-hover:text-slate-400 transition-colors">By: {note.createdBy?.name || 'OPERATIVE'}</p>
+                          </div>
+                          <p className="text-sm font-medium text-slate-700 leading-relaxed">{note.text}</p>
+                        </motion.div>
+                      ))}
                   {notes.length === 0 && (
                     <div className="py-12 flex flex-col items-center justify-center opacity-20 grayscale grayscale animate-pulse">
                        <FiFileText className="h-12 w-12 mb-4" />

@@ -1,0 +1,35 @@
+2026-04-21 12:33:47 [error]: Error: Business not found
+    at ChatbotSeederService.seedFlowsForBusiness (file:///E:/Whatsapp%20API%20automation/backend/services/chatbotSeederService.js:21:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ChatbotController.seedFlows (file:///E:/Whatsapp%20API%20automation/backend/controllers/chatbotController.js:183:7) 
+2026-04-21 12:34:08 [error]: Error: Business not found
+    at ChatbotSeederService.seedFlowsForBusiness (file:///E:/Whatsapp%20API%20automation/backend/services/chatbotSeederService.js:21:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ChatbotController.seedFlows (file:///E:/Whatsapp%20API%20automation/backend/controllers/chatbotController.js:183:7) 
+2026-04-21 15:40:51 [error]: Error: Business not found for ID: 69e5fe5b47850889bd88a20b
+    at ChatbotSeederService.seedFlowsForBusiness (file:///E:/Whatsapp%20API%20automation/backend/services/chatbotSeederService.js:22:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ChatbotController.seedFlows (file:///E:/Whatsapp%20API%20automation/backend/controllers/chatbotController.js:224:7) 
+2026-04-21 15:40:51 [error]: Error: Business not found for ID: 69e5fe5b47850889bd88a20b
+    at ChatbotSeederService.seedFlowsForBusiness (file:///E:/Whatsapp%20API%20automation/backend/services/chatbotSeederService.js:22:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ChatbotController.seedFlows (file:///E:/Whatsapp%20API%20automation/backend/controllers/chatbotController.js:224:7) 
+2026-04-21 15:41:01 [error]: Error: Business not found for ID: 69e5fe5b47850889bd88a20b
+    at ChatbotSeederService.seedFlowsForBusiness (file:///E:/Whatsapp%20API%20automation/backend/services/chatbotSeederService.js:22:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ChatbotController.seedFlows (file:///E:/Whatsapp%20API%20automation/backend/controllers/chatbotController.js:224:7) 
+2026-04-21 15:41:01 [error]: Error: Business not found for ID: 69e5fe5b47850889bd88a20b
+    at ChatbotSeederService.seedFlowsForBusiness (file:///E:/Whatsapp%20API%20automation/backend/services/chatbotSeederService.js:22:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ChatbotController.seedFlows (file:///E:/Whatsapp%20API%20automation/backend/controllers/chatbotController.js:224:7) 
+2026-04-22 16:26:58 [error]: ValidationError: Message validation failed: products.0._id: Cast to ObjectId failed for value "continue_shopping" (type string) at path "_id" because of "BSONError", products.1._id: Cast to ObjectId failed for value "confirm_order" (type string) at path "_id" because of "BSONError"
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at Subdocument.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\types\subdocument.js:229:12)
+    at EmbeddedDocument.$set (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:1466:12)
+    at EmbeddedDocument.set [as _id] (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\helpers\document\compile.js:205:19)
+    at EmbeddedDocument.idSetter (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\helpers\schema\idGetter.js:44:12)
+    at VirtualType.applySetters (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\virtualtype.js:166:16)
+    at EmbeddedDocument.$set (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:1284:12)
+    at EmbeddedDocument.$set (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:1121:16)
+    at EmbeddedDocument.Document (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:167:12)
+    at EmbeddedDocument.Subdocument (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\types\subdocument.js:34:12) {"errors":{"products.0._id":{"stringValue":"\"continue_shopping\"","valueType":"string","kind":"ObjectId","value":"continue_shopping","path":"_id","reason":{},"name":"CastError","message":"Cast to ObjectId failed for value \"continue_shopping\" (type string) at path \"_id\" because of \"BSONError\""},"products.1._id":{"stringValue":"\"confirm_order\"","valueType":"string","kind":"ObjectId","value":"confirm_order","path":"_id","reason":{},"name":"CastError","message":"Cast to ObjectId failed for value \"confirm_order\" (type string) at path \"_id\" because of \"BSONError\""}},"_message":"Message validation failed"}

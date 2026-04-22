@@ -1,73 +1,72 @@
 import mongoose from 'mongoose';
+import logger from '../utils/logger.js';
+
 import ChatbotFlow from '../models/ChatbotFlow.js';
 import ChatSession from '../models/ChatSession.js';
-import Business from '../models/Business.js';
-import AnalyticsEvent from '../models/AnalyticsEvent.js';
+import Customer from '../models/Customer.js';
+import Message from '../models/Message.js';
 import actionHandler from './actionHandler.js';
-import chatbotSeederService from './chatbotSeederService.js';
-import usageService from './usageService.js';
+import Business from '../models/Business.js';
+import { resolveBusinessPlan } from '../config/plans.js';
+import conversationTracker from '../utils/conversationTracker.js';
 
-const DEFAULT_REPLY = 'No flow configured. Please contact admin.';
-
-const normalizeText = (value) => String(value || '').trim().toLowerCase();
-
-const normalizeBusinessCategory = (value) => {
-  const raw = normalizeText(value);
-  if (raw === 'e_commerce' || raw === 'e-commerce') return 'ecommerce';
-  if (raw === 'booking') return 'booking';
-  return 'ecommerce';
-};
-
-const inferSemanticStepAlias = (stepName) => {
-  const normalized = normalizeText(stepName);
-  if (!normalized) return null;
-  if (normalized === 'main_menu' || normalized === 'options' || normalized.includes('menu')) return 'menu';
-  if (normalized.includes('service')) return 'ask_service';
-  if (normalized.includes('name')) return 'ask_name';
-  if (normalized.includes('age')) return 'ask_age';
-  if (normalized.includes('date')) return 'ask_date';
-  if (normalized.includes('time')) return 'ask_time';
-  return null;
-};
+const FALLBACK_24_HOURS = 'We will respond within 24 hrs';
 
 class ChatbotEngine {
-  normalizeAwaitingField(fieldName) {
-    const normalized = normalizeText(fieldName);
-    if (!normalized) return null;
-    if (normalized === 'user_details') return 'age';
-    if (normalized === 'upi' || normalized === 'upi_id') return 'upiId';
-    return normalized;
+  sanitizeProductsForMessage(products = []) {
+    if (!Array.isArray(products)) {
+      return [];
+    }
+
+    return products
+      .filter((item) => mongoose.Types.ObjectId.isValid(item?._id || item?.id))
+      .map((item) => ({
+        _id: item._id || item.id,
+        name: item.name,
+        mrp: item.mrp,
+        offerPrice: item.offerPrice ?? item.price,
+        offerPercentage: item.offerPercentage,
+        unitType: item.unitType,
+        category: item.category,
+        image: item.image,
+        redirectUrl: item.redirectUrl,
+      }));
+  }
+
+  normalizeStep(step) {
+    return String(step || 'start').trim().toLowerCase();
+  }
+
+  normalizeKeywords(flow) {
+    return (flow?.triggerKeywords || [])
+      .map((keyword) => String(keyword || '').trim().toLowerCase())
+      .filter(Boolean);
   }
 
   async getBusinessContext(businessId) {
     const business = await Business.findById(businessId)
-      .select('category businessType')
+      .select('plan subscription.plan')
       .lean();
 
     return {
       business,
-      category: normalizeBusinessCategory(
-        business?.businessType || business?.category || 'ecommerce'
-      ),
+      plan: resolveBusinessPlan(business),
     };
   }
 
+  /**
+   * Fetch or create a session for the user
+   */
   async getOrCreateSession(phone, businessId) {
     const normalizedPhone = String(phone || '').trim();
 
-    // ─── Phase 2: Resolve Customer ───
+    // Ensure customer exists
     let customer = await Customer.findOne({ phone: normalizedPhone, businessId });
     if (!customer) {
       customer = await Customer.create({ phone: normalizedPhone, businessId, status: 'new' });
     }
-    customer.lastInteraction = new Date();
-    await customer.save();
 
-    let session = await ChatSession.findOne({
-      phone: normalizedPhone,
-      businessId,
-    });
-
+    let session = await ChatSession.findOne({ phone: normalizedPhone, businessId });
     if (!session) {
       session = await ChatSession.create({
         phone: normalizedPhone,
@@ -77,335 +76,304 @@ class ChatbotEngine {
         awaitingField: null,
         collectedData: {},
         context: {},
-        mode: 'BOT',
+        mode: 'BOT'
       });
-    } else if (!session.customerId) {
-      session.customerId = customer._id;
-      await session.save();
+    }
+
+    if (!session.currentStep) {
+      session.currentStep = 'start';
     }
 
     return { session, customer };
   }
 
-  parseTriggers(triggerValue) {
-    const raw = String(triggerValue || '').trim();
-    if (!raw) return [];
-    if (raw === '*') return ['*'];
+  /**
+   * Match flow logic using the active step first, then global keyword flows.
+   * PRIORITY:
+   * 1. Exact keyword match in current step
+   * 2. Exact keyword match in global flows (step = '*')
+   * 3. Wildcard (*) match in current step only
+   */
+  findMatchedFlow(flows, currentStep, message) {
+    const normalizedMsg = String(message || '').trim().toLowerCase();
+    const normalizedStep = this.normalizeStep(currentStep);
+    const stepFlows = flows.filter((flow) => this.normalizeStep(flow.step) === normalizedStep);
+    const globalFlows = flows.filter((flow) => this.normalizeStep(flow.step) === '*');
 
-    return raw
-      .split(/[,\n]/)
-      .map((trigger) => normalizeText(trigger))
-      .filter(Boolean);
-  }
-
-  triggerMatches(flow, normalizedMessage) {
-    const triggers = this.parseTriggers(flow?.trigger);
-    if (triggers.includes('*')) return true;
-    return triggers.includes(normalizedMessage);
-  }
-
-  findStepFlow(flows, currentStep, normalizedMessage) {
-    const stepFlows = flows.filter((flow) => normalizeText(flow.step) === normalizeText(currentStep));
-
+    // 1. Exact match in current step (exclude '*' keyword here)
     const exactMatch = stepFlows.find((flow) => {
-      const triggers = this.parseTriggers(flow.trigger);
-      return !triggers.includes('*') && triggers.includes(normalizedMessage);
+      const keywords = this.normalizeKeywords(flow);
+      return keywords.some((keyword) => keyword === normalizedMsg && keyword !== '*');
     });
 
-    if (exactMatch) return exactMatch;
-
-    return stepFlows.find((flow) => this.parseTriggers(flow.trigger).includes('*')) || null;
-  }
-
-  findFlowWithAliases(flows, currentStep, normalizedMessage) {
-    const directMatch = this.findStepFlow(flows, currentStep, normalizedMessage);
-    if (directMatch) return directMatch;
-
-    const aliasStep = inferSemanticStepAlias(currentStep);
-    if (aliasStep && aliasStep !== normalizeText(currentStep)) {
-      return this.findStepFlow(flows, aliasStep, normalizedMessage);
+    if (exactMatch) {
+      return exactMatch;
     }
 
-    return null;
-  }
-
-  inferAwaitingField(flow, stepName = '') {
-    const action = String(flow?.action || '').trim().toUpperCase();
-    if (action.startsWith('SAVE_')) {
-      const inferred = action
-        .replace(/^SAVE_/, '')
-        .toLowerCase();
-
-      return this.normalizeAwaitingField(inferred);
-    }
-
-    const normalizedStep = normalizeText(stepName);
-    if (normalizedStep.startsWith('ask_')) {
-      return this.normalizeAwaitingField(normalizedStep.replace(/^ask_/, ''));
-    }
-
-    return null;
-  }
-
-  async getSystemFallback(businessId, vars = {}) {
-    const fallbackFlow = await ChatbotFlow.findOne({
-      businessId,
-      step: 'system',
-      trigger: 'fallback',
-      isActive: true,
-    }).lean();
-
-    const invalidInputFlow = await ChatbotFlow.findOne({
-      businessId,
-      step: 'system',
-      trigger: 'invalid_input',
-      isActive: true,
-    }).lean();
-
-    const replyTemplate =
-      fallbackFlow?.reply ||
-      invalidInputFlow?.reply ||
-      DEFAULT_REPLY;
-
-    return actionHandler.interpolate(replyTemplate, vars);
-  }
-
-  async logDebug({ businessId, phone, currentStep, message, matchedFlow, actionExecuted, nextStep, collectedData }) {
-    console.log('[ChatbotEngine]', {
-      businessId: String(businessId),
-      phone,
-      currentStep,
-      message,
-      matchedFlow: matchedFlow
-        ? {
-            id: String(matchedFlow._id),
-            step: matchedFlow.step,
-            trigger: matchedFlow.trigger,
-          }
-        : null,
-      actionExecuted,
-      nextStep,
-      collectedData,
+    // 2. Exact match in global flows
+    const globalExactMatch = globalFlows.find((flow) => {
+      const keywords = this.normalizeKeywords(flow);
+      return keywords.some((keyword) => keyword === normalizedMsg && keyword !== '*');
     });
-  }
 
-  async trackEvent(businessId, customerId, eventType, data = {}) {
-    try {
-      if (!mongoose.Types.ObjectId.isValid(businessId)) return;
-
-      await AnalyticsEvent.create({
-        businessId,
-        customerId,
-        eventType,
-        eventData: data,
-        source: 'chatbot',
-      });
-    } catch (error) {
-      console.error('[ChatbotEngine] Analytics event failed:', error.message);
+    if (globalExactMatch) {
+      return globalExactMatch;
     }
+
+    // 3. Wildcard match ONLY in current step
+    return stepFlows.find((flow) => this.normalizeKeywords(flow).includes('*')) || null;
   }
 
+  /**
+   * Main entry point
+   * Refactored for strict "Wait-for-Input" execution
+   */
   async chatbotEngine({ message, phone, businessId }) {
     try {
-      if (!businessId) {
-        throw new Error('businessId is required');
+      const isStructured = typeof message === 'object' && message !== null;
+      const normalizedMsg = isStructured ? (message.label || JSON.stringify(message)) : String(message || '').trim();
+      const normalizedPhone = String(phone || '').trim();
+
+      if (!businessId || !normalizedPhone || !normalizedMsg) {
+        return {
+          response: 'Invalid request. phone, message, and businessId are required.',
+          text: 'Invalid request. phone, message, and businessId are required.',
+          type: 'text',
+          nextStep: 'start'
+        };
       }
 
       const resolvedBusinessId = mongoose.Types.ObjectId.isValid(businessId)
         ? new mongoose.Types.ObjectId(businessId)
         : businessId;
+      const { plan } = await this.getBusinessContext(resolvedBusinessId);
 
-      const normalizedMessage = normalizeText(message);
+      // 1. Get/Create Session and Customer
       const { session, customer } = await this.getOrCreateSession(phone, resolvedBusinessId);
+      await Customer.findByIdAndUpdate(customer._id, { lastActivity: new Date() });
 
-      if (session.mode === 'HUMAN') {
-        return null;
-      }
-
-      const { category } = await this.getBusinessContext(resolvedBusinessId);
+      // 2. Logging and Interaction Tracking
       const currentStep = session.currentStep || 'start';
-
-      await chatbotSeederService.ensureCoreFlowCoverage(resolvedBusinessId, category);
-
-      const flows = await ChatbotFlow.find({
+      logger.info(`[Engine] Incoming: "${normalizedMsg}" from: ${phone} (Step: ${currentStep})`);
+      
+      // Save incoming message immediately
+      await Message.create({
+        customerId: customer._id,
+        message: normalizedMsg,
+        type: 'incoming',
+        senderType: 'customer',
         businessId: resolvedBusinessId,
-        category,
-        isActive: true,
-      }).lean();
+      });
 
-      let matchedFlow = null;
-      let previousStep = currentStep;
-      let actionExecuted = 'NONE';
+      // Unified Conversation Persistence
+      await conversationTracker.addMessage(resolvedBusinessId, normalizedPhone, 'customer', normalizedMsg, {
+        customerId: customer._id,
+        assignedStaffId: customer.assignedTo || null,
+      });
 
-      const dataSnapshot = JSON.parse(JSON.stringify(session.collectedData || {}));
-      const contextSnapshot = JSON.parse(JSON.stringify(session.context || {}));
-      const awaitingFieldSnapshot = session.awaitingField;
+      // 3. Guards
+      if (session.mode === 'HUMAN') return null;
 
-      if (session.awaitingField) {
-        const awaitingField = session.awaitingField;
-        session.collectedData = { ...(session.collectedData || {}), [awaitingField]: String(message || '').trim() };
-        session.context = { ...(session.context || {}), [awaitingField]: String(message || '').trim() };
-        session.awaitingField = null;
-        session.markModified('collectedData');
-        session.markModified('context');
+      // 4. Structured Action Handling (Bypass keyword matching)
+      if (isStructured && message.action) {
+        logger.info(`[Engine] Structured Action Detected: ${message.action}`);
+        const actionToRun = String(message.action).toUpperCase();
+        
+        const actionResult = await actionHandler.executeAction(actionToRun, {
+          message: normalizedMsg,
+          payload: message.payload,
+          phone: normalizedPhone,
+          businessId: resolvedBusinessId,
+          session,
+          customer,
+        });
 
-        matchedFlow = this.findFlowWithAliases(flows, currentStep, '*');
-      } else {
-        matchedFlow = this.findFlowWithAliases(flows, currentStep, normalizedMessage);
-      }
-
-      if (!matchedFlow) {
-        const hasCurrentStepFlows = flows.some(
-          (flow) => normalizeText(flow.step) === normalizeText(currentStep)
-        );
-        const aliasStep = inferSemanticStepAlias(currentStep);
-        const hasAliasFlows = aliasStep
-          ? flows.some((flow) => normalizeText(flow.step) === aliasStep)
-          : false;
-
-        if (!hasCurrentStepFlows && !hasAliasFlows) {
-          session.currentStep = 'start';
-          session.awaitingField = null;
-          session.markModified('currentStep');
-        }
-
-        const fallbackMessage = await this.getSystemFallback(resolvedBusinessId, {
+        const nextStep = actionResult.nextStep || currentStep;
+        let finalReply = actionResult.text || "";
+        finalReply = actionHandler.interpolate(finalReply, {
           ...(session.context || {}),
           ...(session.collectedData || {}),
         });
 
-        await this.logDebug({
-          businessId: resolvedBusinessId,
-          phone,
-          currentStep,
-          message,
-          matchedFlow: null,
-          actionExecuted: 'NONE',
-          nextStep: (hasCurrentStepFlows || hasAliasFlows) ? currentStep : 'start',
-          collectedData: session.collectedData || {},
-        });
-
-        await session.save();
-
+        await this.finalizeTurn(session, customer, finalReply, nextStep, resolvedBusinessId, actionResult.products, actionResult.awaitingField || null);
+        
         return {
-          response: fallbackMessage,
-          text: fallbackMessage,
-          type: 'text',
-          products: [],
-          payment: null,
-        };
-      }
-
-      let actionResult = { success: true };
-      actionExecuted = String(matchedFlow.action || 'NONE').toUpperCase();
-
-      if (actionExecuted && actionExecuted !== 'NONE' && actionExecuted !== 'JUST_SEND_REPLY') {
-        actionResult = await actionHandler.executeAction(actionExecuted, {
-          message,
-          phone: String(phone || '').trim(),
-          businessId: resolvedBusinessId,
-          session,
-          customer, // Ensure customer is passed to actions
-        });
-      }
-
-      if (actionResult?.success === false) {
-        session.currentStep = previousStep;
-        session.awaitingField = awaitingFieldSnapshot;
-        session.collectedData = dataSnapshot;
-        session.context = contextSnapshot;
-        session.markModified('collectedData');
-        session.markModified('context');
-
-        await this.logDebug({
-          businessId: resolvedBusinessId,
-          phone,
-          currentStep: previousStep,
-          message,
-          matchedFlow,
-          actionExecuted,
-          nextStep: previousStep,
-          collectedData: session.collectedData || {},
-        });
-
-        await session.save();
-
-        return {
-          response: actionResult.text || actionResult.error || DEFAULT_REPLY,
-          text: actionResult.text || actionResult.error || DEFAULT_REPLY,
+          response: finalReply,
+          text: finalReply,
           type: actionResult.type || 'text',
           products: actionResult.products || [],
           payment: actionResult.payment || null,
+          nextStep: nextStep,
+          plan
         };
       }
 
-      const nextStep = String(actionResult?.nextStep || matchedFlow.nextStep || previousStep || 'start').trim();
-      session.currentStep = nextStep;
+      // 5. Global Reset Keywords (Always prioritized for text input)
+      const resetKeywords = ["hi", "hello", "start", "menu", "restart", "back"];
+      const lowerInput = normalizedMsg.toLowerCase();
+      if (resetKeywords.includes(lowerInput)) {
+        session.currentStep = 'start';
+        session.awaitingField = null;
+        session.collectedData = {};
+        session.context = {};
+        session.markModified('awaitingField');
+        session.markModified('collectedData');
+        session.markModified('context');
+        
+        const startFlow = await ChatbotFlow.findOne({
+          businessId: resolvedBusinessId,
+          step: 'start',
+          isActive: true
+        }).sort({ createdAt: 1 }).lean();
+        const reply = startFlow?.responseTemplate || FALLBACK_24_HOURS;
+        
+        await this.finalizeTurn(session, customer, reply, startFlow?.nextStep || 'start', resolvedBusinessId);
+        return { response: reply, text: reply, type: 'text', nextStep: startFlow?.nextStep || 'start', plan };
+      }
 
-      const nextWildcardFlow = this.findStepFlow(flows, nextStep, '*');
-      session.awaitingField = actionResult?.awaitingField || this.inferAwaitingField(nextWildcardFlow, nextStep);
+      // 5. Flow Matching (Active step + global menu + fallback)
+      const flows = await ChatbotFlow.find({
+        businessId: resolvedBusinessId,
+        isActive: true,
+        $or: [
+          { step: currentStep },
+          { step: '*' },
+          { step: 'system', isSystem: true }
+        ]
+      }).lean();
 
-      let replyText =
-        actionResult?.text ||
-        matchedFlow.reply ||
-        (await this.getSystemFallback(resolvedBusinessId, {
-          ...(session.context || {}),
-          ...(session.collectedData || {}),
-        }));
+      const matchedFlow = this.findMatchedFlow(flows, currentStep, lowerInput);
 
-      replyText = actionHandler.interpolate(replyText, {
+      // 6. Handle "No Match" -> Fallback to System
+      if (!matchedFlow) {
+        logger.warn(`[Engine] No match for "${normalizedMsg}" at step "${currentStep}"`);
+        const fallbackFlow = flows.find(f => f.step === 'system' && f.isSystem);
+        const reply = fallbackFlow?.responseTemplate || FALLBACK_24_HOURS;
+        
+        // We don't advance the step on error, we just stay and repeat/fallback
+        await this.finalizeTurn(session, customer, reply, currentStep, resolvedBusinessId);
+        return { response: reply, text: reply, type: 'text', nextStep: currentStep, plan };
+      }
+
+      logger.info(`[Engine] Matched Flow: ${matchedFlow.step} -> ${matchedFlow.nextStep} (Action: ${matchedFlow.action || 'NONE'})`);
+
+      // 7. Execute Action (Validation & Logic) for the CURRENT step's message
+      const actionToRun = String(matchedFlow.action || 'NONE').toUpperCase();
+      let actionResult = { success: true };
+
+      if (actionToRun !== 'NONE') {
+        actionResult = await actionHandler.executeAction(actionToRun, {
+          message: normalizedMsg,
+          phone: String(phone || '').trim(),
+          businessId: resolvedBusinessId,
+          session,
+          customer,
+        });
+      }
+
+      // 8. Handle Action/Validation Failure
+      if (actionResult.success === false) {
+        const errorReply = actionResult.text || actionResult.error || "Invalid input. Please try again.";
+        // On error, stay at current step so user can retry the SAME input field
+        await this.finalizeTurn(
+          session,
+          customer,
+          errorReply,
+          currentStep,
+          resolvedBusinessId,
+          [],
+          actionResult.awaitingField ?? session.awaitingField ?? null
+        );
+        return { 
+          response: errorReply, 
+          text: errorReply, 
+          type: 'text',
+          nextStep: currentStep,
+          plan
+        };
+      }
+
+      // 9. Move to Next Step & Prepare Next Prompt
+      // Important: We do NOT execute the next step's action here. We stop and wait for a new message.
+      const nextStep = actionResult.nextStep || matchedFlow.nextStep || currentStep;
+      
+      // Interpolate variables (e.g. {{name}}, {{date}}) into the response template
+      let finalReply = actionResult.text || matchedFlow.responseTemplate || "";
+      finalReply = actionHandler.interpolate(finalReply, {
         ...(session.context || {}),
         ...(session.collectedData || {}),
       });
 
-      const hasQuota = await usageService.canSendMessages(resolvedBusinessId);
-      if (!hasQuota) {
-        return {
-          response: 'Monthly message limit reached. Please upgrade your plan.',
-          text: 'Monthly message limit reached. Please upgrade your plan.',
-          type: 'text',
-          products: [],
-          payment: null,
-        };
-      }
-
-      await this.logDebug({
-        businessId: resolvedBusinessId,
-        phone,
-        currentStep: previousStep,
-        message,
-        matchedFlow,
-        actionExecuted,
+      // 10. Persist and WAIT for user's next input
+      await this.finalizeTurn(
+        session,
+        customer,
+        finalReply,
         nextStep,
-        collectedData: session.collectedData || {},
-      });
-
-      await this.trackEvent(resolvedBusinessId, session.customerId, 'flow_step_reach', {
-        step: nextStep,
-        flowId: matchedFlow._id,
-        category,
-      });
-
-      await session.save();
+        resolvedBusinessId,
+        actionResult.products,
+        actionResult.awaitingField ?? null
+      );
 
       return {
-        response: replyText,
-        text: replyText,
-        type: actionResult?.type || 'text',
-        products: actionResult?.products || [],
-        payment: actionResult?.payment || null,
+        response: finalReply,
+        text: finalReply,
+        type: actionResult.type || 'text',
+        products: actionResult.products || [],
+        payment: actionResult.payment || null,
+        nextStep: nextStep,
+        plan
       };
+
     } catch (error) {
-      console.error('[ChatbotEngine] Fatal error:', error);
+      logger.error("[ChatbotEngine] Critical Error:", error);
       return {
-        response: 'Internal system error.',
-        text: 'Internal system error.',
-        type: 'text',
-        products: [],
-        payment: null,
+        response: FALLBACK_24_HOURS,
+        text: FALLBACK_24_HOURS,
+        nextStep: "start"
       };
     }
   }
+
+  /**
+   * Helper to persist session state and outgoing message
+   */
+  async finalizeTurn(session, customer, replyText, nextStep, businessId, products = [], awaitingField = null) {
+    session.currentStep = nextStep;
+    session.awaitingField = awaitingField;
+    
+    // Funnel Tracking: Store step progression
+    if (!session.stepsCompleted) session.stepsCompleted = [];
+    if (!session.stepsCompleted.includes(nextStep)) {
+      session.stepsCompleted.push(nextStep);
+    }
+    
+    // Track completion if the user reaches a success state
+    const completionSteps = ['SUCCESS', 'ORDER_CONFIRMED', 'APPOINTMENT_CONFIRMED', 'COMPLETED', 'THANK_YOU'];
+    if (completionSteps.includes(String(nextStep).toUpperCase())) {
+      session.isCompleted = true;
+      session.completedAt = new Date();
+    }
+    session.lastInteractionAt = new Date();
+    session.markModified('awaitingField');
+    await session.save();
+
+    await Message.create({
+      customerId: customer._id,
+      message: replyText,
+      type: 'outgoing',
+      senderType: 'chatbot',
+      products: this.sanitizeProductsForMessage(products),
+      businessId,
+    });
+
+    // Unified Conversation Persistence
+    await conversationTracker.addMessage(businessId, session.phone, 'bot', replyText, {
+      customerId: customer._id,
+      assignedStaffId: customer.assignedTo || null,
+    });
+  }
 }
+
 
 export default new ChatbotEngine();

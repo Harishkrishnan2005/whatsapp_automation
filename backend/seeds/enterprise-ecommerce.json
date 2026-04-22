@@ -1,0 +1,167 @@
+[
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "start",
+    "triggerKeywords": ["hi", "hello", "welcome", "catalog", "menu"],
+    "responseTemplate": "Welcome to our Enterprise Commerce Platform! 🏢\n\nWhat can we help you with?\n1. Browse Storefront\n2. View Cart / Checkout\n3. Track Order\n4. Support Portal\n5. Send Feedback",
+    "nextStep": "main_menu",
+    "action": "NONE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "main_menu",
+    "triggerKeywords": ["1", "store", "catalog", "browse"],
+    "responseTemplate": "Loading enterprise product catalog...",
+    "nextStep": "browse",
+    "action": "SHOW_PRODUCTS",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "main_menu",
+    "triggerKeywords": ["2", "cart", "checkout", "view"],
+    "responseTemplate": "Opening your enterprise cart...",
+    "nextStep": "cart_decision",
+    "action": "SHOW_CART",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "main_menu",
+    "triggerKeywords": ["3", "track", "order"],
+    "responseTemplate": "Please provide your Order ID for real-time tracking.",
+    "nextStep": "track_order_step",
+    "action": "NONE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "main_menu",
+    "triggerKeywords": ["4", "support"],
+    "responseTemplate": "Connecting to our support team...",
+    "nextStep": "support",
+    "action": "START_SUPPORT",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "main_menu",
+    "triggerKeywords": ["5", "feedback"],
+    "responseTemplate": "We value your feedback. Please share your thoughts:",
+    "nextStep": "submit_feedback",
+    "action": "NONE",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "browse",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Processing your selection...",
+    "nextStep": "cart_decision",
+    "action": "SELECT_PRODUCT",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "get_quantity",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Adding to cart...",
+    "nextStep": "cart_decision",
+    "action": "SAVE_QUANTITY",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "cart_decision",
+    "triggerKeywords": ["continue", "continue shopping", "more", "1"],
+    "responseTemplate": "Returning to storefront...",
+    "nextStep": "browse",
+    "action": "CONTINUE_SHOPPING",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "cart_decision",
+    "triggerKeywords": ["checkout", "confirm", "2", "finalize"],
+    "responseTemplate": "Finalizing your order...",
+    "nextStep": "confirm_quantities",
+    "action": "CONFIRM_ORDER",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "confirm_quantities",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Confirming quantities...",
+    "nextStep": "confirm_quantities",
+    "action": "SAVE_CART_ITEM_QUANTITY",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "select_payment",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Processing payment method...",
+    "nextStep": "finalize_order",
+    "action": "SAVE_PAYMENT_METHOD",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "finalize_order",
+    "triggerKeywords": ["yes", "confirm", "place order"],
+    "responseTemplate": "Creating enterprise order...",
+    "nextStep": "start",
+    "action": "CREATE_ORDER",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "track_order_step",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Fetching order status...",
+    "nextStep": "start",
+    "action": "TRACK_ORDER",
+    "isActive": true,
+    "isSystem": false
+  },
+  {
+    "businessId": "SEED_ID",
+    "category": "ecommerce",
+    "step": "submit_feedback",
+    "triggerKeywords": ["*"],
+    "responseTemplate": "Thank you for your valuable feedback.",
+    "nextStep": "start",
+    "action": "CREATE_FEEDBACK",
+    "isActive": true,
+    "isSystem": false
+  }
+]

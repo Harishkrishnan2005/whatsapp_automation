@@ -5,6 +5,6 @@ import { checkBusinessType } from '../middlewares/businessType.js';
 
 const router = express.Router();
 
-router.post('/', authenticateToken, checkBusinessType('E_COMMERCE'), isAdmin, ChatAssignmentController.assignChat);
+router.post('/', authenticateToken, checkBusinessType(['E_COMMERCE', 'BOOKING']), isAdmin, ChatAssignmentController.assignChat);
 
 export default router;

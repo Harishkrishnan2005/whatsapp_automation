@@ -10,6 +10,7 @@ router.use(businessContext);
 
 router.post('/', noteController.createNote);
 router.get('/:customerId', noteController.getNotesByCustomer);
+router.get('/appointment/:appointmentId', noteController.getNotesByAppointment);
 router.delete('/:id', noteController.deleteNote);
 
 export default router;

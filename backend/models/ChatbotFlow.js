@@ -2,87 +2,54 @@ import mongoose from 'mongoose';
 import COLLECTIONS from '../config/mongoCollections.js';
 
 const chatbotFlowSchema = new mongoose.Schema({
-  trigger: {
-    type: String,
+  businessId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Business',
     required: true,
-    trim: true,
-    lowercase: true,
+    index: true,
   },
-  reply: {
+  category: {
     type: String,
+    enum: ['booking', 'ecommerce'],
     required: true,
-    trim: true,
+    index: true,
   },
   step: {
     type: String,
     required: true,
     trim: true,
   },
+  triggerKeywords: {
+    type: [String],
+    default: [],
+  },
+  responseTemplate: {
+    type: String,
+    required: true,
+  },
   nextStep: {
     type: String,
     required: true,
-    trim: true,
   },
   action: {
     type: String,
-    default: 'JUST_SEND_REPLY',
+    default: 'NONE',
   },
-  nodes: [
-    {
-      id: {
-        type: String,
-        required: true,
-        trim: true,
-      },
-      type: {
-        type: String,
-        trim: true,
-        default: 'message',
-      },
-      data: {
-        type: mongoose.Schema.Types.Mixed,
-        default: {},
-      },
-    },
-  ],
-  edges: [
-    {
-      source: {
-        type: String,
-        required: true,
-        trim: true,
-      },
-      target: {
-        type: String,
-        required: true,
-        trim: true,
-      },
-      label: {
-        type: String,
-        trim: true,
-        default: '',
-      },
-    },
-  ],
   isActive: {
     type: Boolean,
     default: true,
   },
-  businessId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Business',
-    required: true,
-  },
-  category: {
-    type: String,
-    enum: ['booking', 'ecommerce'],
-    index: true,
+  isSystem: {
+    type: Boolean,
+    default: false,
   },
 }, {
   timestamps: true,
   collection: COLLECTIONS.CHATBOT_FLOWS,
 });
 
-chatbotFlowSchema.index({ businessId: 1, step: 1, trigger: 1 });
+chatbotFlowSchema.index({ businessId: 1, isActive: 1, isSystem: 1 });
+chatbotFlowSchema.index({ businessId: 1, step: 1 });
+
 
 export default mongoose.model('ChatbotFlow', chatbotFlowSchema);

@@ -124,6 +124,17 @@ class AuthController {
     }
   }
 
+  async updateStaff(req, res) {
+    try {
+      const { id } = req.params;
+      const scopeBusinessId = req.user?.businessId;
+      const staff = await AuthService.updateStaff(id, req.body, scopeBusinessId);
+      res.json(staff);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
+
   async updateStaffPermissions(req, res) {
     try {
       const { id } = req.params;

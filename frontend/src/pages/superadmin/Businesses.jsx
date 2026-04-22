@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { FiBriefcase, FiMail, FiCalendar, FiBox, FiCheckCircle } from 'react-icons/fi';
+import { FiBriefcase, FiMail, FiCalendar, FiBox, FiUsers, FiZap, FiActivity, FiCheckCircle } from 'react-icons/fi';
 import api from '../../utils/api';
 
 const Businesses = () => {
@@ -44,7 +44,7 @@ const Businesses = () => {
     <div className="space-y-10 animate-fade-in pb-10">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Enterprise Ecosystem</h1>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none uppercase italic">Enterprise Ecosystem</h1>
           <p className="mt-2 text-slate-500 font-medium tracking-tight">Monitoring all registered business nodes and tenant specifications.</p>
         </div>
         <div className="bg-white px-5 py-3 rounded-2xl border border-slate-200/60 shadow-sm flex items-center gap-4">
@@ -53,35 +53,70 @@ const Businesses = () => {
         </div>
       </header>
 
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
         {businesses.map((business, i) => (
           <motion.div 
             key={business._id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="group relative bg-white rounded-[2.5rem] border border-slate-200/60 p-8 hover:shadow-2xl hover:shadow-slate-200/40 transition-all duration-500"
+            className="group relative bg-white rounded-[3rem] border border-slate-200/60 p-10 hover:shadow-2xl hover:shadow-blue-500/5 transition-all duration-500"
           >
             <div className="flex items-center justify-between mb-8">
-               <div className="h-14 w-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-500">
-                  <FiBriefcase className="h-7 w-7" />
+               <div className="h-16 w-16 rounded-[1.5rem] bg-blue-600 text-white flex items-center justify-center shadow-xl shadow-blue-500/20 group-hover:scale-110 transition-transform duration-500">
+                  <FiBriefcase className="h-8 w-8" />
                </div>
-               <div className={`h-2.5 w-2.5 rounded-full ring-4 ring-white shadow-sm ${business.isActive !== false ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+               <div className={`h-3 w-3 rounded-full ring-4 ring-white shadow-sm ${business.isActive !== false ? 'bg-emerald-500 animate-pulse ring-emerald-500/10' : 'bg-slate-300'}`} />
             </div>
 
-            <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase group-hover:text-blue-600 transition-colors leading-none">{business.name}</h3>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase group-hover:text-blue-600 transition-colors leading-none truncate">{business.name}</h3>
+            <p className="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">{business.businessType || 'Standard Tenant'}</p>
             
-            <div className="mt-6 space-y-3">
+            <div className="mt-8 space-y-4">
                <div className="flex items-center gap-3 text-slate-500">
-                  <FiMail className="h-4 w-4" />
+                  <FiMail className="h-4 w-4 text-blue-500" />
                   <span className="text-xs font-bold truncate">{business.email}</span>
                </div>
-               <div className="flex items-center gap-3 text-slate-400 font-black text-[9px] uppercase tracking-widest">
-                  <FiCalendar className="h-4 w-4" />
-                  <div className="flex flex-col gap-1">
-                    <span>Created: {new Date(business.createdAt).toLocaleDateString()}</span>
-                    <span className="text-rose-500">
-                      Expires: {business.subscription?.expiryDate 
+               
+               <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-50">
+                  <div className="space-y-1">
+                     <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                        <FiUsers className="h-3 w-3 text-blue-500" />
+                        Staff Nodes
+                     </div>
+                     <p className="text-lg font-black text-slate-900">{business.staffCount || 0}</p>
+                  </div>
+                  <div className="space-y-1">
+                     <div className="flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                        <FiZap className="h-3 w-3 text-emerald-500" />
+                        Active Flows
+                     </div>
+                     <p className="text-lg font-black text-slate-900">{business.flowCount || 0}</p>
+                  </div>
+               </div>
+
+               <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest">
+                     <div className="flex items-center gap-2 text-slate-400">
+                        <FiActivity className="h-3 w-3 text-indigo-500" />
+                        Messaging Throughput
+                     </div>
+                     <span className="text-blue-600">{business.messagesUsed} / {business.maxMessages === Infinity ? '∞' : business.maxMessages}</span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+                     <div 
+                        className="h-full bg-blue-600 rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(37,99,235,0.4)]"
+                        style={{ width: `${Math.min(100, (business.messagesUsed / (business.maxMessages || 1)) * 100)}%` }}
+                     />
+                  </div>
+               </div>
+
+               <div className="pt-4 flex items-center gap-3 text-slate-400 font-extrabold text-[9px] uppercase tracking-widest leading-tight border-t border-slate-50">
+                  <FiCalendar className="h-3.5 w-3.5 text-slate-300" />
+                  <div className="flex flex-col">
+                    <span>Provisioned: {new Date(business.createdAt).toLocaleDateString()}</span>
+                    <span className="text-rose-500 mt-0.5">
+                      Service Expiry: {business.subscription?.expiryDate 
                         ? new Date(business.subscription.expiryDate).toLocaleDateString() 
                         : new Date(new Date(business.createdAt).getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
                     </span>
@@ -89,15 +124,15 @@ const Businesses = () => {
                </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-slate-50 flex items-center justify-between">
-              <div className="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-lg shadow-sm">
-                 <FiBox className="h-3 w-3 text-white" />
-                 <span className="text-[9px] font-black text-white uppercase tracking-widest">{business.subscription?.plan || 'Free'}</span>
+            <div className="mt-10 flex items-center justify-between">
+              <div className="flex items-center gap-2 bg-slate-900 px-4 py-2 rounded-xl shadow-lg shadow-slate-900/10 transition-transform hover:scale-105 cursor-default">
+                 <FiBox className="h-4 w-4 text-blue-400" />
+                 <span className="text-[10px] font-black text-white uppercase tracking-widest">{business.subscription?.plan || 'Free Tier'}</span>
               </div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-slate-600 transition-colors">{business.businessType}</span>
+              <div className="h-8 w-8 rounded-full border-2 border-slate-100 flex items-center justify-center text-slate-200 group-hover:text-emerald-500 group-hover:border-emerald-100 transition-all">
+                <FiCheckCircle className="h-4 w-4" />
+              </div>
             </div>
-            
-            <div className="absolute inset-0 border-2 border-transparent group-hover:border-blue-600/5 rounded-[2.5rem] transition-all pointer-events-none" />
           </motion.div>
         ))}
       </div>

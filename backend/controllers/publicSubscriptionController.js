@@ -5,6 +5,7 @@ import Lead from '../models/Lead.js';
 import Business from '../models/Business.js';
 import User, { BUSINESS_TYPES } from '../models/User.js';
 import { PLAN_CONFIG } from '../config/plans.js';
+import chatbotSeederService from '../services/chatbotSeederService.js';
 
 let razorpayInstance = null;
 const getRazorpay = () => {
@@ -56,6 +57,7 @@ const createAccountFromLead = async (lead) => {
     email,
     phone: lead.phone,
     status: 'active',
+    plan: lead.selectedPlan,
     businessType,
     category: toCategory(businessType),
     subscription: {
@@ -78,6 +80,8 @@ const createAccountFromLead = async (lead) => {
     businessId: business._id,
     userId: user._id,
   });
+
+  await chatbotSeederService.seedFlowsForBusiness(business._id, lead.selectedPlan);
 
   return { businessId: business._id, userId: user._id };
 };
@@ -182,9 +186,12 @@ export const verifyPublicPayment = async (req, res) => {
     const { businessId } = await createAccountFromLead(lead);
 
     await Business.findByIdAndUpdate(businessId, {
+      plan: lead.selectedPlan,
       'subscription.plan': lead.selectedPlan,
       'subscription.status': 'ACTIVE',
     });
+
+    await chatbotSeederService.seedFlowsForBusiness(businessId, lead.selectedPlan);
 
     return res.status(200).json({
       success: true,
@@ -217,6 +224,7 @@ export const publicRegister = async (req, res) => {
       email: normalizedEmail,
       phone,
       status: 'active',
+      plan: 'FREE',
       businessType: normalizedBusinessType,
       category: toCategory(normalizedBusinessType),
       subscription: { plan: 'FREE', status: 'ACTIVE' },
@@ -244,6 +252,8 @@ export const publicRegister = async (req, res) => {
       businessId: business._id,
       userId: user._id,
     });
+
+    await chatbotSeederService.seedFlowsForBusiness(business._id, 'FREE');
 
     return res.status(201).json({
       message: 'Account created successfully! Please sign in.',

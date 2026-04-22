@@ -24,6 +24,11 @@ const businessSchema = new mongoose.Schema({
     enum: ['active', 'inactive', 'suspended'],
     default: 'active',
   },
+  plan: {
+    type: String,
+    enum: ['FREE', 'BASIC', 'PRO', 'ENTERPRISE'],
+    default: 'FREE',
+  },
   businessType: {
     type: String,
     enum: BUSINESS_TYPES,
@@ -33,6 +38,12 @@ const businessSchema = new mongoose.Schema({
   category: {
     type: String,
     enum: ['booking', 'ecommerce'],
+    default: 'ecommerce',
+    required: true,
+  },
+  business_type: {
+    type: String,
+    enum: ['ecommerce', 'booking'],
     default: 'ecommerce',
     required: true,
   },

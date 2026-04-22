@@ -3,13 +3,34 @@ import Message from '../models/Message.js';
 import buildTenantScope from '../utils/tenantScope.js';
 
 class ChatService {
+  async assertCustomerAccess(businessId, customerId, user = null) {
+    const tenantScope = buildTenantScope(businessId);
+    const customer = await Customer.findOne({ _id: customerId, ...tenantScope }).lean();
+    if (!customer) {
+      throw new Error('Customer not found');
+    }
+
+    const userId = user?.id || user?._id;
+    if (user?.role === 'staff' && String(customer.assignedTo || '') !== String(userId || '')) {
+      throw new Error('Unauthorized to access this conversation');
+    }
+
+    return customer;
+  }
+
   // Get all customers with last message, sorted by latest activity
-  async getAllChats(businessId, page = 1, limit = 20) {
+  async getAllChats(businessId, page = 1, limit = 20, user = null) {
     try {
       const skip = (page - 1) * limit;
       const tenantScope = buildTenantScope(businessId);
       
-      const customers = await Customer.find(tenantScope)
+      const query = { ...tenantScope };
+      const userId = user?.id || user?._id;
+      if (user?.role === 'staff') {
+        query.assignedTo = userId;
+      }
+
+      const customers = await Customer.find(query)
         .sort({ updatedAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -39,7 +60,7 @@ class ChatService {
         })
       );
 
-      const total = await Customer.countDocuments(tenantScope);
+      const total = await Customer.countDocuments(query);
 
       return {
         chats: chatsWithMessages,
@@ -53,10 +74,11 @@ class ChatService {
   }
 
   // Get all messages for a customer with pagination
-  async getMessages(businessId, customerId, page = 1, limit = 50) {
+  async getMessages(businessId, customerId, page = 1, limit = 50, user = null) {
     try {
       const skip = (page - 1) * limit;
       const tenantScope = buildTenantScope(businessId);
+      await this.assertCustomerAccess(businessId, customerId, user);
 
       const messages = await Message.find({ customerId, ...tenantScope })
         .sort({ createdAt: -1 })
@@ -79,14 +101,10 @@ class ChatService {
   }
 
   // Send message from admin/staff
-  async sendMessage(businessId, customerId, message, senderType = 'staff') {
+  async sendMessage(businessId, customerId, message, senderType = 'staff', user = null) {
     try {
       const tenantScope = buildTenantScope(businessId);
-      // Verify customer exists
-      const customer = await Customer.findOne({ _id: customerId, ...tenantScope });
-      if (!customer) {
-        throw new Error('Customer not found');
-      }
+      const customer = await this.assertCustomerAccess(businessId, customerId, user);
 
       const resolvedBusinessId = customer.businessId;
 
@@ -145,16 +163,23 @@ class ChatService {
   }
 
   // Search customers by name or phone
-  async searchCustomers(businessId, query) {
+  async searchCustomers(businessId, query, user = null) {
     try {
       const tenantScope = buildTenantScope(businessId);
-      const customers = await Customer.find({
+      const customerQuery = {
         ...tenantScope,
         $or: [
           { name: { $regex: query, $options: 'i' } },
           { phone: { $regex: query, $options: 'i' } },
         ],
-      })
+      };
+
+      const userId = user?.id || user?._id;
+      if (user?.role === 'staff') {
+        customerQuery.assignedTo = userId;
+      }
+
+      const customers = await Customer.find(customerQuery)
         .sort({ updatedAt: -1 })
         .limit(20)
         .lean();
@@ -181,13 +206,9 @@ class ChatService {
   }
 
   // Get customer details with stats
-  async getCustomerDetails(businessId, customerId) {
+  async getCustomerDetails(businessId, customerId, user = null) {
     try {
-      const tenantScope = buildTenantScope(businessId);
-      const customer = await Customer.findOne({ _id: customerId, ...tenantScope }).lean();
-      if (!customer) {
-        throw new Error('Customer not found');
-      }
+      const customer = await this.assertCustomerAccess(businessId, customerId, user);
 
       const messageScope = buildTenantScope(customer.businessId || businessId);
       const messageCount = await Message.countDocuments({ customerId, ...messageScope });
@@ -207,9 +228,10 @@ class ChatService {
   }
 
   // Mark messages as read
-  async markMessagesAsRead(businessId, customerId) {
+  async markMessagesAsRead(businessId, customerId, user = null) {
     try {
       const tenantScope = buildTenantScope(businessId);
+      await this.assertCustomerAccess(businessId, customerId, user);
       await Message.updateMany(
         { customerId, ...tenantScope, type: 'incoming', isRead: false },
         { isRead: true }

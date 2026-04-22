@@ -23,7 +23,8 @@ api.interceptors.response.use(
     const message = String(error?.response?.data?.message || '').toLowerCase();
     const isAuthError =
       status === 401 ||
-      (status === 403 && (message.includes('invalid token') || message.includes('access token required')));
+      (status === 403 && (message.includes('invalid token') || message.includes('access token required'))) ||
+      (status === 404 && message.includes('business account not found'));
 
     if (isAuthError) {
       localStorage.removeItem('token');

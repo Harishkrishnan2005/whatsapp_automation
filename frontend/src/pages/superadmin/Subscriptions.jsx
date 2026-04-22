@@ -62,45 +62,10 @@ const Subscriptions = () => {
             transition={{ delay: i * 0.1 }}
             className="group relative bg-white rounded-[2.5rem] border border-slate-200/60 p-10 hover:shadow-2xl hover:shadow-slate-200/40 transition-all duration-500 overflow-hidden"
           >
-            <div className="absolute top-0 right-0 w-48 h-48 bg-blue-50 rounded-full -mr-24 -mt-24 opacity-30 blur-3xl group-hover:bg-emerald-50 transition-colors" />
-            
-            <div className="flex items-center justify-between mb-10">
-               <div className="h-14 w-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-xl shadow-slate-900/10 group-hover:scale-110 transition-transform duration-500">
-                  <FiCreditCard className="h-7 w-7" />
-               </div>
-               <div className="flex flex-col items-end">
-                   <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none">Plan Segment</p>
-                   <p className="text-sm font-black text-slate-900 mt-2 uppercase tracking-tight">{sub.plan}</p>
-                   <p className="text-[10px] font-black text-blue-600 mt-1 uppercase">₹{sub.monthlyPrice}/mo</p>
-                </div>
-            </div>
-
-            <div className="space-y-2">
-               <p className="text-5xl font-black text-slate-900 tracking-tighter group-hover:text-blue-600 transition-colors">{sub.businessCount}</p>
-               <div className="flex flex-col gap-1 mt-1">
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <FiLayers className="h-3 w-3" />
-                    Active Infrastructure Nodes
-                 </p>
-                 <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">
-                    Plan Revenue: ₹{sub.revenue.toLocaleString()}
-                 </p>
-               </div>
-            </div>
-
-            <div className="mt-10 pt-8 border-t border-slate-50 flex items-center justify-between">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2 text-slate-400 font-black text-[9px] uppercase tracking-widest">
-                   <FiActivity className="h-3 w-3" />
-                   Latest Expiry: {sub.expiryDate ? new Date(sub.expiryDate).toLocaleDateString() : 'N/A'}
-                </div>
-                {sub.daysRemaining !== null && (
-                  <div className={`text-[9px] font-black uppercase tracking-widest ${sub.daysRemaining <= 5 ? 'text-rose-500' : 'text-blue-500'}`}>
-                    Critical Window: {sub.daysRemaining} Days Remaining
-                  </div>
-                )}
-              </div>
-              <FiCheckCircle className="text-emerald-500 h-5 w-5" />
+            <div className="flex flex-col items-center justify-center text-center py-6">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">{sub.plan} SEGMENT</p>
+                <p className="text-7xl font-black text-slate-900 tracking-tighter group-hover:text-blue-600 transition-colors">{sub.businessCount}</p>
+                <p className="text-[10px] font-black text-slate-400 mt-6 uppercase tracking-widest">Active Business Nodes</p>
             </div>
             
             <div className="absolute inset-0 border-2 border-transparent group-hover:border-blue-600/5 rounded-[2.5rem] transition-all pointer-events-none" />

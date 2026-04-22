@@ -7,6 +7,11 @@ const noteSchema = new mongoose.Schema({
     ref: 'Customer',
     required: true,
   },
+  appointmentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Appointment',
+    required: false,
+  },
   content: {
     type: String,
     required: true,
@@ -26,6 +31,6 @@ const noteSchema = new mongoose.Schema({
   collection: COLLECTIONS.NOTES,
 });
 
-noteSchema.index({ businessId: 1, customerId: 1, createdAt: -1 });
+noteSchema.index({ businessId: 1, customerId: 1, appointmentId: 1, createdAt: -1 });
 
 export default mongoose.model('Note', noteSchema);

@@ -1,6 +1,6 @@
 import ProductCard from './ProductCard';
 
-export default function ProductCarousel({ products, onProductBuy }) {
+export default function ProductCarousel({ products, onProductBuy, onAddToCart }) {
   if (!products || products.length === 0) {
     return null;
   }
@@ -14,6 +14,7 @@ export default function ProductCarousel({ products, onProductBuy }) {
             key={product._id || index}
             product={product}
             onBuyClick={() => onProductBuy && onProductBuy(product)}
+            onAddToCart={() => onAddToCart && onAddToCart(product)}
           />
         ))}
       </div>

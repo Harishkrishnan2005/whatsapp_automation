@@ -52,12 +52,33 @@ const chatSessionSchema = new mongoose.Schema(
       enum: ['BOT', 'HUMAN'],
       default: 'BOT',
     },
+    lastInteractionAt: {
+      type: Date,
+      default: Date.now,
+    },
+    isCompleted: {
+      type: Boolean,
+      default: false,
+    },
+    isCancelled: {
+      type: Boolean,
+      default: false,
+    },
+    stepsCompleted: {
+      type: [String],
+      default: [],
+    },
+    completedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
     collection: COLLECTIONS.CHAT_SESSIONS,
   }
 );
+
 
 chatSessionSchema.index({ businessId: 1, phone: 1 }, { unique: true });
 

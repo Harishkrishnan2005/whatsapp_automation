@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { FiX } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiX, FiFilter, FiPackage } from 'react-icons/fi';
 import api from '../utils/api';
 import useAnalyticsStore from '../store/analyticsStore';
 import { getDateRangePayload } from '../utils/dateRange';
@@ -208,264 +208,258 @@ const Products = () => {
   const visibleProducts = products.slice((clientPage - 1) * clientLimit, clientPage * clientLimit);
 
   return (
-    <div className="space-y-10 animate-fade-in pb-10">
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <div className="space-y-8 animate-fade-in pb-10">
+      {/* Header & Catalog Hub */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Products</h1>
-          <p className="mt-2 text-slate-500 font-medium">Add and manage the products shown in your catalog.</p>
+          <div className="flex items-center gap-3">
+             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Products</h1>
+             <span className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
+             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Catalog Infrastructure</span>
+          </div>
+          <p className="mt-1 text-slate-500 font-medium tracking-tight">Managing resource availability and commercial settlement values.</p>
         </div>
-        <div className="bg-white px-5 py-3 rounded-2xl border border-slate-200/60 shadow-sm">
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Total Items</p>
-           <p className="text-sm font-bold text-slate-900 mt-1">{total} Active Products</p>
-        </div>
-      </header>
 
-      <div className="grid gap-10 lg:grid-cols-3">
-        <section className="lg:col-span-1 bg-white p-10 rounded-[2.5rem] border border-slate-200/60 shadow-sm h-fit">
-          <h2 className="text-xl font-bold text-slate-900 mb-8 flex items-center gap-2">
-             {editing ? 'Edit Product' : 'Add New Product'}
-             <span className="h-2 w-2 rounded-full bg-blue-600 block" />
-          </h2>
-          
-          {message && <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-100 text-[10px] font-black text-blue-700 uppercase tracking-widest">{message}</div>}
-          
-          <form className="space-y-6" onSubmit={handleSubmit}>
+        <div className="flex items-center gap-4 bg-white p-2 rounded-2xl border border-slate-200/60 shadow-sm w-full xl:w-auto">
+          <div className="flex-1 xl:w-80 relative group">
+            <FiFilter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4 group-focus-within:text-blue-500 transition-colors" />
+            <input 
+              type="text" 
+              placeholder="Search catalog network..." 
+              value={searchQuery}
+              onChange={(e) => useAnalyticsStore.getState().setSearchQuery(e.target.value)}
+              className="w-full bg-slate-50 border-none rounded-xl pl-11 pr-12 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/10 transition-all"
+            />
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-slate-200 bg-white text-[10px] font-black text-slate-400">
+               ⌘ K
+            </div>
+          </div>
+          <div className="flex items-center gap-4 px-6 border-l border-slate-100">
+            <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+               <FiPackage className="h-5 w-5" />
+            </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Product Name</label>
-              <input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full bg-slate-50/50 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
-                placeholder="Enter product name"
-                required
-              />
+               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Inventory</p>
+               <p className="text-xs font-black text-slate-900 mt-1 uppercase leading-none">{total} Nodes</p>
             </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Price (MRP)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={form.mrp}
-                  onChange={(e) => setForm({ ...form, mrp: e.target.value })}
-                  className="w-full bg-slate-50/50 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
-                  placeholder="0.00"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Discount %</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={form.offerPercentage}
-                  onChange={(e) => setForm({ ...form, offerPercentage: e.target.value })}
-                  className="w-full bg-slate-50/50 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
-                  placeholder="0"
-                  min="0"
-                  max="100"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 pt-2">
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Unit Type</label>
-                <select
-                  value={form.unitType}
-                  onChange={(e) => setForm({ ...form, unitType: e.target.value })}
-                  className="w-full bg-slate-50/50 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white transition-all cursor-pointer"
-                  required
-                >
-                  <option value="unit">Piece / Unit</option>
-                  <option value="kg">Kilogram (kg)</option>
-                  <option value="gram">Gram (g)</option>
-                  <option value="liter">Liter (L)</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Category</label>
-                <input
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  className="w-full bg-slate-50/50 border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-700 outline-none focus:bg-white transition-all"
-                  placeholder="e.g. Clothes, Food"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="border-t border-slate-50 pt-6">
-              <div className="mb-4 flex items-center justify-between">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Specifications</label>
-                <button
-                  type="button"
-                  onClick={addSpecification}
-                  className="text-[9px] font-black uppercase text-blue-600 tracking-widest hover:underline"
-                >
-                  + Add Detail
-                </button>
-              </div>
-              <div className="space-y-3 max-h-[200px] overflow-y-auto custom-scrollbar pr-2">
-                {form.specifications.map((spec, index) => (
-                  <div key={index} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
-                    <input
-                      value={spec.label}
-                      onChange={(e) => updateSpecification(index, 'label', e.target.value)}
-                      className="bg-slate-50 border-none rounded-lg px-3 py-2 text-[10px] font-bold text-slate-600 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/10 transition-all shadow-sm"
-                      placeholder="Size"
-                    />
-                    <input
-                      value={spec.value}
-                      onChange={(e) => updateSpecification(index, 'value', e.target.value)}
-                      className="bg-slate-50 border-none rounded-lg px-3 py-2 text-[10px] font-bold text-slate-600 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/10 transition-all shadow-sm"
-                      placeholder="XL"
-                    />
-                    <button type="button" onClick={() => removeSpecification(index)} className="h-8 w-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center text-xs hover:bg-rose-100 transition-all"><FiX /></button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="border-t border-slate-50 pt-6">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Product Image</label>
-              <div className="flex items-center gap-3">
-                <label className="flex-1 cursor-pointer group">
-                  <div className="bg-slate-50 border-slate-100 border rounded-xl px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center group-hover:bg-slate-100 transition-all">
-                     {selectedImageName ? selectedImageName : 'Upload Image'}
-                  </div>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleImageFileChange} />
-                </label>
-                {form.image && <div className="h-10 w-10 rounded-lg bg-slate-900 overflow-hidden ring-2 ring-white shadow-sm"><img src={form.image} className="h-full w-full object-cover" /></div>}
-              </div>
-            </div>
-
-            <button type="submit" className="btn-primary w-full py-4 rounded-2xl shadow-xl shadow-blue-500/10 text-xs font-black uppercase tracking-[0.2em] mt-8">
-              {editing ? 'Update Product' : 'Add Product'}
-            </button>
-            {editing && <button type="button" onClick={resetForm} className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-colors mt-4">Cancel</button>}
-          </form>
-        </section>
-
-          <section className="lg:col-span-2 space-y-8">
-            <div className="flex items-center justify-between px-4">
-               <div>
-                  <h2 className="text-xl font-bold text-slate-900 uppercase tracking-tight">Product List</h2>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Manage all your products here</p>
-               </div>
-            </div>
-
-            {loading ? (
-              <div className="grid gap-6 sm:grid-cols-2">
-                 {[1, 2, 3, 4].map((i) => (
-                   <div key={`product-skeleton-${i}`} className="h-64 bg-white rounded-[2rem] animate-pulse shadow-sm" />
-                 ))}
-              </div>
-            ) : (
-              <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                {visibleProducts.map((product) => (
-                  <div
-                    key={product._id}
-                    className="bg-white rounded-[2rem] border border-slate-200/60 shadow-sm overflow-hidden flex flex-col group hover:shadow-xl hover:shadow-blue-500/5 hover:-translate-y-1 transition-all duration-300"
-                  >
-                    <div className="h-44 bg-slate-100 relative overflow-hidden flex items-center justify-center cursor-pointer" onClick={() => setSelectedProduct(product)}>
-                      {product.image ? (
-                        <img src={product.image} alt={product.name} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      ) : (
-                        <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No Image</div>
-                      )}
-                      <div className="absolute top-4 right-4">
-                         <span className={`px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest shadow-sm ${product.isActive ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
-                           {product.isActive ? 'Active' : 'Hidden'}
-                         </span>
-                      </div>
-                    </div>
-                    
-                    <div className="p-6 flex-1 flex flex-col">
-                      <div className="mb-4">
-                         <p className="text-[8px] font-black text-blue-600 uppercase tracking-widest mb-1">{product.category}</p>
-                         <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight line-clamp-1">{product.name}</h3>
-                      </div>
-
-                      <div className="mb-6 space-y-1">
-                         <div className="flex items-baseline gap-2">
-                            <p className="text-lg font-black text-slate-900 tracking-tighter">Rs {product.offerPrice?.toFixed(2)}</p>
-                            <p className="text-[10px] font-bold text-slate-400 line-through">Rs {product.mrp?.toFixed(2)}</p>
-                         </div>
-                         {product.offerPercentage > 0 && (
-                           <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest">Save {product.offerPercentage}%</span>
-                         )}
-                      </div>
-
-                      <div className="mt-auto flex gap-2 pt-4 border-t border-slate-50">
-                         <button onClick={() => startEdit(product)} className="flex-1 py-2 rounded-xl bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest hover:bg-black transition-all">Edit</button>
-                         <button onClick={() => deleteProduct(product._id)} className="flex-1 py-2 rounded-xl bg-slate-50 text-slate-400 text-[9px] font-black uppercase tracking-widest hover:bg-rose-50 hover:text-rose-500 transition-all">Delete</button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {products.length > clientLimit && (
-              <div className="flex justify-end gap-2 px-2">
-                 <button disabled={clientPage === 1} onClick={() => setClientPage(p => p - 1)} className="btn-secondary h-12 px-6 text-[10px] uppercase font-black">Back</button>
-                 <button disabled={clientPage >= clientTotalPages} onClick={() => setClientPage(p => p + 1)} className="btn-primary h-12 px-8 text-[10px] uppercase font-black">Next</button>
-              </div>
-            )}
-         </section>
+          </div>
+        </div>
       </div>
 
-      {selectedProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedProduct(null)} />
-          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-             <div className="h-64 bg-slate-100 relative">
-                {selectedProduct.image ? <img src={selectedProduct.image} className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center font-black text-slate-300">NO IMAGE</div>}
-                <button onClick={() => setSelectedProduct(null)} className="absolute top-8 right-8 h-10 w-10 rounded-full bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-white/40 transition-all"><FiX /></button>
-             </div>
-             
-             <div className="p-12 overflow-y-auto custom-scrollbar">
-                <div className="mb-8 flex justify-between items-start">
-                   <div>
-                      <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">{selectedProduct.category}</p>
-                      <h3 className="text-3xl font-extrabold text-slate-900 tracking-tight uppercase leading-none">{selectedProduct.name}</h3>
-                   </div>
-                   <span className="text-2xl font-black text-slate-900 tracking-tighter">Rs {selectedProduct.offerPrice?.toFixed(2)}</span>
+      <div className="grid gap-10 lg:grid-cols-12">
+        <aside className="lg:col-span-4 h-fit sticky top-6">
+          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200/60 shadow-sm">
+            <h2 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
+               {editing ? 'Update Resource' : 'Register Node'}
+               <span className="h-2 w-2 rounded-full bg-blue-600 block" />
+            </h2>
+            
+            {message && <div className="mb-6 p-4 rounded-2xl bg-blue-50 border border-blue-100 text-[10px] font-black text-blue-700 uppercase tracking-widest">{message}</div>}
+            
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Identifier</label>
+                <input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
+                  placeholder="Product identifier"
+                  required
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Base MRP</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={form.mrp}
+                    onChange={(e) => setForm({ ...form, mrp: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
+                    placeholder="0.00"
+                    required
+                  />
                 </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Yield Yield %</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={form.offerPercentage}
+                    onChange={(e) => setForm({ ...form, offerPercentage: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                   <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col justify-between h-28">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Unit Type</p>
-                      <p className="text-sm font-black text-slate-800 uppercase tracking-tight">{selectedProduct.unitType}</p>
-                   </div>
-                   <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100 flex flex-col justify-between h-28">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Discount</p>
-                      <p className="text-sm font-black text-emerald-600 uppercase tracking-tight">{selectedProduct.offerPercentage}% OFF</p>
-                   </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Vector Type</label>
+                  <select
+                    value={form.unitType}
+                    onChange={(e) => setForm({ ...form, unitType: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-xs font-black uppercase tracking-tight text-slate-600 outline-none focus:bg-white transition-all cursor-pointer appearance-none"
+                    required
+                  >
+                    <option value="unit">PIECE / UNIT</option>
+                    <option value="kg">KILOGRAM (KG)</option>
+                    <option value="liter">LITER (L)</option>
+                  </select>
                 </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block">Matrix Group</label>
+                  <input
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-700 outline-none focus:bg-white transition-all"
+                    placeholder="e.g. CORE"
+                    required
+                  />
+                </div>
+              </div>
 
-                <div className="space-y-4">
-                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Specifications</h4>
-                   {selectedProduct.specifications?.length > 0 ? (
-                      <div className="space-y-2">
-                         {selectedProduct.specifications.map((spec, index) => (
-                           <div key={index} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-white shadow-sm">
-                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{spec.label}</span>
-                              <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">{spec.value}</span>
-                           </div>
-                         ))}
-                      </div>
-                   ) : <p className="text-xs font-bold text-slate-300 italic px-1">No details added.</p>}
-                </div>
+              <div className="pt-4 border-t border-slate-50">
+                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mb-4 block flex justify-between items-center">
+                    Media Asset
+                    {form.image && <span className="text-emerald-500 font-bold tracking-normal">UPLOADED</span>}
+                 </label>
+                 <label className="cursor-pointer group block">
+                   <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-[1.5rem] p-6 text-center group-hover:bg-slate-100 group-hover:border-blue-300 transition-all">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{selectedImageName ? selectedImageName : 'Select Data Asset'}</p>
+                   </div>
+                   <input type="file" accept="image/*" className="hidden" onChange={handleImageFileChange} />
+                 </label>
+              </div>
+
+              <button type="submit" className="w-full py-5 rounded-[1.5rem] bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.3em] shadow-xl shadow-slate-900/20 hover:bg-black active:scale-95 transition-all mt-4">
+                {editing ? 'Synchronize Node' : 'Initialize Matrix'}
+              </button>
+              {editing && <button type="button" onClick={resetForm} className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-rose-500 transition-colors mt-6">Abort Update</button>}
+            </form>
+          </div>
+        </aside>
+
+        <main className="lg:col-span-8 space-y-8">
+          <div className="flex items-center justify-between px-6">
+             <div>
+                <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight leading-none">Resource Grid</h2>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Active Commercial Settlements</p>
              </div>
-          </motion.div>
-        </div>
-      )}
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            {loading ? (
+              [1, 2, 3, 4, 5, 6].map(i => <div key={i} className="h-[400px] bg-white rounded-[2.5rem] animate-pulse border border-slate-100 shadow-sm" />)
+            ) : (
+              visibleProducts.map((product) => (
+                <div key={product._id} className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden flex flex-col group hover:shadow-2xl hover:shadow-slate-200/40 transition-all duration-500 relative">
+                  <div className="h-56 bg-slate-100 relative overflow-hidden flex items-center justify-center cursor-pointer" onClick={() => setSelectedProduct(product)}>
+                    {product.image ? (
+                      <img src={product.image} alt={product.name} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    ) : (
+                      <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">Asset Missing</div>
+                    )}
+                    <div className="absolute top-6 right-6">
+                       <span className={`px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest shadow-xl ${product.isActive ? 'bg-emerald-500 text-white' : 'bg-slate-400 text-white'}`}>
+                         {product.isActive ? 'Active' : 'Offline'}
+                       </span>
+                    </div>
+                  </div>
+                  
+                  <div className="p-8 flex-1 flex flex-col">
+                    <div className="mb-6">
+                       <p className="text-[9px] font-black text-blue-600 uppercase tracking-[0.2em] mb-2 leading-none">{product.category}</p>
+                       <h3 className="text-lg font-black text-slate-800 uppercase tracking-tighter leading-none line-clamp-1">{product.name}</h3>
+                    </div>
+
+                    <div className="mb-8">
+                       <div className="flex items-baseline gap-3">
+                          <p className="text-2xl font-black text-slate-900 tracking-tighter leading-none">₹{product.offerPrice?.toFixed(2)}</p>
+                          <p className="text-[10px] font-bold text-slate-400 line-through tracking-tight leading-none">₹{product.mrp?.toFixed(2)}</p>
+                       </div>
+                    </div>
+
+                    <div className="mt-auto flex gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                       <button onClick={() => startEdit(product)} className="flex-1 py-3 rounded-2xl bg-slate-900 text-white text-[9px] font-black uppercase tracking-widest shadow-lg hover:bg-black transition-all">Modify</button>
+                       <button onClick={() => deleteProduct(product._id)} className="px-5 rounded-2xl bg-rose-50 text-rose-500 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all"><FiX className="h-4 w-4" /></button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {products.length > clientLimit && (
+            <div className="mt-8 px-10 py-8 bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm flex items-center justify-between">
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Grid Index {clientPage} of {clientTotalPages}</p>
+               <div className="flex gap-4">
+                  <button disabled={clientPage === 1} onClick={() => setClientPage(p => p - 1)} className="h-12 px-8 rounded-2xl bg-slate-50 border border-slate-200 text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all disabled:opacity-30">Regress</button>
+                  <button disabled={clientPage >= clientTotalPages} onClick={() => setClientPage(p => p + 1)} className="h-12 px-10 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-black transition-all disabled:opacity-30">Advance</button>
+               </div>
+            </div>
+          )}
+        </main>
+      </div>
+
+      <AnimatePresence>
+        {selectedProduct && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => setSelectedProduct(null)} />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-4xl bg-white rounded-[3.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row h-[70vh]">
+               <div className="md:w-1/2 bg-slate-100 relative h-64 md:h-full">
+                  {selectedProduct.image ? <img src={selectedProduct.image} className="h-full w-full object-cover" /> : <div className="h-full w-full flex items-center justify-center font-black text-slate-300">ASSET MISSING</div>}
+                  <button onClick={() => setSelectedProduct(null)} className="absolute top-10 right-10 h-12 w-12 rounded-full bg-white/20 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-white/40 transition-all"><FiX className="h-6 w-6" /></button>
+               </div>
+               
+               <div className="md:w-1/2 p-14 overflow-y-auto custom-scrollbar flex flex-col">
+                  <div className="mb-10">
+                     <p className="text-[11px] font-black text-blue-600 uppercase tracking-[0.3em] mb-4 leading-none">{selectedProduct.category} MATRIX</p>
+                     <h3 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-tight mb-6">{selectedProduct.name}</h3>
+                     <div className="flex items-center gap-6">
+                        <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">₹{selectedProduct.offerPrice?.toFixed(2)}</span>
+                        {selectedProduct.offerPercentage > 0 && (
+                          <span className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20">{selectedProduct.offerPercentage}% DISCOUNT</span>
+                        )}
+                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-5 mb-10">
+                     <div className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100 flex flex-col justify-between h-36">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Node Variant</p>
+                        <p className="text-lg font-black text-slate-800 uppercase tracking-tight">{selectedProduct.unitType}</p>
+                     </div>
+                     <div className="p-8 rounded-[2rem] bg-slate-50 border border-slate-100 flex flex-col justify-between h-36">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Status Code</p>
+                        <p className={`text-lg font-black uppercase tracking-tight ${selectedProduct.isActive ? 'text-emerald-600' : 'text-slate-400'}`}>{selectedProduct.isActive ? 'Operational' : 'Idle'}</p>
+                     </div>
+                  </div>
+
+                  <div className="space-y-6 flex-1">
+                     <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Resource Specifications</h4>
+                     <div className="space-y-3">
+                        {selectedProduct.specifications?.length > 0 ? (
+                           selectedProduct.specifications.map((spec, index) => (
+                             <div key={index} className="flex items-center justify-between px-6 py-4 rounded-2xl border border-slate-100 bg-white shadow-sm hover:border-blue-200 transition-all group">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-blue-400">{spec.label}</span>
+                                <span className="text-xs font-black text-slate-800 uppercase tracking-tight">{spec.value}</span>
+                             </div>
+                           ))
+                        ) : <p className="text-xs font-black text-slate-300 uppercase tracking-widest px-1 italic">Buffer empty.</p>}
+                     </div>
+                  </div>
+
+                  <div className="mt-12">
+                     <button onClick={() => setSelectedProduct(null)} className="w-full py-5 rounded-[1.5rem] bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-slate-900/20 hover:bg-black transition-all">Close Instance</button>
+                  </div>
+               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
-
 
 export default Products;

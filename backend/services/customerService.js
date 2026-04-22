@@ -1,10 +1,69 @@
 import Customer from '../models/Customer.js';
 import Order from '../models/Order.js';
+import Appointment from '../models/Appointment.js';
+import ChatSession from '../models/ChatSession.js';
 import CustomerStatusService from './customerStatusService.js';
 import buildTenantScope from '../utils/tenantScope.js';
 import { buildCreatedAtFilter, buildSearchRegex } from '../utils/queryFilters.js';
 
 class CustomerService {
+  buildEnrichedCustomers(customers, statusMap, orderRows, appointmentRows, sessionRows) {
+    const orderSummaryMap = new Map();
+    const appointmentSummaryMap = new Map();
+    const sessionSummaryMap = new Map();
+
+    for (const order of orderRows) {
+      const key = String(order.customerId);
+      if (!orderSummaryMap.has(key)) {
+        orderSummaryMap.set(key, { totalOrders: 0, pendingCodOrders: 0, latestOrder: order });
+      }
+      const summary = orderSummaryMap.get(key);
+      summary.totalOrders += 1;
+      if (order.paymentMethod !== 'UPI' && order.status === 'Pending') {
+        summary.pendingCodOrders += 1;
+      }
+    }
+
+    for (const appt of appointmentRows) {
+      const key = String(appt.customerId);
+      if (!appointmentSummaryMap.has(key)) {
+        appointmentSummaryMap.set(key, { totalBookings: 0, latestBooking: appt });
+      }
+      const summary = appointmentSummaryMap.get(key);
+      summary.totalBookings += 1;
+    }
+
+    for (const session of sessionRows) {
+      const key = String(session.customerId);
+      if (!sessionSummaryMap.has(key)) {
+        sessionSummaryMap.set(key, session);
+      }
+    }
+
+    return customers.map((customer) => {
+      const oSummary = orderSummaryMap.get(String(customer._id)) || { totalOrders: 0, latestOrder: null };
+      const aSummary = appointmentSummaryMap.get(String(customer._id)) || { totalBookings: 0, latestBooking: null };
+      const session = sessionSummaryMap.get(String(customer._id));
+
+      let status = statusMap.get(String(customer._id)) || 'new';
+      if (aSummary.totalBookings > 0 || oSummary.totalOrders > 0) status = 'converted';
+      else if (session) status = 'active';
+
+      return {
+        ...customer,
+        status,
+        totalOrders: oSummary.totalOrders,
+        totalBookings: aSummary.totalBookings,
+        totalSpent: Number(customer.totalSpent || 0),
+        lastBookingDate: aSummary.latestBooking?.createdAt || aSummary.latestBooking?.date,
+        lastInteraction: session?.lastInteractionAt || customer.lastActivity || customer.lastInteraction || customer.createdAt,
+        dropStage: session?.isCompleted ? 'Completed' : (session?.currentStep || customer.currentStep || 'start'),
+        orderStatus: oSummary.latestOrder?.status || 'No Orders',
+        appointmentStatus: aSummary.latestBooking?.status || 'No Bookings'
+      };
+    });
+  }
+
   async getCustomers(businessId, page = 1, limit = 10, filters = {}) {
     const skip = (page - 1) * limit;
     const tenantScope = buildTenantScope(businessId);
@@ -32,68 +91,19 @@ class CustomerService {
     );
 
     const customerIds = customers.map((customer) => customer._id);
-    const orderRows = await Order.find(
-      { ...tenantScope, customerId: { $in: customerIds } },
-      { customerId: 1, paymentMethod: 1, status: 1, createdAt: 1 }
-    ).sort({ createdAt: -1 }).lean();
+    const [orderRows, appointmentRows, sessionRows] = await Promise.all([
+      Order.find({ ...tenantScope, customerId: { $in: customerIds } }).sort({ createdAt: -1 }).lean(),
+      Appointment.find({ ...tenantScope, customerId: { $in: customerIds } }).sort({ createdAt: -1 }).lean(),
+      ChatSession.find({ ...tenantScope, customerId: { $in: customerIds } }).sort({ lastInteractionAt: -1 }).lean()
+    ]);
 
-    const orderSummaryMap = new Map();
-    for (const order of orderRows) {
-      const key = String(order.customerId);
-      if (!orderSummaryMap.has(key)) {
-        orderSummaryMap.set(key, {
-          totalOrders: 0,
-          onlineOrders: 0,
-          codOrders: 0,
-          pendingCodOrders: 0,
-          latestOrder: order,
-        });
-      }
-
-      const summary = orderSummaryMap.get(key);
-      summary.totalOrders += 1;
-
-      if (order.paymentMethod === 'UPI') {
-        summary.onlineOrders += 1;
-      } else {
-        summary.codOrders += 1;
-        if (order.status === 'Pending') {
-          summary.pendingCodOrders += 1;
-        }
-      }
-    }
-
-    const enrichedCustomers = customers.map((customer) => {
-      const summary = orderSummaryMap.get(String(customer._id)) || {
-        totalOrders: 0,
-        onlineOrders: 0,
-        codOrders: 0,
-        pendingCodOrders: 0,
-        latestOrder: null,
-      };
-
-      let paymentStatus = 'No Orders';
-      if (summary.totalOrders > 0) {
-        paymentStatus = summary.pendingCodOrders > 0
-          ? `Pending COD (${summary.pendingCodOrders})`
-          : 'Completed';
-      }
-
-      let orderStatus = 'No Orders';
-      if (summary.latestOrder) {
-        orderStatus = summary.latestOrder.paymentMethod === 'UPI'
-          ? 'Confirmed'
-          : (summary.latestOrder.status || 'Pending');
-      }
-
-      return {
-        ...customer,
-        status: statusMap.get(String(customer._id)) || 'new',
-        totalOrders: summary.totalOrders,
-        paymentStatus,
-        orderStatus,
-      };
-    });
+    const enrichedCustomers = this.buildEnrichedCustomers(
+      customers,
+      statusMap,
+      orderRows,
+      appointmentRows,
+      sessionRows
+    );
 
     const total = await Customer.countDocuments(query);
     return { customers: enrichedCustomers, total, page, limit };
@@ -101,7 +111,18 @@ class CustomerService {
 
   async getCustomerById(businessId, id) {
     await CustomerStatusService.syncStatusForCustomer(id, businessId);
-    return await Customer.findOne({ _id: id, ...buildTenantScope(businessId) });
+    const tenantScope = buildTenantScope(businessId);
+    const customer = await Customer.findOne({ _id: id, ...tenantScope }).lean();
+    if (!customer) return null;
+
+    const [orderRows, appointmentRows, sessionRows] = await Promise.all([
+      Order.find({ ...tenantScope, customerId: customer._id }).sort({ createdAt: -1 }).lean(),
+      Appointment.find({ ...tenantScope, customerId: customer._id }).sort({ createdAt: -1 }).lean(),
+      ChatSession.find({ ...tenantScope, customerId: customer._id }).sort({ lastInteractionAt: -1 }).lean()
+    ]);
+
+    const statusMap = new Map([[String(customer._id), customer.status || 'new']]);
+    return this.buildEnrichedCustomers([customer], statusMap, orderRows, appointmentRows, sessionRows)[0];
   }
 
   async updateCustomerStatus(businessId, id) {

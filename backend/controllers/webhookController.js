@@ -1,8 +1,6 @@
 import chatbotEngine from '../services/chatbotEngine.js';
-import SessionService from '../services/sessionService.js';
 import Business from '../models/Business.js';
 import Customer from '../models/Customer.js';
-import Message from '../models/Message.js';
 import OrderService from '../services/orderService.js';
 import PaymentService from '../services/paymentService.js';
 import WhatsAppService from '../services/whatsappService.js';
@@ -89,24 +87,8 @@ class WebhookController {
         businessId,
       });
 
-      // Log messages
-      const customer = await this.getOrCreateCustomer(phone, businessId, value?.contacts?.[0]?.profile?.name);
-      
-      await Message.create({
-        customerId: customer._id,
-        message: messageText,
-        type: 'incoming',
-        senderType: 'customer',
-        businessId,
-      });
-
-      await Message.create({
-        customerId: customer._id,
-        message: botResult.response || botResult.text,
-        type: 'outgoing',
-        senderType: 'chatbot',
-        businessId,
-      });
+      // Sync profile name onto the existing tenant-scoped customer record.
+      await this.getOrCreateCustomer(phone, businessId, value?.contacts?.[0]?.profile?.name);
 
       // Send real response via WhatsApp Cloud API
       const responseText = botResult.response || botResult.text;
@@ -125,9 +107,11 @@ class WebhookController {
   async handleSimulatorWebhook(req, res) {
     const { phone, message, businessId } = req.body;
     const normalizedPhone = String(phone || '').trim();
-    const incomingText = String(message || '').trim();
+    const incomingText = typeof message === 'object' && message !== null
+      ? message
+      : String(message || '').trim();
 
-    if (!normalizedPhone || !incomingText) {
+    if (!normalizedPhone || (!incomingText && typeof incomingText !== 'object')) {
       return res.status(400).json({ message: 'phone and message are required' });
     }
 
@@ -143,25 +127,7 @@ class WebhookController {
       businessId: resolvedBusinessId,
     });
 
-    const customer = await this.getOrCreateCustomer(normalizedPhone, resolvedBusinessId);
-
-    // Save logs
-    await Message.create({
-      customerId: customer._id,
-      message: incomingText,
-      type: 'incoming',
-      senderType: 'customer',
-      businessId: resolvedBusinessId,
-    });
-
-    await Message.create({
-      customerId: customer._id,
-      message: botResult.response || botResult.text,
-      type: 'outgoing',
-      senderType: 'chatbot',
-      products: botResult.products || [],
-      businessId: resolvedBusinessId,
-    });
+    await this.getOrCreateCustomer(normalizedPhone, resolvedBusinessId);
 
     return res.json({
       response: botResult.response || botResult.text,

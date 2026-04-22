@@ -20,11 +20,12 @@ const validate = (schemas) => {
       return next();
     } catch (error) {
       if (error instanceof z.ZodError) {
-        logger.warn('Validation error:', error.errors);
+        const validationErrors = error.errors || error.issues || [];
+        logger.warn('Validation error:', validationErrors);
         return res.status(400).json({
           message: 'Validation failed',
-          errors: error.errors.map(err => ({
-            path: err.path.join('.'),
+          errors: validationErrors.map(err => ({
+            path: Array.isArray(err.path) ? err.path.join('.') : (err.path || ''),
             message: err.message
           }))
         });
