@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 import dns from 'dns';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createServer } from 'http';
+import socketManager from './utils/socketManager.js';
 
 // Load environment variables
 const __filename = fileURLToPath(import.meta.url);
@@ -56,6 +58,10 @@ import logger from './utils/logger.js';
 import errorHandler from './middlewares/errorHandler.js';
 
 const app = express();
+const server = createServer(app);
+
+// Initialize Socket.io
+socketManager.init(server);
 
 // Global Middlewares
 app.use(cors());
@@ -90,7 +96,7 @@ async function connectMongo() {
 
 connectMongo();
 
-// ROUTES ... (keeping existing routes)
+// ROUTES
 app.use('/api/public', publicRoutes);
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/webhook', webhookLimiter, webhookRoutes);
@@ -135,8 +141,8 @@ app.use(errorHandler);
 const BASE_PORT = parseInt(process.env.PORT, 10) || 5000;
 
 const startServer = (port, maxAttempts = 10) => {
-  const server = app.listen(port, () => {
-    logger.info(`Server running on port ${port} in ${process.env.NODE_ENV || 'development'} mode`);
+  server.listen(port, () => {
+    logger.info(`Server running on port ${port} in ${process.env.NODE_ENV || 'development'} mode (Real-time Enabled)`);
   });
 
   server.on('error', (err) => {

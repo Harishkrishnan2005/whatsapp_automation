@@ -54,6 +54,12 @@ const appointmentSchema = new mongoose.Schema({
     ref: 'Business',
     required: true,
   },
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Business',
+    required: true,
+    index: true,
+  },
   notes: [noteSchema],
   auditLogs: [auditLogSchema],
 }, {
@@ -62,12 +68,12 @@ const appointmentSchema = new mongoose.Schema({
 });
 
 // Standard lookup indexes
-appointmentSchema.index({ businessId: 1, date: 1 });
-appointmentSchema.index({ businessId: 1, customerId: 1, createdAt: -1 });
+appointmentSchema.index({ tenantId: 1, date: 1 });
+appointmentSchema.index({ tenantId: 1, customerId: 1, createdAt: -1 });
 appointmentSchema.index({ assignedTo: 1, date: 1 });
 
 // Unique constraint: prevent double-booking the same slot per business
-appointmentSchema.index({ businessId: 1, date: 1, time: 1 }, {
+appointmentSchema.index({ tenantId: 1, date: 1, time: 1 }, {
   unique: true,
   partialFilterExpression: { status: { $in: ['BOOKED', 'RESCHEDULED'] } },
 });

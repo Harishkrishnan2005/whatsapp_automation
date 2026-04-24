@@ -13,6 +13,8 @@ const authenticateToken = (req, res, next) => {
       return res.status(403).json({ message: 'Invalid token' });
     }
     req.user = user;
+    req.tenantId = user.tenantId || user.businessId;
+    req.businessId = req.tenantId; // Maintain businessId for backward compatibility
     next();
   });
 };

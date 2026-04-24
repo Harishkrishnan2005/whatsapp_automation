@@ -1,10 +1,10 @@
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiBarChart2,
   FiCalendar,
-  FiClipboard,
   FiFileText,
   FiGrid,
   FiMessageCircle,
@@ -18,142 +18,196 @@ import {
   FiLogOut,
   FiShield,
   FiCreditCard,
-  FiAlertCircle,
-  FiClock,
+  FiActivity,
+  FiPieChart,
+  FiLifeBuoy,
+  FiSettings,
 } from 'react-icons/fi';
 
-const Sidebar = ({ open, onClose }) => {
+const Sidebar = ({ open, onClose, isHovered, setIsHovered }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const businessType = user?.businessType || 'E_COMMERCE';
 
-  const commonMenuItems = [
-    { path: '/dashboard', label: 'Overview', icon: FiGrid },
-  ];
-
-  const adminMenuItems =
-    businessType === 'BOOKING'
-      ? [
-          { path: '/chat', label: 'Live Chat', icon: FiMessageCircle },
+  const menuGroups = [
+    {
+      title: 'Main Hub',
+      items: [
+        { path: '/dashboard', label: 'Overview', icon: FiActivity },
+        { path: '/chat', label: 'Live Chat', icon: FiMessageCircle },
+      ]
+    },
+    {
+      title: 'Management',
+      items: user?.role === 'admin' ? (
+        businessType === 'BOOKING' ? [
+          { path: '/admin/appointments', label: 'Schedule', icon: FiCalendar },
           { path: '/customers', label: 'Customers', icon: FiUsers },
-          { path: '/admin/appointments', label: 'Appointments', icon: FiCalendar },
-          { path: '/admin/chatbot', label: 'Chatbot Settings', icon: FiMessageCircle },
-          { path: '/admin/simulation-chat', label: 'Management', icon: FiMessageCircle },
-          { path: '/analytics', label: 'Reports', icon: FiBarChart2 },
-          { path: '/admin/staff', label: 'Manage Staff', icon: FiUserCheck },
-          { path: '/admin/advanced-analytics', label: 'Detailed Reports', icon: FiTrendingUp },
-          { path: '/admin/support', label: 'Support Desk', icon: FiMessageCircle },
-          { path: '/pricing', label: 'Billing', icon: FiCreditCard },
-        ]
-      : [
-          { path: '/chat', label: 'Live Chat', icon: FiMessageCircle },
-          { path: '/customers', label: 'Customers', icon: FiUsers },
+          { path: '/admin/chatbot', label: 'Bot Engine', icon: FiGrid },
+        ] : [
           { path: '/orders', label: 'Orders', icon: FiShoppingCart },
+          { path: '/products', label: 'Inventory', icon: FiPackage },
+          { path: '/customers', label: 'Customers', icon: FiUsers },
           { path: '/campaigns', label: 'Marketing', icon: FiSend },
-          { path: '/products', label: 'Products', icon: FiPackage },
-          { path: '/analytics', label: 'Reports', icon: FiBarChart2 },
-          { path: '/admin/chatbot', label: 'Chatbot Settings', icon: FiMessageCircle },
-          { path: '/admin/simulation-chat', label: 'Management', icon: FiMessageCircle },
-          { path: '/admin/staff', label: 'Manage Staff', icon: FiUserCheck },
-          { path: '/admin/support', label: 'Support Desk', icon: FiMessageCircle },
-          { path: '/pricing', label: 'Billing', icon: FiCreditCard },
-        ];
-
-  const staffMenuItems =
-    businessType === 'BOOKING'
-      ? [
-          { path: '/staff/chat', label: 'My Conversations', icon: FiMessageCircle },
-          { path: '/staff/bookings', label: 'My Schedule', icon: FiCalendar },
-          { path: '/staff/notes', label: 'Customer Files', icon: FiFileText },
+          { path: '/admin/chatbot', label: 'Bot Engine', icon: FiGrid },
         ]
-      : [
-          { path: '/staff/chat', label: 'My Conversations', icon: FiMessageCircle },
-          { path: '/staff/orders', label: 'Assigned Orders', icon: FiShoppingCart },
-          { path: '/staff/notes', label: 'Customer Files', icon: FiFileText },
-        ];
-
-  const superAdminMenuItems = [
-    { path: '/superadmin/dashboard', label: 'Admin Panel', icon: FiShield },
-    { path: '/superadmin/businesses', label: 'Businesses', icon: FiUsers },
-    { path: '/superadmin/subscriptions', label: 'Plans', icon: FiTrendingUp },
+      ) : (
+        businessType === 'BOOKING' ? [
+          { path: '/staff/bookings', label: 'Schedule', icon: FiCalendar },
+          { path: '/staff/notes', label: 'Documents', icon: FiFileText },
+        ] : [
+          { path: '/staff/orders', label: 'Orders', icon: FiShoppingCart },
+          { path: '/staff/notes', label: 'Documents', icon: FiFileText },
+        ]
+      )
+    },
+    {
+      title: 'Performance',
+      items: [
+        { path: '/analytics', label: 'Analytics', icon: FiPieChart },
+        { path: '/admin/advanced-analytics', label: 'Insights', icon: FiTrendingUp },
+      ]
+    },
+    {
+      title: 'System',
+      items: user?.role === 'admin' ? [
+        { path: '/admin/settings', label: 'Configuration', icon: FiSettings },
+        { path: '/admin/support', label: 'Help Desk', icon: FiLifeBuoy },
+      ] : [
+        { path: '/admin/support', label: 'Help Desk', icon: FiLifeBuoy },
+      ]
+    }
   ];
 
-  const menuItems = user?.role === 'super_admin'
-    ? superAdminMenuItems
-    : [
-        ...commonMenuItems,
-        ...(user?.role === 'admin' ? adminMenuItems : staffMenuItems),
-      ];
+  const superAdminItems = [
+    {
+      title: 'Platform Control',
+      items: [
+        { path: '/superadmin/dashboard', label: 'Pulse', icon: FiActivity },
+        { path: '/superadmin/businesses', label: 'Tenants', icon: FiShield },
+        { path: '/superadmin/subscriptions', label: 'Revenue', icon: FiCreditCard },
+      ]
+    }
+  ];
 
+  const activeGroups = user?.role === 'super_admin' ? superAdminItems : menuGroups;
   const isActive = (path) => location.pathname === path;
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
+  // Sidebar dynamic width classes
+  const sidebarWidth = isHovered ? 'md:w-72' : 'md:w-24';
 
   return (
     <>
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 transform bg-white border-r border-slate-200 transition-transform duration-300 ease-in-out md:translate-x-0 flex flex-col ${
-          open ? 'translate-x-0' : '-translate-x-full'
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={`fixed inset-y-0 left-0 z-50 transform bg-[#001f3f] text-slate-400 transition-all duration-300 ease-in-out flex flex-col shadow-2xl border-r border-white/5 ${
+          open ? 'translate-x-0 w-72' : '-translate-x-full md:translate-x-0 ' + sidebarWidth
         }`}
       >
-        <div className="flex items-center justify-between p-6 mb-4">
-           <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-xl shadow-blue-500/20">
-                <FiGrid className="h-5 w-5" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Company Panel</span>
-                <span className="text-sm font-black tracking-tight text-slate-900 uppercase truncate max-w-[140px]">
-                  {user?.businessName || user?.businessId?.businessName || 'Ematix Platform'}
-                </span>
-              </div>
+        {/* Brand Section */}
+        <div className={`h-24 flex items-center gap-4 border-b border-white/5 transition-all duration-300 ${isHovered ? 'px-8' : 'px-6 justify-center'}`}>
+           <div className="h-12 w-12 min-w-[3rem] rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-xl shadow-blue-600/20">
+             <FiActivity className="h-6 w-6" />
            </div>
-           <button onClick={onClose} className="text-slate-500 md:hidden hover:text-white transition-colors">
-              <FiX className="h-6 w-6" />
-           </button>
+           {isHovered && (
+             <motion.div 
+               initial={{ opacity: 0, x: -10 }}
+               animate={{ opacity: 1, x: 0 }}
+               className="flex flex-col min-w-0"
+             >
+               <span className="text-white font-black tracking-tight text-lg leading-tight truncate uppercase">
+                 {user?.businessName || 'Hub Console'}
+               </span>
+               <div className="flex items-center gap-2 mt-1">
+                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                   {user?.role || 'Staff'} Node
+                 </span>
+               </div>
+             </motion.div>
+           )}
+           {isHovered && (
+             <button onClick={onClose} className="ml-auto text-slate-500 md:hidden">
+                <FiX className="h-6 w-6" />
+             </button>
+           )}
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
-          <div className="space-y-1">
-            <p className="px-4 text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Main Menu</p>
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.path);
-              return (
-                <Link
-                  key={item.path}
-                   to={item.path}
-                  onClick={onClose}
-                  className={`flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${
-                    active 
-                    ? 'bg-blue-600/10 text-blue-600 shadow-sm' 
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-                   }`}
-                >
-                  <Icon className={`h-5 w-5 transition-transform group-hover:scale-110 ${active ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                  <span className="text-sm font-bold tracking-tight">{item.label}</span>
-                </Link>
-              );
-            })}
+        {/* Navigation Section */}
+        <nav className="flex-1 overflow-y-auto px-4 py-6 no-scrollbar">
+          <div className="space-y-10">
+            {activeGroups.map((group, gIdx) => (
+              <div key={gIdx} className="space-y-2">
+                {isHovered ? (
+                  <p className="px-4 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] mb-4">
+                    {group.title}
+                  </p>
+                ) : (
+                  <div className="h-4 border-b border-white/5 mb-4" />
+                )}
+                <div className="space-y-1">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const active = isActive(item.path);
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={onClose}
+                        className={`flex items-center gap-4 rounded-2xl transition-all duration-200 group relative ${
+                          isHovered ? 'px-4 py-3' : 'p-4 justify-center'
+                        } ${
+                          active 
+                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                          : 'hover:bg-white/5 hover:text-white'
+                         }`}
+                      >
+                        <Icon className={`h-5 w-5 min-w-[1.25rem] ${active ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'} transition-colors`} />
+                        {isHovered && (
+                          <motion.span 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="text-sm font-bold whitespace-nowrap"
+                          >
+                            {item.label}
+                          </motion.span>
+                        )}
+                        {active && isHovered && (
+                          <motion.div 
+                            layoutId="active-pill"
+                            className="ml-auto h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+                          />
+                        )}
+                        {!isHovered && active && (
+                          <div className="absolute left-0 w-1 h-8 bg-blue-600 rounded-r-full" />
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </nav>
 
-        <div className="p-6 mt-auto border-t border-slate-100 bg-slate-50/50">
-          <button 
-            onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-white border border-slate-200 text-slate-400 text-sm font-black uppercase tracking-widest hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all"
-          >
-            <FiLogOut className="h-4 w-4" />
-            Sign Out
-          </button>
+        {/* User Context Section */}
+        <div className={`p-4 border-t border-white/5 bg-white/[0.02] transition-all duration-300 ${isHovered ? 'p-6' : 'p-4 flex flex-col items-center'}`}>
+           <button 
+             onClick={() => { logout(); navigate('/'); }}
+             className={`flex items-center justify-center gap-3 rounded-2xl border border-white/5 text-slate-500 text-xs font-black uppercase tracking-widest hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/20 transition-all ${
+               isHovered ? 'w-full px-6 py-4' : 'w-12 h-12'
+             }`}
+             title="Termination"
+           >
+             <FiLogOut className="h-5 w-5" />
+             {isHovered && <span>Termination</span>}
+           </button>
         </div>
       </aside>
 
-      {open && <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm md:hidden" onClick={onClose} />}
+      {open && <div className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm md:hidden" onClick={onClose} />}
     </>
   );
 };

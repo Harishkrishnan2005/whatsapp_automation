@@ -34,6 +34,11 @@
   body {
     @apply bg-background text-foreground font-inter antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.03) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(79, 70, 229, 0.03) 0px, transparent 50%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2394a3b8' fill-opacity='0.05'%3E%3Cpath d='M36 34v2H22v-2h14zm0 4v2H22v-2h14zm0-8v2H22v-2h14zm0-4v2H22v-2h14zM22 20h14v2H22v-2zm0-4h14v2H22v-2zM6 34v2H0v-2h6zm0 4v2H0v-2h6zm0-8v2H0v-2h6zm0-4v2H0v-2h6zM0 20h6v2H0v-2zm0-4h6v2H0v-2zm6 44v-2H0v2h6zm0-4v-2H0v2h6zm0-8v-2H0v2h6zm0-4v-2H0v2h6zM0 36h6v2H0v-2zm0-4h6v2H0v-2zm30 28v-2h-14v2h14zm0-4v-2h-14v2h14zm0-8v-2h-14v2h14zm0-4v-2h-14v2h14zM16 36h14v2H16v-2zm0-4h14v2H16v-2zm30 28v-2H32v2h14zm0-4v-2H32v2h14zm0-8v-2H32v2h14zm0-4v-2H32v2h14zM32 36h14v2H32v-2zm0-4h14v2H32v-2zm30 28v-2H48v2h14zm0-4v-2H48v2h14zm0-8v-2H48v2h14zm0-4v-2H48v2h14zM48 36h14v2H48v-2zm0-4h14v2H48v-2zM6 0v2H0V0h6zm0 4v2H0V4h6zm0 8v2H0v-2h6zm0 4v2H0v-2h6zM0 6h6v2H0V6zm0 4h6v2H0v-2zm30 0v-2h-14v2h14zm0-4v-2h-14v2h14zm0-8v-2h-14v2h14zm0-4v-2h-14v2h14zM16 6h14v2H16V6zm0 4h14v2H16v-2zm30 0v-2H32v2h14zm0-4v-2H32v2h14zm0-8v-2H32v2h14zm0-4v-2H32v2h14zM32 6h14v2H32V6zm0 4h14v2H32v-2zm30 0v-2H48v2h14zm0-4v-2H48v2h14zm0-8v-2H48v2h14zm0-4v-2H48v2h14zM48 6h14v2H48V6zm0 4h14v2H48v-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-attachment: fixed;
   }
 }
 

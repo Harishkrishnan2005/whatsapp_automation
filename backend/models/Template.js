@@ -4,7 +4,6 @@ import COLLECTIONS from '../config/mongoCollections.js';
 /**
  * Template Schema
  * Predefined flow templates that businesses can use
- * When selected, creates multiple flows in DB automatically
  */
 const templateSchema = new mongoose.Schema({
   name: {
@@ -21,6 +20,12 @@ const templateSchema = new mongoose.Schema({
     type: String,
     enum: ['booking', 'ecommerce', 'support', 'feedback', 'lead'],
     required: true,
+  },
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Business',
+    required: true,
+    index: true,
   },
   // Flow definitions that will be created
   flows: [

@@ -1,13 +1,14 @@
 import express from 'express';
 import TemplateController from '../controllers/templateController.js';
-import { authenticateToken } from '../middlewares/authorization.js';
+import { authenticateToken, isAdmin } from '../middlewares/authorization.js';
 import { businessContext } from '../middlewares/bussinessContext.js';
 import validate from '../middlewares/validate.js';
 
 const router = express.Router();
 
-// All routes require authentication
+// All routes require authentication and Admin role
 router.use(authenticateToken);
+router.use(isAdmin);
 router.use(businessContext);
 
 /**

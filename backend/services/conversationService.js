@@ -3,6 +3,7 @@ import Customer from '../models/Customer.js';
 import Message from '../models/Message.js';
 import ChatAssignment from '../models/ChatAssignment.js';
 import buildTenantScope from '../utils/tenantScope.js';
+import socketManager from '../utils/socketManager.js';
 
 class ConversationService {
   buildAccessFilter(user, businessId, extra = {}) {
@@ -60,10 +61,10 @@ class ConversationService {
     return conversation;
   }
 
-  async sendMessage(conversationId, text, user, businessId) {
-    const normalizedText = String(text || '').trim();
-    if (!normalizedText) {
-      throw new Error('Message text is required');
+  async sendMessage(conversationId, content, user, businessId) {
+    const normalizedContent = String(content || '').trim();
+    if (!normalizedContent) {
+      throw new Error('Message content is required');
     }
 
     const conversation = await this.getConversationById(conversationId, user, businessId);
@@ -72,34 +73,41 @@ class ConversationService {
       throw new Error('Conversation is not linked to a customer');
     }
 
-    const senderRole = user?.role === 'admin' ? 'admin' : 'staff';
+    const senderId = user?.id || user?._id;
     const messageTimestamp = new Date();
 
+    // 1. Save in Messages collection (for legacy/history compatibility)
     await Message.create({
       customerId,
       businessId,
-      message: normalizedText,
+      tenantId: businessId,
+      content: normalizedContent,
+      message: normalizedContent,
       type: 'outgoing',
-      senderType: senderRole,
+      senderType: user.role,
+      sender: senderId,
+      senderModel: 'User',
+      receiver: customerId,
+      receiverModel: 'Customer',
+      conversationId: conversation._id,
+      status: 'sent'
     });
 
-    await Customer.findOneAndUpdate(
-      { _id: customerId, ...buildTenantScope(businessId) },
-      { updatedAt: messageTimestamp }
-    );
-
+    // 2. Update Conversation with nested message
     const updatedConversation = await Conversation.findOneAndUpdate(
-      this.buildAccessFilter(user, businessId, { _id: conversationId }),
+      { _id: conversationId },
       {
         $push: {
           messages: {
-            sender: senderRole,
-            text: normalizedText,
+            senderId,
+            senderModel: 'User',
+            content: normalizedContent,
             timestamp: messageTimestamp,
+            status: 'sent'
           }
         },
         $set: {
-          lastMessage: normalizedText,
+          lastMessage: normalizedContent,
           lastMessageAt: messageTimestamp,
           updatedAt: messageTimestamp,
           status: 'active',
@@ -110,46 +118,59 @@ class ConversationService {
       .populate('customerId', 'name phone assignedTo')
       .populate('assignedStaffId', 'name email');
 
+    // 3. Real-time broadcast
+    socketManager.emitToRoom(String(conversationId), 'receive_message', {
+      senderId,
+      senderModel: 'User',
+      content: normalizedContent,
+      timestamp: messageTimestamp,
+      status: 'sent',
+      conversationId
+    });
+
+    socketManager.emitToUser(String(businessId), 'chat_list_update', {
+      conversationId,
+      lastMessage: normalizedContent,
+      updatedAt: messageTimestamp
+    });
+
     return updatedConversation;
   }
 
+  async markAsRead(conversationId, user, businessId) {
+    const filter = this.buildAccessFilter(user, businessId, { _id: conversationId });
+    
+    await Conversation.updateOne(
+      { ...filter, 'messages.status': { $ne: 'read' } },
+      { $set: { 'messages.$[].status': 'read' } }
+    );
+
+    socketManager.emitToRoom(String(conversationId), 'messages_read', { conversationId });
+    return true;
+  }
+
   async closeConversation(conversationId, user, businessId) {
-    const conversation = await Conversation.findOne(
-      this.buildAccessFilter(user, businessId, { _id: conversationId })
-    ).select('customerId');
+    const filter = this.buildAccessFilter(user, businessId, { _id: conversationId });
+    const conversation = await Conversation.findOne(filter).select('customerId');
 
     if (!conversation) {
       throw new Error('Conversation not found or access denied');
     }
 
     const updatedConversation = await Conversation.findOneAndUpdate(
-      this.buildAccessFilter(user, businessId, { _id: conversationId }),
-      {
-        $set: {
-          status: 'closed',
-          updatedAt: new Date(),
-        }
-      },
+      filter,
+      { $set: { status: 'closed', updatedAt: new Date() } },
       { new: true }
-    )
-      .populate('customerId', 'name phone assignedTo')
-      .populate('assignedStaffId', 'name email');
+    );
 
     if (conversation.customerId) {
       await ChatAssignment.updateMany(
-        {
-          customerId: conversation.customerId,
-          ...buildTenantScope(businessId),
-          status: { $ne: 'closed' },
-        },
-        {
-          $set: {
-            status: 'closed',
-          }
-        }
+        { customerId: conversation.customerId, ...buildTenantScope(businessId), status: { $ne: 'closed' } },
+        { $set: { status: 'closed' } }
       );
     }
 
+    socketManager.emitToUser(String(businessId), 'conversation_closed', { conversationId });
     return updatedConversation;
   }
 }

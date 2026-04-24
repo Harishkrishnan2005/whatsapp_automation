@@ -6,8 +6,8 @@ import { checkFlowLimit } from '../middlewares/planMiddleware.js';
 
 const router = express.Router();
 
-// Get all flows
-router.get('/', authenticateToken, businessContext, ChatbotController.getFlows);
+// Get all flows (Admin only)
+router.get('/', authenticateToken, businessContext, isAdmin, ChatbotController.getFlows);
 
 // Admin only - create, update, delete flows
 router.post('/', authenticateToken, businessContext, isAdmin, checkFlowLimit, ChatbotController.createFlow);

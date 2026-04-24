@@ -75,6 +75,7 @@ class AppointmentService {
       time, 
       assignedTo, 
       businessId, 
+      tenantId: businessId, // Ensure multi-tenant isolation
       service,
       auditLogs: [{
         type: 'CREATED',

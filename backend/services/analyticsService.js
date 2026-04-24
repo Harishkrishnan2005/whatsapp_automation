@@ -241,6 +241,7 @@ class AnalyticsService {
           sessionsStarted,
           recentOrders,
           orderTrend,
+          messageTrendData,
         ] = await Promise.all([
           this.getCustomerStatusTotals(businessId, category),
           Message.countDocuments(tenantScope),
@@ -279,7 +280,43 @@ class AnalyticsService {
             },
             { $sort: { _id: 1 } }
           ]),
+          Message.aggregate([
+            {
+              $match: {
+                ...tenantScope,
+                createdAt: {
+                  $gte: new Date(new Date().setDate(new Date().getDate() - 6))
+                }
+              }
+            },
+            {
+              $group: {
+                _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+                count: { $sum: 1 }
+              }
+            },
+            { $sort: { _id: 1 } }
+          ]),
         ]);
+
+        const formatTrend = (rawTrend) => {
+          const days = [];
+          const now = new Date();
+          for (let i = 6; i >= 0; i--) {
+            const d = new Date(now);
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            const found = rawTrend.find(t => t._id === dateStr);
+            days.push({
+              name: d.toLocaleDateString('en-US', { weekday: 'short' }),
+              value: found ? (found.count || found.confirmed || 0) : 0
+            });
+          }
+          return days;
+        };
+
+        const messageTrend = formatTrend(messageTrendData);
+        const trendData = formatTrend(orderTrend);
 
         const totalRevenue = Number(paidRevenueData[0]?.totalRevenue || 0);
         const refundedAmount = Number(refundedAmountData[0]?.refundedAmount || 0);
@@ -337,7 +374,8 @@ class AnalyticsService {
             { step: 'ORDERS', label: 'Orders Placed', count: totalOrders, dropRate: this.formatRate(sessionsStarted > 0 ? ((sessionsStarted - totalOrders) / sessionsStarted) * 100 : 0) },
             { step: 'DELIVERED', label: 'Delivered', count: deliveredOrders, dropRate: this.formatRate(totalOrders > 0 ? ((totalOrders - deliveredOrders) / totalOrders) * 100 : 0) },
           ],
-          appointmentTrend: orderTrend,
+          appointmentTrend: trendData,
+          engagementTrend: messageTrend,
           revenue: {
             total: totalRevenue,
             averageOrderValue,
@@ -494,10 +532,41 @@ class AnalyticsService {
         appointmentTrend.push(existing || { _id: dateStr, confirmed: 0, cancelled: 0 });
       }
 
+      const rawMessageTrend = await Message.aggregate([
+        {
+          $match: {
+            ...tenantScope,
+            createdAt: {
+              $gte: new Date(new Date().setDate(new Date().getDate() - 6))
+            }
+          }
+        },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } }
+      ]);
+
+      const messageTrend = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        const found = rawMessageTrend.find(t => t._id === dateStr);
+        messageTrend.push({
+          name: d.toLocaleDateString('en-US', { weekday: 'short' }),
+          value: found ? found.count : 0
+        });
+      }
+
       return {
         category,
         funnel,
         appointmentTrend,
+        engagementTrend: messageTrend,
         summary: {
           totalSessions,
           qualifiedLeads,

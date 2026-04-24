@@ -24,6 +24,12 @@ const orderSchema = new mongoose.Schema({
     ref: 'Business',
     required: true,
   },
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Business',
+    required: true,
+    index: true,
+  },
   items: [
     {
       productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
@@ -186,10 +192,10 @@ const orderSchema = new mongoose.Schema({
   collection: COLLECTIONS.ORDERS,
 });
 
-orderSchema.index({ businessId: 1, createdAt: -1 });
-orderSchema.index({ businessId: 1, customerId: 1, createdAt: -1 });
-orderSchema.index({ businessId: 1, orderStatus: 1, paymentStatus: 1, createdAt: -1 });
-orderSchema.index({ businessId: 1, assignedTo: 1, createdAt: -1 });
+orderSchema.index({ tenantId: 1, createdAt: -1 });
+orderSchema.index({ tenantId: 1, customerId: 1, createdAt: -1 });
+orderSchema.index({ tenantId: 1, orderStatus: 1, paymentStatus: 1, createdAt: -1 });
+orderSchema.index({ tenantId: 1, assignedTo: 1, createdAt: -1 });
 
 orderSchema.pre('validate', function syncOrderCompatibility(next) {
   if (!this.paymentType) {

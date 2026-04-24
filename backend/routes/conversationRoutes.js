@@ -54,6 +54,15 @@ router.post('/id/:id/messages', async (req, res) => {
   }
 });
 
+router.put('/id/:id/read', async (req, res) => {
+  try {
+    await ConversationService.markAsRead(req.params.id, req.user, req.businessId);
+    res.json({ message: 'Conversation marked as read' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 router.put('/id/:id/close', async (req, res) => {
   try {
     const conversation = await ConversationService.closeConversation(req.params.id, req.user, req.businessId);

@@ -35,13 +35,15 @@ class AuthService {
 
   buildUserResponse(user, businessId = user.businessId) {
     const plan = resolveBusinessPlan(businessId);
+    const tenantId = businessId?._id || businessId || user.tenantId;
     return {
       id: user._id,
       email: user.email,
       role: user.role,
       name: user.name,
       permissions: user.permissions,
-      businessId: businessId?._id || businessId,
+      businessId: tenantId,
+      tenantId: tenantId,
       businessName: businessId?.name || user.businessName || null,
       businessType: user.businessType,
       plan,
@@ -52,11 +54,13 @@ class AuthService {
 
   buildAccessTokenPayload(user, businessId = user.businessId) {
     const plan = resolveBusinessPlan(businessId);
+    const tenantId = businessId?._id || businessId || user.tenantId;
     return {
       id: user._id,
       email: user.email,
       role: user.role,
-      businessId: businessId?._id || businessId,
+      businessId: tenantId,
+      tenantId: tenantId,
       businessType: user.businessType,
       plan,
       subscriptionStatus: businessId?.subscription?.status || 'ACTIVE',
@@ -112,6 +116,7 @@ class AuthService {
       role: 'admin',
       permissions: ADMIN_PERMISSIONS,
       businessId: business._id,
+      tenantId: business._id,
       businessType,
     });
 
@@ -146,9 +151,11 @@ class AuthService {
       resolvedBusinessType = fallbackBusiness.businessType || resolvedBusinessType || 'E_COMMERCE';
       await User.findByIdAndUpdate(user._id, {
         businessId: resolvedBusinessId,
+        tenantId: resolvedBusinessId,
         businessType: resolvedBusinessType,
       });
       user.businessId = resolvedBusinessId;
+      user.tenantId = resolvedBusinessId;
       user.businessType = resolvedBusinessType;
     }
 
@@ -246,6 +253,7 @@ class AuthService {
       permissions,
       isActive,
       businessId: resolvedBusinessId,
+      tenantId: resolvedBusinessId,
       businessType: resolvedBusinessType || 'E_COMMERCE',
     });
 
@@ -316,6 +324,44 @@ class AuthService {
       filter.businessId = businessId;
     }
     return await User.findOneAndDelete(filter);
+  }
+
+  async switchBusiness(userId, targetBusinessId) {
+    const user = await User.findById(userId).populate('associatedBusinesses.businessId');
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const businessEntry = user.associatedBusinesses.find(
+      (b) => String(b.businessId?._id || b.businessId) === String(targetBusinessId)
+    );
+
+    if (!businessEntry && String(user.businessId) !== String(targetBusinessId)) {
+      throw new Error('You do not have access to this business');
+    }
+
+    const targetBusiness = await Business.findById(targetBusinessId);
+    if (!targetBusiness) {
+      throw new Error('Business not found');
+    }
+
+    // Update active business context
+    user.businessId = targetBusinessId;
+    user.tenantId = targetBusinessId;
+    user.role = businessEntry?.role || user.role;
+    user.businessType = businessEntry?.businessType || targetBusiness.businessType;
+    await user.save();
+
+    const accessToken = jwt.sign(
+      this.buildAccessTokenPayload(user, targetBusiness),
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    return {
+      accessToken,
+      user: this.buildUserResponse(user, targetBusiness),
+    };
   }
 
   async seedSuperAdmin() {

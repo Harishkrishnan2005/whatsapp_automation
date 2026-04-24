@@ -15,6 +15,7 @@ router.post('/superadmin/login', validate(loginSchema), AuthController.superAdmi
 router.post('/admin/login', validate(loginSchema), AuthController.adminLogin);
 router.post('/staff/login', validate(loginSchema), AuthController.staffLogin);
 router.post('/refresh', AuthController.refresh);
+router.post('/switch-business', authenticateToken, AuthController.switchBusiness);
 
 // Admin only
 router.post('/staff', authenticateToken, isAdmin, checkUsageLimit('maxUsers'), validate(createStaffSchema), AuthController.createStaff);

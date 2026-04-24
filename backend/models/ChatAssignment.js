@@ -25,11 +25,17 @@ const chatAssignmentSchema = new mongoose.Schema({
     ref: 'Business',
     required: true,
   },
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Business',
+    required: true,
+    index: true,
+  },
 }, {
   timestamps: true,
   collection: COLLECTIONS.CHAT_ASSIGNMENTS,
 });
 
-chatAssignmentSchema.index({ businessId: 1, status: 1, updatedAt: -1 });
+chatAssignmentSchema.index({ tenantId: 1, status: 1, updatedAt: -1 });
 
 export default mongoose.model('ChatAssignment', chatAssignmentSchema);

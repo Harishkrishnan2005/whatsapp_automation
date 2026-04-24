@@ -239,7 +239,7 @@ const Orders = () => {
       </div>
 
       {/* KPI Resource Matrix */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
         {[
           { label: 'Total Orders', value: metrics.totalOrders, icon: FiPackage, color: 'blue' },
           { label: 'Delivered Orders', value: metrics.deliveredOrders, icon: FiTruck, color: 'emerald' },
@@ -295,8 +295,8 @@ const Orders = () => {
            </div>
         </div>
 
-        <div className="overflow-visible">
-          <table className="w-full text-left">
+        <div className="overflow-x-auto no-scrollbar">
+          <table className="w-full text-left min-w-[1200px]">
             <tbody className="divide-y divide-slate-50">
               <AnimatePresence mode="popLayout">
                 {visibleOrders.map((order, idx) => {

@@ -46,12 +46,37 @@ const messageSchema = new mongoose.Schema({
     ref: 'Business',
     required: true,
   },
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Business',
+    required: true,
+    index: true,
+  },
+  status: {
+    type: String,
+    enum: ['sent', 'delivered', 'read'],
+    default: 'sent',
+  },
+  sender: {
+    type: mongoose.Schema.Types.ObjectId,
+    refPath: 'senderModel',
+    required: true
+  },
+  receiver: {
+    type: mongoose.Schema.Types.ObjectId,
+    refPath: 'receiverModel',
+    required: true
+  },
+  senderModel: { type: String, enum: ['Customer', 'User'], required: true },
+  receiverModel: { type: String, enum: ['Customer', 'User'], required: true },
+  content: { type: String, required: true },
+  conversationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Conversation', required: true }
 }, {
   timestamps: true,
   collection: COLLECTIONS.MESSAGES,
 });
 
-messageSchema.index({ businessId: 1, customerId: 1, createdAt: -1 });
-messageSchema.index({ businessId: 1, campaignId: 1, createdAt: -1 });
+messageSchema.index({ tenantId: 1, customerId: 1, createdAt: -1 });
+messageSchema.index({ tenantId: 1, campaignId: 1, createdAt: -1 });
 
 export default mongoose.model('Message', messageSchema);

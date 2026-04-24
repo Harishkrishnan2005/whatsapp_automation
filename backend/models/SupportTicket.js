@@ -9,6 +9,12 @@ const supportTicketSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Business',
+      required: true,
+      index: true,
+    },
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Customer',
@@ -57,7 +63,7 @@ const supportTicketSchema = new mongoose.Schema(
   }
 );
 
-supportTicketSchema.index({ businessId: 1, status: 1 });
-supportTicketSchema.index({ businessId: 1, customerId: 1 });
+supportTicketSchema.index({ tenantId: 1, status: 1 });
+supportTicketSchema.index({ tenantId: 1, customerId: 1 });
 
 export default mongoose.model('SupportTicket', supportTicketSchema);

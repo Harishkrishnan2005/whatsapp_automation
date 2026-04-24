@@ -215,6 +215,7 @@ class OrderService {
     const orderPayload = {
       orderId: this.generateOrderId(),
       businessId,
+      tenantId: businessId, // Ensure multi-tenant isolation
       customerId,
       items: orderItems,
       productId: productId || (orderItems[0]?.productId || null),

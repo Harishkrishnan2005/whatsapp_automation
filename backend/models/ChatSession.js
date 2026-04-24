@@ -14,6 +14,12 @@ const chatSessionSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Business',
+      required: true,
+      index: true,
+    },
     customerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Customer',
@@ -80,6 +86,6 @@ const chatSessionSchema = new mongoose.Schema(
 );
 
 
-chatSessionSchema.index({ businessId: 1, phone: 1 }, { unique: true });
+chatSessionSchema.index({ tenantId: 1, phone: 1 }, { unique: true });
 
 export default mongoose.model('ChatSession', chatSessionSchema);

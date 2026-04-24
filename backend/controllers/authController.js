@@ -157,6 +157,17 @@ class AuthController {
       res.status(500).json({ message: error.message });
     }
   }
+
+  async switchBusiness(req, res) {
+    try {
+      const { businessId } = req.body;
+      const userId = req.user.id;
+      const result = await AuthService.switchBusiness(userId, businessId);
+      res.json(result);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
+  }
 }
 
 export default new AuthController();

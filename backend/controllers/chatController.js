@@ -52,15 +52,7 @@ class ChatController {
       const senderType = req.user?.role === 'admin' ? 'admin' : 'staff';
       const newMessage = await ChatService.sendMessage(req.businessId, customerId, message, senderType, req.user);
       
-      // Unified Conversation Persistence
-      const customer = await Customer.findOne({ _id: customerId, ...buildTenantScope(req.businessId) });
-      if (customer) {
-        await conversationTracker.addMessage(req.businessId, customer.phone, senderType, message, {
-          customerId: customer._id,
-          assignedStaffId: customer.assignedTo || null,
-        });
-      }
-
+      // Conversation persistence is handled inside ChatService for consistency
       res.status(201).json(newMessage);
     } catch (error) {
       const status = error.message.includes('Unauthorized') ? 403 : 500;
@@ -123,13 +115,6 @@ class ChatController {
       }
 
       const newMessage = await ChatService.sendMessage(req.businessId, customer._id, message, 'admin', req.user);
-      
-      // Unified Conversation Persistence
-      await conversationTracker.addMessage(req.businessId, customer.phone, 'admin', message, {
-        customerId: customer._id,
-        assignedStaffId: customer.assignedTo || null,
-      });
-
       res.status(201).json(newMessage);
     } catch (error) {
       res.status(500).json({ message: error.message });

@@ -114,12 +114,18 @@ const customerSchema = new mongoose.Schema({
     ref: 'Business',
     required: true,
   },
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Business',
+    required: true,
+    index: true,
+  },
 }, {
   timestamps: true,
   collection: COLLECTIONS.CUSTOMERS,
 });
 
-customerSchema.index({ businessId: 1, phone: 1 }, { unique: true });
-customerSchema.index({ businessId: 1, createdAt: -1 });
+customerSchema.index({ tenantId: 1, phone: 1 }, { unique: true });
+customerSchema.index({ tenantId: 1, createdAt: -1 });
 
 export default mongoose.model('Customer', customerSchema);

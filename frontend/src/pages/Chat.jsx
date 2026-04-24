@@ -1,359 +1,345 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { FiMessageCircle, FiSend, FiSearch, FiMoreVertical, FiUser, FiInfo } from 'react-icons/fi';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  FiMessageCircle, 
+  FiSend, 
+  FiSearch, 
+  FiMoreVertical, 
+  FiUser, 
+  FiInfo, 
+  FiPhone, 
+  FiVideo, 
+  FiPaperclip, 
+  FiSmile,
+  FiClock,
+  FiCheck,
+  FiCheckCircle,
+  FiX
+} from 'react-icons/fi';
 import api from '../utils/api';
-import ProductCarousel from '../components/ProductCarousel';
+import socket from '../utils/socket';
+import { useAuth } from '../context/AuthContext';
+import Badge from '../components/ui/Badge';
 
 const Chat = () => {
-  const [phone, setPhone] = useState('');
-  const [message, setMessage] = useState('');
-  const [chatHistory, setChatHistory] = useState([]);
+  const { user } = useAuth();
+  const [conversations, setConversations] = useState([]);
+  const [activeConversation, setActiveConversation] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [typingUsers, setTypingUsers] = useState({}); // conversationId -> { userId, isTyping }
   const chatContainerRef = useRef(null);
 
+  // Initialize Socket Connection
   useEffect(() => {
-    const fetchHistory = async () => {
-      if (!phone || phone.length < 10) return;
-      try {
-        const response = await api.get(`/chatbot/history?phone=${phone}`);
-        const history = response.data.map(m => ({
-          type: m.senderType === 'customer' ? 'user' : 'bot',
-          text: m.message,
-          response: m.message,
-          products: m.products || [],
-          createdAt: m.createdAt
-        }));
-        setChatHistory(history);
-      } catch (error) {
-        console.error('Error fetching history:', error);
-      }
-    };
-    fetchHistory();
-  }, [phone]);
-
-  useEffect(() => {
-    if (chatContainerRef.current) {
-        chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
-  }, [chatHistory]);
-
-  const sendWebhookMessage = async (outgoingMessage) => {
-    if (!phone || !outgoingMessage) return;
-    
-    // Determine what text to show in the chat UI
-    const displayMessage = typeof outgoingMessage === 'object' && outgoingMessage.label 
-      ? outgoingMessage.label 
-      : (typeof outgoingMessage === 'object' ? JSON.stringify(outgoingMessage) : outgoingMessage);
-
-    try {
-      const response = await api.post('/chatbot/send', {
-        phone,
-        message: outgoingMessage,
+    if (user) {
+      socket.connect(user.id || user._id);
+      
+      // Listen for global chat list updates
+      socket.on('chat_list_update', (data) => {
+        fetchConversations();
       });
-      const botPayload = { type: 'bot', ...response.data };
-      setChatHistory((prev) => [
-        ...prev, 
-        { type: 'user', text: displayMessage, createdAt: new Date() }, 
-        botPayload
-      ]);
 
-      if (response.data?.type === 'payment' && response.data?.payment) {
-        openRazorpayPopup(response.data.payment);
-      }
+      return () => {
+        socket.disconnect();
+      };
+    }
+  }, [user]);
 
-      return response.data;
+  // Fetch Conversations
+  const fetchConversations = async (query = '') => {
+    try {
+      const response = await api.get(`/conversations?q=${query}`);
+      setConversations(response.data.conversations || []);
+      setLoading(false);
     } catch (error) {
-      console.error('Error sending message:', error);
-      const errorMsg = error?.response?.data?.message || 'Neural Link Error: Unable to process transmission.';
-      setChatHistory((prev) => [
-        ...prev,
-        { type: 'user', text: displayMessage, createdAt: new Date() },
-        {
-          type: 'bot',
-          response: errorMsg,
-          text: errorMsg,
-          createdAt: new Date()
-        },
-      ]);
-      return null;
+      console.error('Error fetching conversations:', error);
+      setLoading(false);
     }
   };
 
-  const openRazorpayPopup = (paymentPayload) => {
-    try {
-      if (!window.Razorpay) {
-        setChatHistory((prev) => [
+  useEffect(() => {
+    fetchConversations(searchQuery);
+  }, [searchQuery]);
+
+  // Handle Active Conversation Change
+  useEffect(() => {
+    if (activeConversation) {
+      fetchMessages(activeConversation._id);
+      socket.emit('join_conversation', activeConversation._id);
+      
+      // Listen for new messages in this conversation
+      socket.on('receive_message', (message) => {
+        if (message.conversationId === activeConversation._id) {
+          setMessages((prev) => [...prev, message]);
+          markAsRead(activeConversation._id);
+        }
+      });
+
+      socket.on('display_typing', ({ userId, isTyping }) => {
+        setTypingUsers(prev => ({
           ...prev,
-          {
-            type: 'bot',
-            response: 'Transaction Protocol Failed: Razorpay SDK not detected.',
-            text: 'Transaction Protocol Failed: Razorpay SDK not detected.',
-            createdAt: new Date()
-          },
-        ]);
-        return;
-      }
+          [activeConversation._id]: { userId, isTyping }
+        }));
+      });
 
-      const options = {
-        key: paymentPayload.keyId,
-        amount: paymentPayload.amount,
-        currency: paymentPayload.currency || 'INR',
-        order_id: paymentPayload.razorpayOrderId,
-        name: 'Enterprise Automation',
-        description: 'Secure Node Settlement',
-        prefill: {
-          name: paymentPayload.customer?.name || 'Authorized Client',
-          contact: paymentPayload.customer?.contact || '',
-        },
-        theme: { color: '#2563eb' },
-        handler: async function onPaymentSuccess(razorpayResponse) {
-          try {
-            await api.post('/webhook/payment/verify', {
-              orderId: paymentPayload.internalOrderId,
-              razorpayOrderId: razorpayResponse.razorpay_order_id,
-              razorpayPaymentId: razorpayResponse.razorpay_payment_id,
-              razorpaySignature: razorpayResponse.razorpay_signature,
-            });
-
-            setChatHistory((prev) => [
-              ...prev,
-              {
-                type: 'bot',
-                response: `Settlement Confirmed.\nTrace ID: ${razorpayResponse.razorpay_payment_id}\nOrder node ${paymentPayload.internalOrderId} initialized.`,
-                text: `Settlement Confirmed.\nTrace ID: ${razorpayResponse.razorpay_payment_id}\nOrder node ${paymentPayload.internalOrderId} initialized.`,
-                createdAt: new Date()
-              },
-            ]);
-          } catch (verifyError) {
-            setChatHistory((prev) => [
-              ...prev,
-              {
-                type: 'bot',
-                response: `Verification Latency: ${verifyError?.response?.data?.message || 'Resolution failed.'}`,
-                text: `Verification Latency: ${verifyError?.response?.data?.message || 'Resolution failed.'}`,
-                createdAt: new Date()
-              },
-            ]);
-          }
-        },
-        modal: {
-          ondismiss: () => {
-            setChatHistory((prev) => [
-              ...prev,
-              {
-                type: 'bot',
-                response: 'Transaction Aborted: User termination detected.',
-                text: 'Transaction Aborted: User termination detected.',
-                createdAt: new Date()
-              },
-            ]);
-          },
-        },
+      return () => {
+        socket.emit('leave_conversation', activeConversation._id);
+        socket.off('receive_message');
+        socket.off('display_typing');
       };
+    }
+  }, [activeConversation]);
 
-      const rzp = new window.Razorpay(options);
-      rzp.open();
+  const fetchMessages = async (conversationId) => {
+    try {
+      const response = await api.get(`/conversations/id/${conversationId}/messages`);
+      setMessages(response.data.messages || []);
+      markAsRead(conversationId);
     } catch (error) {
-      console.error('Razorpay popup error:', error);
+      console.error('Error fetching messages:', error);
+    }
+  };
+
+  const markAsRead = async (conversationId) => {
+    try {
+      await api.put(`/conversations/id/${conversationId}/read`);
+    } catch (error) {
+      console.error('Error marking as read:', error);
     }
   };
 
   const sendMessage = async () => {
-    if (!phone || !message) return;
-    const outgoingText = message;
-    setMessage('');
-    await sendWebhookMessage(outgoingText);
+    if (!inputMessage.trim() || !activeConversation) return;
+
+    const content = inputMessage;
+    setInputMessage('');
+
+    try {
+      // The socket will update the UI via 'receive_message' event from backend
+      await api.post(`/conversations/id/${activeConversation._id}/messages`, { text: content });
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
 
-  const renderTextWithLinks = (text) => {
-    const content = String(text || '');
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    const parts = content.split(urlRegex);
-
-    return parts.map((part, idx) => {
-      if (/^https?:\/\//i.test(part)) {
-        return <a key={`link-${idx}`} href={part} target="_blank" rel="noreferrer" className="text-blue-600 font-bold underline decoration-blue-200 decoration-2 underline-offset-4">{part}</a>;
-      }
-      return <span key={`txt-${idx}`}>{part}</span>;
-    });
+  const handleTyping = (e) => {
+    setInputMessage(e.target.value);
+    if (activeConversation) {
+      socket.emit('typing', { 
+        conversationId: activeConversation._id, 
+        userId: user.id || user._id, 
+        isTyping: e.target.value.length > 0 
+      });
+    }
   };
 
-  const formatTime = (date) => {
-    const d = date ? new Date(date) : new Date();
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages, typingUsers]);
+
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const renderQuickReplies = (msg) => {
-    if (!msg?.products?.length) return null;
-
-    return (
-      <div className="mt-3 flex flex-wrap gap-2">
-        {msg.products.map((option, index) => (
-          <button
-            key={option.id || option.name || index}
-            onClick={() => sendWebhookMessage({
-              label: option.name,
-              action: option.action || (option.id === 'cod' || option.id === 'online' ? 'SAVE_PAYMENT_METHOD' : undefined),
-              payload: option.action ? {} : undefined
-            })}
-            className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
-          >
-            {option.name}
-          </button>
-        ))}
-      </div>
-    );
-  };
+  const isTyping = activeConversation && typingUsers[activeConversation._id]?.isTyping;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-100px)] max-w-5xl mx-auto overflow-hidden bg-[#efeae2] border border-gray-300 rounded-2xl shadow-2xl relative">
-       {/* WhatsApp Doodle Background */}
-       <div 
-          className="absolute inset-0 opacity-[0.06] pointer-events-none"
-          style={{ backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")' }}
-       />
-
-       {/* Header */}
-       <header className="bg-[#f0f2f5] border-b border-gray-300 px-6 py-3 flex items-center justify-between z-10">
-          <div className="flex items-center gap-4">
-             <div className="h-12 w-12 rounded-full bg-emerald-600 flex items-center justify-center text-white shadow-md">
-                <FiMessageCircle className="h-6 w-6" />
-             </div>
-             <div>
-                <h2 className="font-bold text-gray-800 leading-none">WhatsApp Bot Simulator</h2>
-                <div className="flex items-center gap-1.5 mt-1.5">
-                   <span className="h-2 w-2 rounded-full bg-[#25d366] animate-pulse" />
-                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-none">Neural Link Active</span>
-                </div>
-             </div>
+    <div className="h-[calc(100vh-120px)] flex bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden font-inter">
+      
+      {/* Left Panel: Conversation List */}
+      <div className="w-96 flex flex-col border-r border-slate-100 bg-slate-50/30">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">Messages</h2>
+            <button className="h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-900 hover:text-white transition-all">
+              <FiMoreVertical />
+            </button>
           </div>
-          <div className="flex items-center gap-4 text-gray-500">
-             <div className="hidden md:flex flex-col items-end">
-                <span className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Phone Node</span>
-                <input 
-                  type="text" 
-                  placeholder="Enter Phone..." 
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="bg-white/50 border-none px-2 py-0.5 rounded text-xs font-bold text-gray-700 focus:bg-white outline-none w-32"
-                />
-             </div>
-             <button className="p-2 hover:bg-gray-200 rounded-full transition-colors"><FiSearch className="h-5 w-5"/></button>
-             <button className="p-2 hover:bg-gray-200 rounded-full transition-colors"><FiMoreVertical className="h-5 w-5"/></button>
+          <div className="relative group">
+            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+            <input 
+              type="text" 
+              placeholder="Search conversations..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-white border border-slate-100 rounded-2xl pl-11 pr-4 py-3 text-xs font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-600/5 transition-all shadow-sm"
+            />
           </div>
-       </header>
+        </div>
 
-       {/* Main Chat Area */}
-       <div 
-         ref={chatContainerRef}
-         className="flex-1 overflow-y-auto px-8 md:px-14 py-8 space-y-3 custom-scrollbar relative z-0"
-       >
-          {chatHistory.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center">
-               <div className="bg-[#fff1c1] text-[#725a2c] text-[11px] px-6 py-2 rounded-lg font-bold shadow-sm uppercase tracking-wide border border-[#e6daae]">
-                  End-to-end encrypted protocol initiated
-               </div>
-               <div className="mt-10 max-w-sm">
-                  <p className="text-gray-500 text-sm font-medium leading-relaxed">
-                     Enter a phone number in the header and type a message below to test the automated chatbot flows.
-                  </p>
-               </div>
+        <div className="flex-1 overflow-y-auto px-4 space-y-2 no-scrollbar">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-full space-y-4 opacity-50">
+              <div className="h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <p className="text-[10px] font-black uppercase tracking-widest">Loading Chats...</p>
             </div>
-          ) : (
-            chatHistory.map((msg, index) => {
-              const isUser = msg.type === 'user';
-              
-              return (
-                <div key={index} className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'}`}>
-                   <div className={`max-w-[85%] px-3 py-1.5 rounded-lg shadow-sm relative group ${
-                     isUser 
-                     ? 'bg-[#dcf8c6] text-gray-900 rounded-tr-none' 
-                     : 'bg-white text-gray-900 rounded-tl-none'
-                   }`}>
-                      {/* Tail */}
-                      <div className={`absolute top-0 w-3 h-3 ${
-                        isUser ? 'right-[-8px] text-[#dcf8c6]' : 'left-[-8px] text-white'
-                      }`}>
-                         <svg viewBox="0 0 8 13" height="13" width="8" preserveAspectRatio="xMidYMid meet" fill="currentColor">
-                           <path d={isUser 
-                             ? "M1.533 3.568 8 12.193V1H2.812C1.042 1 .474 2.156 1.533 3.568Z" 
-                             : "M6.467 3.568 0 12.193V1h5.188c1.77 0 2.338 1.156 1.279 2.568Z"} 
-                           />
-                         </svg>
-                      </div>
+          ) : conversations.length === 0 ? (
+            <div className="text-center p-8 opacity-40">
+              <p className="text-xs font-bold">No conversations found</p>
+            </div>
+          ) : conversations.map((conv) => {
+            const isActive = activeConversation?._id === conv._id;
+            const hasUnread = conv.messages?.some(m => m.status !== 'read' && m.senderModel === 'Customer');
+            
+            return (
+              <motion.div 
+                layout
+                key={conv._id}
+                onClick={() => setActiveConversation(conv)}
+                className={`p-4 rounded-3xl flex items-center gap-4 cursor-pointer transition-all duration-300 ${isActive ? 'bg-white shadow-xl shadow-slate-200/50 border border-slate-100' : 'hover:bg-white/60'}`}
+              >
+                <div className="relative">
+                  <div className={`h-12 w-12 rounded-2xl flex items-center justify-center text-white font-black text-lg transition-colors ${isActive ? 'bg-blue-600' : 'bg-slate-300'}`}>
+                    {(conv.customerId?.name || conv.phone || '?').charAt(0).toUpperCase()}
+                  </div>
+                  {conv.status === 'active' && <div className="absolute -bottom-1 -right-1 h-3.5 w-3.5 bg-emerald-500 border-2 border-white rounded-full" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-sm font-black text-slate-900 truncate">
+                      {conv.customerId?.name || `+${conv.phone}`}
+                    </p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">
+                      {conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-slate-500 truncate font-medium">
+                      {conv.lastMessage || 'Start a conversation'}
+                    </p>
+                    {hasUnread && (
+                      <div className="h-2.5 w-2.5 rounded-full bg-blue-600 ring-4 ring-blue-600/10" />
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
 
-                      <div className="flex flex-col">
-                         {!isUser && (
-                           <span className="text-[10px] font-bold text- emerald-600 uppercase tracking-tighter mb-1 select-none">Automated Bot</span>
-                         )}
-                         <div className="text-[14.5px] leading-[19px] whitespace-pre-wrap">
-                            {isUser ? msg.text : renderTextWithLinks(msg.response || msg.text)}
-                         </div>
+      {/* Right Panel: Chat Interface */}
+      <div className="flex-1 flex flex-col bg-white relative">
+        {!activeConversation ? (
+          <div className="h-full flex flex-col items-center justify-center text-center p-12 bg-slate-50/50">
+            <div className="h-20 w-20 rounded-[2rem] bg-white shadow-xl flex items-center justify-center text-blue-600 mb-6">
+              <FiMessageCircle className="h-10 w-10" />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 tracking-tight">Select a Chat</h3>
+            <p className="text-sm text-slate-400 font-bold max-w-xs mt-2 uppercase tracking-widest leading-relaxed">
+              Pick a conversation from the sidebar to start messaging in real-time
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Header */}
+            <header className="h-20 px-8 flex items-center justify-between border-b border-slate-50 bg-white z-10">
+              <div className="flex items-center gap-4">
+                <div className="h-11 w-11 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black">
+                  {(activeConversation.customerId?.name || activeConversation.phone || '?').charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 tracking-tight">
+                    {activeConversation.customerId?.name || `+${activeConversation.phone}`}
+                  </h3>
+                  <div className="flex items-center gap-1.5">
+                    <div className={`h-1.5 w-1.5 rounded-full ${isTyping ? 'bg-blue-500 animate-pulse' : 'bg-emerald-500'}`} />
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                      {isTyping ? 'Typing...' : 'Online'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button className="h-10 w-10 rounded-xl hover:bg-slate-50 text-slate-400 transition-all flex items-center justify-center"><FiPhone /></button>
+                <button className="h-10 w-10 rounded-xl hover:bg-slate-50 text-slate-400 transition-all flex items-center justify-center"><FiVideo /></button>
+                <button 
+                  onClick={() => setActiveConversation(null)}
+                  className="h-10 w-10 rounded-xl hover:bg-red-50 text-slate-400 hover:text-red-500 transition-all flex items-center justify-center lg:hidden"
+                >
+                  <FiX />
+                </button>
+              </div>
+            </header>
 
-                         {/* Products */}
-                         {!isUser && msg.type === 'quick_reply' && renderQuickReplies(msg)}
-
-                         {!isUser && msg.products && msg.products.length > 0 && msg.type !== 'quick_reply' && (
-                           <div className="mt-3 bg-gray-50 rounded-xl overflow-hidden mb-1 border border-gray-100">
-                             <ProductCarousel 
-                               products={msg.products} 
-                               onProductBuy={(p) => sendWebhookMessage({
-                                 label: p?.name,
-                                 action: 'BUY_NOW',
-                                 payload: { productId: p?._id || p?.id }
-                               })} 
-                               onAddToCart={(p) => sendWebhookMessage({
-                                 label: `Add to Cart: ${p?.name}`,
-                                 action: 'ADD_TO_CART',
-                                 payload: {
-                                   productId: p?._id || p?.id,
-                                   quantity: 1
-                                 }
-                               })}
-                             />
-                           </div>
-                         )}
-
-                         <div className="flex items-center justify-end gap-1 -mb-1 mt-1 ml-10">
-                            <span className="text-[9px] text-gray-400 font-medium tracking-tight">
-                               {formatTime(msg.createdAt)}
+            {/* Messages Area */}
+            <div 
+              ref={chatContainerRef}
+              className="flex-1 overflow-y-auto px-10 py-8 space-y-4 bg-slate-50/30 no-scrollbar scroll-smooth"
+            >
+              <AnimatePresence mode="popLayout">
+                {messages.map((msg, idx) => {
+                  const isOwn = msg.senderModel === 'User';
+                  const showAvatar = idx === 0 || messages[idx - 1]?.senderId !== msg.senderId;
+                  
+                  return (
+                    <motion.div 
+                      layout
+                      key={msg._id || idx}
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group`}
+                    >
+                      <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-[75%]`}>
+                        <div className={`px-5 py-3 rounded-[1.5rem] shadow-sm relative transition-all ${
+                          isOwn 
+                          ? 'bg-blue-600 text-white rounded-tr-none' 
+                          : 'bg-white text-slate-700 rounded-tl-none border border-slate-100'
+                        }`}>
+                          <p className="text-sm font-bold leading-relaxed whitespace-pre-wrap">
+                            {msg.content || msg.text}
+                          </p>
+                          <div className={`flex items-center gap-1.5 mt-1.5 ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                            <span className={`text-[8px] font-black uppercase tracking-tighter ${isOwn ? 'text-blue-100/60' : 'text-slate-400'}`}>
+                              {formatTime(msg.timestamp || msg.createdAt)}
                             </span>
-                            {isUser && (
-                              <div className="flex text-[#34b7f1] font-bold">
-                                 <svg viewBox="0 0 16 11" height="11" width="16" preserveAspectRatio="xMidYMid meet" fill="currentColor"><path d="M11.053 1.514 5.373 7.194 2.433 4.254.803 5.884l4.57 4.57 7.31-7.31-1.63-1.63Zm3.84 0-7.31 7.31-.21-.21.21.21-1.63-1.63 7.31-7.31 1.63 1.63Z"></path></svg>
+                            {isOwn && (
+                              <div className="flex -space-x-1">
+                                <FiCheck className={`h-2.5 w-2.5 ${msg.status === 'read' ? 'text-emerald-400' : 'text-blue-200'}`} />
+                                {msg.status !== 'sent' && <FiCheck className={`h-2.5 w-2.5 ${msg.status === 'read' ? 'text-emerald-400' : 'text-blue-200'}`} />}
                               </div>
                             )}
-                         </div>
+                          </div>
+                        </div>
                       </div>
-                   </div>
-                </div>
-              );
-            })
-          )}
-       </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
 
-       {/* Input Area */}
-       <footer className="bg-[#f0f2f5] px-6 py-4 flex gap-4 items-center z-10">
-          <div className="flex-1 bg-white rounded-xl shadow-sm px-5 py-3 flex items-center border border-transparent focus-within:border-emerald-100 transition-all">
-             <input
-               type="text"
-               placeholder={phone ? "Type a message..." : "Enter phone above to begin..."}
-               value={message}
-               onChange={(e) => setMessage(e.target.value)}
-               onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-               disabled={!phone}
-               className="flex-1 bg-transparent text-[15px] text-gray-700 outline-none"
-             />
-          </div>
-          <button
-             onClick={sendMessage}
-             disabled={!phone || !message.trim()}
-             className={`h-12 w-12 rounded-full flex items-center justify-center transition-all ${
-               message.trim() ? 'bg-[#00a884] shadow-lg active:scale-90 hover:bg-[#009173]' : 'bg-gray-400 cursor-not-allowed'
-             }`}
-          >
-             <FiSend className="h-5 w-5 text-white" />
-          </button>
-       </footer>
+            {/* Input Area */}
+            <footer className="p-6 bg-white border-t border-slate-50">
+              <div className="flex items-center gap-4 bg-slate-50 border border-slate-100 rounded-[2rem] px-6 py-3 transition-all focus-within:bg-white focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-600/5 shadow-sm">
+                <button className="text-slate-400 hover:text-blue-600 transition-colors"><FiSmile className="h-5 w-5" /></button>
+                <button className="text-slate-400 hover:text-blue-600 transition-colors"><FiPaperclip className="h-5 w-5" /></button>
+                <input 
+                  type="text"
+                  placeholder="Type your message..."
+                  className="flex-1 bg-transparent border-none outline-none text-sm font-bold text-slate-700 placeholder:text-slate-400"
+                  value={inputMessage}
+                  onChange={handleTyping}
+                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                />
+                <button 
+                  onClick={sendMessage}
+                  disabled={!inputMessage.trim()}
+                  className={`h-11 w-11 rounded-2xl flex items-center justify-center transition-all ${
+                    inputMessage.trim() ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 active:scale-90' : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  <FiSend className="h-5 w-5" />
+                </button>
+              </div>
+            </footer>
+          </>
+        )}
+      </div>
     </div>
   );
 };

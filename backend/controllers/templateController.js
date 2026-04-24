@@ -118,6 +118,7 @@ class TemplateController {
         category,
         flows,
         minPlan,
+        tenantId: req.user.businessId,
       });
 
       return res.status(201).json({

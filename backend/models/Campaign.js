@@ -52,12 +52,18 @@ const campaignSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Business',
+    required: true,
+    index: true,
+  },
 }, {
   timestamps: true,
   collection: COLLECTIONS.CAMPAIGNS,
 });
 
-campaignSchema.index({ businessId: 1, status: 1, scheduledAt: 1 });
-campaignSchema.index({ businessId: 1, createdAt: -1 });
+campaignSchema.index({ tenantId: 1, status: 1, scheduledAt: 1 });
+campaignSchema.index({ tenantId: 1, createdAt: -1 });
 
 export default mongoose.model('Campaign', campaignSchema);

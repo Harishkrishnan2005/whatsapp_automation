@@ -8,6 +8,12 @@ const chatbotFlowSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Business',
+    required: true,
+    index: true,
+  },
   category: {
     type: String,
     enum: ['booking', 'ecommerce'],
@@ -48,8 +54,8 @@ const chatbotFlowSchema = new mongoose.Schema({
   collection: COLLECTIONS.CHATBOT_FLOWS,
 });
 
-chatbotFlowSchema.index({ businessId: 1, isActive: 1, isSystem: 1 });
-chatbotFlowSchema.index({ businessId: 1, step: 1 });
+chatbotFlowSchema.index({ tenantId: 1, isActive: 1, isSystem: 1 });
+chatbotFlowSchema.index({ tenantId: 1, step: 1 });
 
 
 export default mongoose.model('ChatbotFlow', chatbotFlowSchema);

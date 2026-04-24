@@ -30,6 +30,7 @@ class CampaignService {
     // 2. Create Campaign Record
     const campaign = await Campaign.create({
       businessId,
+      tenantId: businessId, // Ensure multi-tenant isolation
       message,
       type: type || 'TEXT',
       audience,
@@ -73,6 +74,7 @@ class CampaignService {
           // Log in Messages collection
           await Message.create({
             businessId,
+            tenantId: businessId,
             customerId: customer._id,
             message: campaign.message,
             type: 'outgoing',

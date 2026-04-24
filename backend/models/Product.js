@@ -92,12 +92,18 @@ const productSchema = new mongoose.Schema({
     ref: 'Business',
     required: true,
   },
+  tenantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Business',
+    required: true,
+    index: true,
+  },
 }, {
   timestamps: true,
   collection: COLLECTIONS.PRODUCTS,
 });
 
-productSchema.index({ businessId: 1, isActive: 1, createdAt: -1 });
+productSchema.index({ tenantId: 1, isActive: 1, createdAt: -1 });
 
 productSchema.pre('validate', function normalizePrice(next) {
   if (this.price == null) {

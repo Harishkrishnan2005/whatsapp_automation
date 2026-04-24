@@ -86,8 +86,25 @@ export const AuthProvider = ({ children }) => {
     setLoginType(null);
   };
 
+  const switchBusiness = async (businessId) => {
+    try {
+      const response = await api.post('/auth/switch-business', { businessId });
+      const { token, user: userData } = response.data;
+
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      api.defaults.headers.common.Authorization = `Bearer ${token}`;
+      setUser(userData);
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to switch business:', error);
+      throw error;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, loginType, registerAdmin }}>
+    <AuthContext.Provider value={{ user, login, logout, switchBusiness, loading, loginType, registerAdmin }}>
       {children}
     </AuthContext.Provider>
   );

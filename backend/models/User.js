@@ -34,6 +34,21 @@ const userSchema = new mongoose.Schema(
       },
       index: true,
     },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Business',
+      required: function () {
+        return this.role !== 'super_admin';
+      },
+      index: true,
+    },
+    associatedBusinesses: [
+      {
+        businessId: { type: mongoose.Schema.Types.ObjectId, ref: 'Business' },
+        role: { type: String, enum: ['admin', 'staff'], default: 'staff' },
+        businessType: { type: String, enum: BUSINESS_TYPES }
+      }
+    ],
     businessType: {
       type: String,
       enum: BUSINESS_TYPES,

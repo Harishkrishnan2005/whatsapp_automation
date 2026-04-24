@@ -23,7 +23,7 @@ class TemplateService {
       const availableTemplateNames = plan?.availableTemplates || [];
 
       const templates = await Template.find({
-        name: { $in: availableTemplateNames },
+        tenantId: businessId,
         isActive: true,
       });
 
@@ -56,6 +56,7 @@ class TemplateService {
       // Get template
       const template = await Template.findOne({
         name: templateName,
+        tenantId: businessId,
         isActive: true,
       });
 
@@ -83,6 +84,7 @@ class TemplateService {
       for (const flowData of template.flows) {
         const flow = await ChatbotFlow.create({
           businessId,
+          tenantId: businessId,
           category,
           trigger: flowData.trigger,
           reply: flowData.reply,
@@ -141,6 +143,7 @@ class TemplateService {
         category: templateData.category,
         flows: templateData.flows,
         minPlan: templateData.minPlan || 'BASIC',
+        tenantId: templateData.tenantId,
         isActive: true,
       });
 

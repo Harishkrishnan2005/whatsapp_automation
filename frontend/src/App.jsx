@@ -25,6 +25,7 @@ import AdvancedAnalytics from './pages/admin/AdvancedAnalytics';
 import Pricing from './pages/admin/Pricing';
 import SimulationChat from './pages/admin/SimulationChat';
 import SupportTickets from './pages/admin/SupportTickets';
+import Settings from './pages/admin/Settings';
 import StaffChat from './pages/staff/StaffChat';
 import StaffBookings from './pages/staff/StaffBookings';
 import StaffDashboard from './pages/staff/StaffDashboard';
@@ -101,14 +102,20 @@ function AppShell() {
   const isEcommerce = businessType === 'E_COMMERCE';
   const isBooking = businessType === 'BOOKING';
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   return (
     <div className="flex h-screen w-full bg-[#f1f5f9] overflow-hidden font-inter">
       {/* Sidebar: Fixed left, blue gradient */}
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar 
+        open={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)} 
+        isHovered={isHovered}
+        setIsHovered={setIsHovered}
+      />
 
-      <div className="flex flex-1 flex-col min-w-0 overflow-hidden md:pl-72">
+      <div className={`flex flex-1 flex-col min-w-0 overflow-hidden transition-all duration-300 ${isHovered ? 'md:pl-72' : 'md:pl-24'}`}>
         {/* Header: White with search */}
         <TopBar 
           onToggleSidebar={() => setSidebarOpen(true)} 
@@ -235,6 +242,14 @@ function AppShell() {
               element={
                 <ProtectedRoute requiredRole="admin">
                   <SupportTickets />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/settings"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <Settings />
                 </ProtectedRoute>
               }
             />
