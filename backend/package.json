@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "migrate:customer-phone-index": "node utils/migrateCustomerPhoneIndex.js"
+    "migrate:customer-phone-index": "node utils/migrateCustomerPhoneIndex.js",
+    "migrate:flow-templates": "node scripts/migrateFlowTemplates.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

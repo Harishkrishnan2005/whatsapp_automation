@@ -130,7 +130,7 @@ class ChatbotActions {
 
   async saveDynamicField({ session, message, customer, fieldName }) {
     const targetField = this.normalizeCustomerField(fieldName);
-    const rawValue = String(message || '').trim();
+    const rawValue = typeof message === 'object' ? JSON.stringify(message) : String(message || '').trim();
 
     if (!rawValue) {
       return { success: false, text: `Please enter a valid ${targetField}.` };
@@ -258,7 +258,12 @@ class ChatbotActions {
   async CREATE_CUSTOMER({ phone, businessId }) {
     let customer = await Customer.findOne({ phone, businessId });
     if (!customer) {
-      customer = await Customer.create({ phone, businessId, status: 'new' });
+      customer = await Customer.create({ 
+        phone, 
+        businessId, 
+        tenantId: businessId, // Ensure multi-tenant isolation
+        status: 'new' 
+      });
     }
     return { success: true, customer };
   }
@@ -323,7 +328,7 @@ class ChatbotActions {
   }
 
   async SAVE_ADDRESS({ session, message, customer }) {
-    const address = String(message || '').trim();
+    const address = typeof message === 'object' ? (message.label || JSON.stringify(message)) : String(message || '').trim();
     if (!address) return { success: false, text: 'Please enter a valid address.' };
 
     session.collectedData = session.collectedData || {};
@@ -344,7 +349,7 @@ class ChatbotActions {
   // PRODUCT ACTIONS
   // ==========================================================================
 
-  async SHOW_PRODUCTS({ businessId }) {
+  async SHOW_PRODUCTS({ session, businessId }) {
     // Task 6: FIX SHOW_PRODUCTS ACTION
     const products = await Product.find({ businessId, isActive: true }).lean();
     if (!products || products.length === 0) {
@@ -355,8 +360,37 @@ class ChatbotActions {
         products: []
       };
     }
-    return {
+
+      const productLines = products.map((p, index) => {
+        const price = Number(p.offerPrice || p.mrp || 0);
+        const unit = p.unitType ? ` / ${p.unitType}` : '';
+        return `${index + 1}. ${p.name} - Rs ${price.toFixed(2)}${unit}`;
+      });
+
+        if (session) {
+          session.context = session.context || {};
+          session.context.products = products.map((product) => ({
+            id: String(product._id),
+            name: product.name,
+            price: product.offerPrice || product.mrp,
+            mrp: product.mrp,
+            offerPrice: product.offerPrice,
+            offerPercentage: product.offerPercentage,
+            image: product.image,
+            category: product.category,
+            unitType: product.unitType,
+          }));
+          session.context.lastShownProducts = products.map((product, index) => ({
+            index: index + 1,
+            id: String(product._id),
+            name: product.name,
+          }));
+        session.markModified('context');
+      }
+
+      return {
       type: 'product',
+      text: `Available products:\n${productLines.join('\n')}\n\nReply with the product name or number to continue.`,
       products: products.map((p) => ({
         id: p._id,
         name: p.name,
@@ -373,38 +407,55 @@ class ChatbotActions {
   }
 
   async SELECT_PRODUCT({ session, message, businessId, payload }) {
-    let product = null;
-    const productId = payload?.productId;
-    let parsedQuantity = null;
+      let product = null;
+      const productId = payload?.productId;
+      let parsedQuantity = null;
 
     if (productId) {
       product = await Product.findById(productId).lean();
-    } else {
-      const cleanMessage = String(message || '')
-        .replace(/^(add to cart|buy|select|get|order|i want|want to buy)\s+/i, '')
-        .replace(/^(\d+)\s+(of|units? of|x)\s+/i, (match, qty) => {
-          parsedQuantity = parseInt(qty, 10);
-          return '';
+      } else {
+        const cleanMessage = String(message || '')
+          .replace(/^(add to cart|buy|select|get|order|i want|want to buy)\s+/i, '')
+          .replace(/^(\d+)\s+(of|units? of|x)\s+/i, (match, qty) => {
+            parsedQuantity = parseInt(qty, 10);
+            return '';
         })
         .replace(/\s+(\d+)$/, (match, qty) => {
           if (!parsedQuantity) parsedQuantity = parseInt(qty, 10);
           return '';
-        })
-        .trim();
+          })
+          .trim();
 
-      product = await Product.findOne({
-        businessId,
-        $or: [
-          { name: new RegExp(cleanMessage, 'i') },
-          {
-            _id: mongoose.Types.ObjectId.isValid(cleanMessage)
-              ? new mongoose.Types.ObjectId(cleanMessage)
-              : new mongoose.Types.ObjectId(),
-          },
-        ],
-      }).lean();
+        const selectedIndex = Number.parseInt(cleanMessage, 10);
+        const lastShownProducts = Array.isArray(session?.context?.lastShownProducts)
+          ? session.context.lastShownProducts
+          : [];
 
-    }
+        if (Number.isInteger(selectedIndex) && selectedIndex > 0 && lastShownProducts.length >= selectedIndex) {
+          const selectedProduct = lastShownProducts[selectedIndex - 1];
+          if (selectedProduct?.id && mongoose.Types.ObjectId.isValid(selectedProduct.id)) {
+            product = await Product.findOne({
+              _id: new mongoose.Types.ObjectId(selectedProduct.id),
+              businessId,
+            }).lean();
+          }
+        }
+
+        if (!product) {
+          product = await Product.findOne({
+            businessId,
+            $or: [
+              { name: new RegExp(cleanMessage, 'i') },
+              {
+                _id: mongoose.Types.ObjectId.isValid(cleanMessage)
+                  ? new mongoose.Types.ObjectId(cleanMessage)
+                  : new mongoose.Types.ObjectId(),
+              },
+            ],
+          }).lean();
+        }
+
+      }
 
     if (!product) return { success: false, text: 'Product not found. Please try again.' };
 
@@ -608,10 +659,15 @@ class ChatbotActions {
 
     const cart = session.collectedData?.cart || [];
     const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2);
+    const productLines = products.map((p, index) => {
+      const price = Number(p.offerPrice || p.mrp || 0);
+      const unit = p.unitType ? ` / ${p.unitType}` : '';
+      return `${index + 1}. ${p.name} - Rs ${price.toFixed(2)}${unit}`;
+    });
 
     return {
       type: 'product',
-      text: `Cart: ${cart.length} item(s) | Rs ${cartTotal}\n\nChoose a product to add:`,
+      text: `Cart: ${cart.length} item(s) | Rs ${cartTotal}\n\nChoose a product to add:\n${productLines.join('\n')}`,
       products: products.map((p) => ({
         id: p._id,
         name: p.name,
@@ -740,41 +796,6 @@ class ChatbotActions {
       type: 'quick_reply',
       nextStep: 'select_payment',
       products: paymentOptions
-    };
-
-    {
-    // Finished all items, calculate total and determine payment
-    let totalAmountLegacy = 0;
-    let summary = "✅ Order Summary:\n\n";
-    cart.forEach(item => {
-      const subtotal = item.price * item.quantity;
-      totalAmount += subtotal;
-      summary += `• ${item.productName} × ${item.quantity} = ₹${subtotal.toFixed(2)}\n`;
-    });
-
-    summary += `\n*Total: ₹${totalAmount.toFixed(2)}*`;
-    session.collectedData.totalAmount = totalAmount;
-    session.markModified('collectedData');
-
-    let paymentText = "\n\n💳 Select Payment Method:\n";
-    let paymentOptions = [
-      { id: 'online', name: '💳 Online Payment' }
-    ];
-    
-    if (totalAmountLegacy <= 5000) {
-      paymentText += "1. Online Payment\n2. Cash on Delivery (COD)";
-      paymentOptions.push({ id: 'cod', name: '🏠 Cash on Delivery' });
-    } else {
-      paymentText += "1. Online Payment\n\n(COD not available for orders above ₹5000)";
-    }
-
-    return {
-      success: true,
-      text: `${summary}${paymentText}`,
-      type: 'quick_reply',
-      nextStep: 'select_payment',
-      products: paymentOptions
-    };
     }
   }
 
@@ -910,11 +931,21 @@ class ChatbotActions {
 
     session.collectedData = session.collectedData || {};
     session.collectedData.currentOrderId = String(creation.order._id);
+    session.collectedData.orderId = creation.order.orderId || String(creation.order._id);
     session.collectedData.cart = [];
     session.collectedData.currentCartIndex = 0;
     session.collectedData.quantityConfirmationMode = false;
     session.context = session.context || {};
     session.context.currentOrderId = session.collectedData.currentOrderId;
+    session.context.orderId = creation.order.orderId || String(creation.order._id);
+    session.context.amount = creation.order.amount;
+    session.context.limit = 5000;
+    session.context.paymentUrl = creation.payment?.paymentLink || '';
+    session.context.orderSummary = orderItems
+      .map((item) => `${item.productName || item.name} x ${item.quantity}`)
+      .join(', ');
+    session.context.status = creation.order.orderStatus || creation.order.status || 'Confirmed';
+    session.context.details = creation.order.product || session.context.orderSummary;
     session.context.cart = [];
     
     session.markModified('collectedData');
@@ -970,7 +1001,15 @@ class ChatbotActions {
     }).lean();
 
     if (!order) return { success: false, text: 'Order not found. Please check your Order ID.' };
-    return { text: `Status of Order ${order.orderId || order._id}: *${order.orderStatus}*`, success: true };
+    return {
+      text: `Status of Order ${order.orderId || order._id}: *${order.orderStatus}*`,
+      success: true,
+      data: {
+        orderId: order.orderId || String(order._id),
+        status: order.orderStatus,
+        details: order.product,
+      },
+    };
   }
 
   // ==========================================================================
@@ -1000,6 +1039,12 @@ class ChatbotActions {
       return { success: false, text: `Payment initialization failed: ${creation.payment.error}` };
     }
 
+    session.context = session.context || {};
+    session.context.orderId = creation.order.orderId || String(creation.order._id);
+    session.context.amount = creation.order.amount;
+    session.context.limit = 5000;
+    session.context.paymentUrl = creation.payment?.paymentLink || '';
+
     return {
       type: 'payment',
       payment: {
@@ -1011,6 +1056,12 @@ class ChatbotActions {
         customer: { name: customer.name, contact: customer.phone },
       },
       success: true,
+      data: {
+        orderId: creation.order.orderId || String(creation.order._id),
+        amount: creation.order.amount,
+        limit: 5000,
+        paymentUrl: creation.payment?.paymentLink || '',
+      },
     };
   }
 
@@ -1021,7 +1072,13 @@ class ChatbotActions {
       { paymentStatus: 'Paid', razorpayPaymentId: razorpay_payment_id },
       { new: true }
     ).lean();
-    return { success: true, text: `Payment verified for Order ${order?.orderId || order?._id}.` };
+    return {
+      success: true,
+      text: `Payment verified for Order ${order?.orderId || order?._id}.`,
+      data: {
+        orderId: order?.orderId || String(order?._id || ''),
+      },
+    };
   }
 
   // ==========================================================================
@@ -1047,7 +1104,14 @@ class ChatbotActions {
       { new: true }
     ).lean();
     if (!order) return { success: false, text: 'Order not found.' };
-    return { success: true, text: 'Your order has been cancelled.' };
+    return {
+      success: true,
+      text: 'Your order has been cancelled.',
+      data: {
+        orderId: order.orderId || String(order._id),
+        cancellationType: 'order',
+      },
+    };
   }
 
   async REQUEST_REFUND({ message, businessId, customer }) {
@@ -1318,6 +1382,9 @@ ${freeSlots.slice(0, 6).map((slot) => `- ${slot}`).join('\n') || 'No slots avail
       if (session.collectedData) delete session.collectedData[field];
       if (session.context) delete session.context[field];
     });
+    session.context = session.context || {};
+    session.context.date = dateStr;
+    session.context.reminderType = 'appointment';
     session.markModified('collectedData');
     session.markModified('context');
 
@@ -1333,6 +1400,10 @@ ${freeSlots.slice(0, 6).map((slot) => `- ${slot}`).join('\n') || 'No slots avail
         (finalTime !== 'TBD' ? `Time: ${finalTime}\n` : '') +
         `Booking ID: ${appointment._id}\n\n` +
         'We look forward to seeing you!',
+      data: {
+        date: dateStr,
+        type: 'appointment',
+      },
     };
   }
 

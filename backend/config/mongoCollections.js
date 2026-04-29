@@ -21,6 +21,7 @@ export const COLLECTIONS = {
   USAGE: 'usage',
   SUPPORT_TICKETS: 'support_tickets',
   FEEDBACKS: 'feedbacks',
+  FLOWS: 'flows',
 };
 
 export default COLLECTIONS;

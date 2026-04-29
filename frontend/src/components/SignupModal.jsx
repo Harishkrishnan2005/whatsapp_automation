@@ -122,6 +122,10 @@ const SignupModal = ({ open, mode = 'signup', selectedPlan = 'FREE', onClose }) 
           });
 
           setSuccess(verifyRes.data?.message || 'Payment verified successfully.');
+          if (verifyRes.data?.success && !verifyRes.data?.redirectTo && verifyRes.data?.redirectUrl) {
+            window.location.href = verifyRes.data.redirectUrl;
+            return;
+          }
           redirectToLogin(verifyRes.data?.redirectTo || '/admin/login');
         },
         modal: {

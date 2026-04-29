@@ -13,37 +13,27 @@ const subscriptionSchema = new mongoose.Schema({
     enum: ['FREE', 'BASIC', 'PRO', 'ENTERPRISE'],
     required: true
   },
-  price: {
-    type: Number,
-    required: true
-  },
-  startDate: {
-    type: Date,
-    required: true
-  },
-  endDate: {
-    type: Date,
-    required: true
-  },
-  paymentStatus: {
-    type: String,
-    enum: ['PAID', 'FAILED', 'PENDING'],
-    default: 'PENDING'
-  },
   status: {
     type: String,
     enum: ['ACTIVE', 'EXPIRED', 'CANCELLED'],
     default: 'ACTIVE'
   },
-  razorpayOrderId: {
-    type: String,
+  startDate: {
+    type: Date,
+    required: true,
+    default: Date.now
+  },
+  endDate: {
+    type: Date,
     required: true
   },
-  razorpayPaymentId: {
-    type: String
+  paymentId: {
+    type: String,
+    default: ''
   },
-  razorpaySignature: {
-    type: String
+  amount: {
+    type: Number,
+    required: true
   }
 }, {
   timestamps: true,

@@ -25,6 +25,7 @@ class SupportService {
   async createTicket({ businessId, customerId, subject, message }) {
     return await SupportTicket.create({
       businessId,
+      tenantId: businessId, // Ensure multi-tenant isolation
       customerId,
       subject,
       message,

@@ -6,6 +6,8 @@ import Business from '../models/Business.js';
 import User, { BUSINESS_TYPES } from '../models/User.js';
 import { PLAN_CONFIG } from '../config/plans.js';
 import chatbotSeederService from '../services/chatbotSeederService.js';
+import subscriptionService from '../services/subscriptionService.js';
+import seedTemplates from '../scripts/seedTemplates.js';
 
 let razorpayInstance = null;
 const getRazorpay = () => {
@@ -45,10 +47,42 @@ const createAccountFromLead = async (lead) => {
   }
 
   const email = lead.email.toLowerCase();
-  const existingBusiness = await Business.findOne({ email }).lean();
-  const existingUser = await User.findOne({ email, role: 'admin' }).lean();
+  let existingBusiness = await Business.findOne({ email });
+  let existingUser = await User.findOne({ email, role: 'admin' });
+
   if (existingBusiness || existingUser) {
-    throw new Error('An account with this email already exists. Please sign in.');
+    if (!existingBusiness && existingUser?.businessId) {
+      existingBusiness = await Business.findById(existingUser.businessId);
+    }
+
+    if (existingBusiness && !existingUser) {
+      existingUser = await User.create({
+        name: lead.businessName,
+        email,
+        password: lead.passwordHash,
+        role: 'admin',
+        permissions: ADMIN_PERMISSIONS,
+        businessId: existingBusiness._id,
+        tenantId: existingBusiness._id,
+        businessType: normalizeBusinessType(lead.businessType),
+      });
+    }
+
+    if (!existingBusiness) {
+      throw new Error('An account with this email exists but is not linked to a business.');
+    }
+
+    if (existingUser && !existingUser.tenantId) {
+      existingUser.tenantId = existingBusiness._id;
+      await existingUser.save();
+    }
+
+    await Lead.findByIdAndUpdate(lead._id, {
+      businessId: existingBusiness._id,
+      userId: existingUser?._id || null,
+    });
+
+    return { businessId: existingBusiness._id, userId: existingUser?._id || null };
   }
 
   const businessType = normalizeBusinessType(lead.businessType);
@@ -73,6 +107,7 @@ const createAccountFromLead = async (lead) => {
     role: 'admin',
     permissions: ADMIN_PERMISSIONS,
     businessId: business._id,
+    tenantId: business._id,
     businessType,
   });
 
@@ -82,6 +117,7 @@ const createAccountFromLead = async (lead) => {
   });
 
   await chatbotSeederService.seedFlowsForBusiness(business._id, lead.selectedPlan);
+  await seedTemplates(business._id);
 
   return { businessId: business._id, userId: user._id };
 };
@@ -102,8 +138,18 @@ export const createPublicSubscription = async (req, res) => {
     const normalizedEmail = String(email).toLowerCase().trim();
     const normalizedBusinessType = normalizeBusinessType(businessType);
     const passwordHash = await bcrypt.hash(password, 10);
+    const existingBusiness = await Business.findOne({ email: normalizedEmail });
+    const existingUser = await User.findOne({ email: normalizedEmail, role: 'admin' });
 
     if (plan === 'FREE') {
+      if (existingBusiness || existingUser) {
+        return res.status(200).json({
+          free: true,
+          message: 'Account already exists. Please sign in.',
+          redirectTo: '/admin/login',
+        });
+      }
+
       const lead = await Lead.create({
         businessName,
         email: normalizedEmail,
@@ -133,6 +179,7 @@ export const createPublicSubscription = async (req, res) => {
         phone,
         plan,
         businessType: normalizedBusinessType,
+        businessId: existingBusiness?._id ? String(existingBusiness._id) : '',
       },
     });
 
@@ -145,6 +192,8 @@ export const createPublicSubscription = async (req, res) => {
       razorpayOrderId: order.id,
       passwordHash,
       businessType: normalizedBusinessType,
+      businessId: existingBusiness?._id || null,
+      userId: existingUser?._id || null,
     });
 
     return res.status(200).json({
@@ -184,19 +233,22 @@ export const verifyPublicPayment = async (req, res) => {
     }
 
     const { businessId } = await createAccountFromLead(lead);
+    console.log('PAYMENT BUSINESS ID:', businessId);
 
-    await Business.findByIdAndUpdate(businessId, {
-      plan: lead.selectedPlan,
-      'subscription.plan': lead.selectedPlan,
-      'subscription.status': 'ACTIVE',
-    });
+    await subscriptionService.handleSubscriptionPurchase(
+      businessId,
+      lead.selectedPlan,
+      razorpayPaymentId
+    );
 
     await chatbotSeederService.seedFlowsForBusiness(businessId, lead.selectedPlan);
+    await seedTemplates(businessId);
 
     return res.status(200).json({
       success: true,
-      message: 'Payment verified. Redirecting to sign in...',
+      message: 'Payment verified successfully.',
       redirectTo: '/admin/login',
+      redirectUrl: '/admin/dashboard',
     });
   } catch (error) {
     console.error('Public payment verify error:', error);
@@ -214,9 +266,12 @@ export const publicRegister = async (req, res) => {
 
     const normalizedEmail = String(email).toLowerCase().trim();
     const normalizedBusinessType = normalizeBusinessType(businessType);
-    const existing = await Business.findOne({ email: normalizedEmail });
-    if (existing) {
-      return res.status(409).json({ message: 'An account with this email already exists.' });
+    const [existingBusiness, existingUser] = await Promise.all([
+      Business.findOne({ email: normalizedEmail }),
+      User.findOne({ email: normalizedEmail, role: 'admin' }),
+    ]);
+    if (existingBusiness || existingUser) {
+      return res.status(200).json({ message: 'An account with this email already exists. Please sign in.', redirectTo: '/admin/login' });
     }
 
     const business = await Business.create({
@@ -238,6 +293,7 @@ export const publicRegister = async (req, res) => {
       role: 'admin',
       permissions: ADMIN_PERMISSIONS,
       businessId: business._id,
+      tenantId: business._id,
       businessType: normalizedBusinessType,
     });
 
@@ -254,6 +310,7 @@ export const publicRegister = async (req, res) => {
     });
 
     await chatbotSeederService.seedFlowsForBusiness(business._id, 'FREE');
+    await seedTemplates(business._id);
 
     return res.status(201).json({
       message: 'Account created successfully! Please sign in.',

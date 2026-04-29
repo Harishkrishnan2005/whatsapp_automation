@@ -28,7 +28,7 @@ const ProtectedRoute = ({ children, requiredRole, allowedBusinessTypes, required
     const plan = user.plan || 'FREE';
     const config = PLAN_CONFIG[plan];
     if (config && !config[requiredFeature]) {
-      return <Navigate to="/pricing" state={{ featureLocked: requiredFeature }} />;
+      return <Navigate to="/admin/pricing" state={{ featureLocked: requiredFeature }} />;
     }
   }
 

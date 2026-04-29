@@ -33,3 +33,451 @@
     at EmbeddedDocument.$set (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:1121:16)
     at EmbeddedDocument.Document (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:167:12)
     at EmbeddedDocument.Subdocument (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\types\subdocument.js:34:12) {"errors":{"products.0._id":{"stringValue":"\"continue_shopping\"","valueType":"string","kind":"ObjectId","value":"continue_shopping","path":"_id","reason":{},"name":"CastError","message":"Cast to ObjectId failed for value \"continue_shopping\" (type string) at path \"_id\" because of \"BSONError\""},"products.1._id":{"stringValue":"\"confirm_order\"","valueType":"string","kind":"ObjectId","value":"confirm_order","path":"_id","reason":{},"name":"CastError","message":"Cast to ObjectId failed for value \"confirm_order\" (type string) at path \"_id\" because of \"BSONError\""}},"_message":"Message validation failed"}
+2026-04-25 15:19:46 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 15:20:13 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 15:20:28 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 15:20:38 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 16:32:14 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 16:32:35 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 16:32:53 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 16:56:44 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 16:56:50 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 16:56:58 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 16:57:24 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 16:57:42 [error]: ValidationError: ChatSession validation failed: tenantId: Path `tenantId` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"tenantId":{"name":"ValidatorError","message":"Path `tenantId` is required.","properties":{"message":"Path `tenantId` is required.","type":"required","path":"tenantId"},"kind":"required","path":"tenantId"}},"_message":"ChatSession validation failed"}
+2026-04-25 16:58:09 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 16:58:15 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 16:58:25 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 17:12:07 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 17:12:34 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 17:12:40 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 17:16:36 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 17:16:51 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 17:17:35 [error]: ValidationError: ChatbotFlow validation failed: tenantId: Path `tenantId` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"tenantId":{"name":"ValidatorError","message":"Path `tenantId` is required.","properties":{"message":"Path `tenantId` is required.","type":"required","path":"tenantId"},"kind":"required","path":"tenantId"}},"_message":"ChatbotFlow validation failed"}
+2026-04-25 17:17:35 [error]: ValidationError: ChatbotFlow validation failed: tenantId: Path `tenantId` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"tenantId":{"name":"ValidatorError","message":"Path `tenantId` is required.","properties":{"message":"Path `tenantId` is required.","type":"required","path":"tenantId"},"kind":"required","path":"tenantId"}},"_message":"ChatbotFlow validation failed"}
+2026-04-25 17:20:20 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 17:20:34 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 17:20:40 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 17:20:47 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 17:22:37 [error]: ValidationError: Message validation failed: conversationId: Path `conversationId` is required., content: Path `content` is required., receiverModel: Path `receiverModel` is required., senderModel: Path `senderModel` is required., receiver: Path `receiver` is required., sender: Path `sender` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"conversationId":{"name":"ValidatorError","message":"Path `conversationId` is required.","properties":{"message":"Path `conversationId` is required.","type":"required","path":"conversationId"},"kind":"required","path":"conversationId"},"content":{"name":"ValidatorError","message":"Path `content` is required.","properties":{"message":"Path `content` is required.","type":"required","path":"content"},"kind":"required","path":"content"},"receiverModel":{"name":"ValidatorError","message":"Path `receiverModel` is required.","properties":{"message":"Path `receiverModel` is required.","type":"required","path":"receiverModel"},"kind":"required","path":"receiverModel"},"senderModel":{"name":"ValidatorError","message":"Path `senderModel` is required.","properties":{"message":"Path `senderModel` is required.","type":"required","path":"senderModel"},"kind":"required","path":"senderModel"},"receiver":{"name":"ValidatorError","message":"Path `receiver` is required.","properties":{"message":"Path `receiver` is required.","type":"required","path":"receiver"},"kind":"required","path":"receiver"},"sender":{"name":"ValidatorError","message":"Path `sender` is required.","properties":{"message":"Path `sender` is required.","type":"required","path":"sender"},"kind":"required","path":"sender"}},"_message":"Message validation failed"}
+2026-04-25 17:28:26 [error]: MongoServerError: E11000 duplicate key error collection: test.conversations index: phone_1_businessId_1 dup key: { phone: "9043263671", businessId: ObjectId('69e76f69a4aea6a4366cd5e8') }
+    at E:\Whatsapp API automation\backend\node_modules\mongodb\lib\operations\insert.js:50:33
+    at E:\Whatsapp API automation\backend\node_modules\mongodb\lib\operations\command.js:84:64
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {"index":0,"code":11000,"keyPattern":{"phone":1,"businessId":1},"keyValue":{"phone":"9043263671","businessId":"69e76f69a4aea6a4366cd5e8"}}
+2026-04-25 17:28:37 [error]: MongoServerError: E11000 duplicate key error collection: test.conversations index: phone_1_businessId_1 dup key: { phone: "9043263671", businessId: ObjectId('69e76f69a4aea6a4366cd5e8') }
+    at E:\Whatsapp API automation\backend\node_modules\mongodb\lib\operations\insert.js:50:33
+    at E:\Whatsapp API automation\backend\node_modules\mongodb\lib\operations\command.js:84:64
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {"index":0,"code":11000,"keyPattern":{"phone":1,"businessId":1},"keyValue":{"phone":"9043263671","businessId":"69e76f69a4aea6a4366cd5e8"}}
+2026-04-25 17:37:11 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632667255955783681"},"signature":{"hash":"EzQT5cGmy7hoDM0IxG4SQlAYRcg=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632667255955783681"}}
+2026-04-25 17:39:38 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632667887315976193"},"signature":{"hash":"R842losP/vMiJeu8XGJiHnxd0TM=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632667887315976193"}}
+2026-04-25 17:39:38 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632667887315976197"},"signature":{"hash":"R842losP/vMiJeu8XGJiHnxd0TM=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632667887315976197"}}
+2026-04-25 17:40:53 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632668205143556111"},"signature":{"hash":"GzN/+jRDl+98fMz+Iy62SgT5nNU=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632668205143556111"}}
+2026-04-25 17:40:55 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632668213733490690"},"signature":{"hash":"T7ahqmID7jpVyedEMNFkysTyNYU=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632668213733490690"}}
+2026-04-25 17:41:01 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632668239503294479"},"signature":{"hash":"lWx2bKk/GArTj796acxcVsnXXWw=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632668239503294479"}}
+2026-04-25 17:41:02 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632668243798261765"},"signature":{"hash":"UBoagfZ8ueVYYbAOfStjdmz8t2o=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632668243798261765"}}
+2026-04-25 17:41:16 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632668308222771201"},"signature":{"hash":"fHagH11ub3Hken9WiV9LOAGoXTU=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632668308222771201"}}
+2026-04-25 17:41:17 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632668308222771213"},"signature":{"hash":"fHagH11ub3Hken9WiV9LOAGoXTU=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632668308222771213"}}
+2026-04-25 17:43:01 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632668759194337282"},"signature":{"hash":"wJTdNqG7bz9pbSb3L5jfwvlLIm0=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632668759194337282"}}
+2026-04-25 17:43:02 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632668763489304577"},"signature":{"hash":"6l0zH20f+PV05fB6QjxtrNg0lsw=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632668763489304577"}}
+2026-04-25 17:43:10 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632668797849042947"},"signature":{"hash":"/YhOKVT6CPFDvgbCNW7XFDvN1/s=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632668797849042947"}}
+2026-04-25 17:43:11 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632668797849042950"},"signature":{"hash":"/YhOKVT6CPFDvgbCNW7XFDvN1/s=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632668797849042950"}}
+2026-04-25 17:43:18 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632668832208781313"},"signature":{"hash":"XNAJi3slganQiqYOt1OLzMJHav8=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632668832208781313"}}
+2026-04-25 17:43:19 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632668836503748610"},"signature":{"hash":"G+C9e9g44j1/IKrs6gbY86rhn/8=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632668836503748610"}}
+2026-04-25 17:43:34 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632668896633290755"},"signature":{"hash":"HEHS+hMS4nIZW+Qxert7ooF+WsQ=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632668896633290755"}}
+2026-04-25 17:43:34 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632668900928258049"},"signature":{"hash":"UHUHPChZ2yL87Ejp5iawF1X/Vvw=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632668900928258049"}}
+2026-04-25 17:44:22 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632669102791720963"},"signature":{"hash":"sdUA6QaEZglKOVApdhJdVIF34Bg=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632669102791720963"}}
+2026-04-25 17:44:22 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632669102791720966"},"signature":{"hash":"sdUA6QaEZglKOVApdhJdVIF34Bg=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632669102791720966"}}
+2026-04-25 17:44:54 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632669240230674434"},"signature":{"hash":"9PS0sOvZ0u4KUCgFgnnbMY517jE=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632669240230674434"}}
+2026-04-25 17:44:55 [error]: MongoServerError: Updating the path 'tenantId' would create a conflict at 'tenantId'
+    at Connection.onMessage (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:202:26)
+    at MessageStream.<anonymous> (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\connection.js:61:60)
+    at MessageStream.emit (node:events:508:28)
+    at processIncomingData (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:124:16)
+    at MessageStream._write (E:\Whatsapp API automation\backend\node_modules\mongodb\lib\cmap\message_stream.js:33:9)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at TLSSocket.ondata (node:internal/streams/readable:1012:24)
+    at TLSSocket.emit (node:events:508:28) {"ok":0,"code":40,"codeName":"ConflictingUpdateOperators","$clusterTime":{"clusterTime":{"$timestamp":"7632669244525641741"},"signature":{"hash":"0FYUFxK9Yzu3VvahrdGM2ZqFAHs=","keyId":{"low":13,"high":1763487246,"unsigned":false}}},"operationTime":{"$timestamp":"7632669244525641741"}}
+2026-04-27 11:49:37 [error]: ValidationError: Template validation failed: tenantId: Path `tenantId` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"tenantId":{"name":"ValidatorError","message":"Path `tenantId` is required.","properties":{"message":"Path `tenantId` is required.","type":"required","path":"tenantId"},"kind":"required","path":"tenantId"}},"_message":"Template validation failed"}
+2026-04-27 11:56:06 [error]: ValidationError: Template validation failed: tenantId: Path `tenantId` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"tenantId":{"name":"ValidatorError","message":"Path `tenantId` is required.","properties":{"message":"Path `tenantId` is required.","type":"required","path":"tenantId"},"kind":"required","path":"tenantId"}},"_message":"Template validation failed"}
+2026-04-27 11:56:14 [error]: ValidationError: Template validation failed: tenantId: Path `tenantId` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"tenantId":{"name":"ValidatorError","message":"Path `tenantId` is required.","properties":{"message":"Path `tenantId` is required.","type":"required","path":"tenantId"},"kind":"required","path":"tenantId"}},"_message":"Template validation failed"}
+2026-04-27 11:56:33 [error]: ValidationError: Template validation failed: tenantId: Path `tenantId` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"tenantId":{"name":"ValidatorError","message":"Path `tenantId` is required.","properties":{"message":"Path `tenantId` is required.","type":"required","path":"tenantId"},"kind":"required","path":"tenantId"}},"_message":"Template validation failed"}
+2026-04-27 11:56:41 [error]: ValidationError: Template validation failed: tenantId: Path `tenantId` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"tenantId":{"name":"ValidatorError","message":"Path `tenantId` is required.","properties":{"message":"Path `tenantId` is required.","type":"required","path":"tenantId"},"kind":"required","path":"tenantId"}},"_message":"Template validation failed"}
+2026-04-27 11:56:58 [error]: ValidationError: Template validation failed: tenantId: Path `tenantId` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"tenantId":{"name":"ValidatorError","message":"Path `tenantId` is required.","properties":{"message":"Path `tenantId` is required.","type":"required","path":"tenantId"},"kind":"required","path":"tenantId"}},"_message":"Template validation failed"}
+2026-04-27 11:57:40 [error]: ValidationError: Template validation failed: tenantId: Path `tenantId` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"tenantId":{"name":"ValidatorError","message":"Path `tenantId` is required.","properties":{"message":"Path `tenantId` is required.","type":"required","path":"tenantId"},"kind":"required","path":"tenantId"}},"_message":"Template validation failed"}
+2026-04-27 11:58:11 [error]: ValidationError: Template validation failed: tenantId: Path `tenantId` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"tenantId":{"name":"ValidatorError","message":"Path `tenantId` is required.","properties":{"message":"Path `tenantId` is required.","type":"required","path":"tenantId"},"kind":"required","path":"tenantId"}},"_message":"Template validation failed"}
+2026-04-27 12:47:49 [error]: ValidationError: Template validation failed: tenantId: Path `tenantId` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"tenantId":{"name":"ValidatorError","message":"Path `tenantId` is required.","properties":{"message":"Path `tenantId` is required.","type":"required","path":"tenantId"},"kind":"required","path":"tenantId"}},"_message":"Template validation failed"}
+2026-04-27 12:56:54 [error]: ValidationError: Template validation failed: tenantId: Path `tenantId` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"tenantId":{"name":"ValidatorError","message":"Path `tenantId` is required.","properties":{"message":"Path `tenantId` is required.","type":"required","path":"tenantId"},"kind":"required","path":"tenantId"}},"_message":"Template validation failed"}
+2026-04-27 13:59:33 [error]: ValidationError: Template validation failed: tenantId: Path `tenantId` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"tenantId":{"name":"ValidatorError","message":"Path `tenantId` is required.","properties":{"message":"Path `tenantId` is required.","type":"required","path":"tenantId"},"kind":"required","path":"tenantId"}},"_message":"Template validation failed"}
+2026-04-27 14:01:45 [error]: ValidationError: Template validation failed: tenantId: Path `tenantId` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"tenantId":{"name":"ValidatorError","message":"Path `tenantId` is required.","properties":{"message":"Path `tenantId` is required.","type":"required","path":"tenantId"},"kind":"required","path":"tenantId"}},"_message":"Template validation failed"}
+2026-04-27 14:03:23 [error]: ValidationError: Template validation failed: tenantId: Path `tenantId` is required.
+    at Document.invalidate (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3221:32)
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\document.js:3014:17
+    at E:\Whatsapp API automation\backend\node_modules\mongoose\lib\schematype.js:1368:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11) {"errors":{"tenantId":{"name":"ValidatorError","message":"Path `tenantId` is required.","properties":{"message":"Path `tenantId` is required.","type":"required","path":"tenantId"},"kind":"required","path":"tenantId"}},"_message":"Template validation failed"}
+2026-04-27 14:49:06 [error]: ReferenceError: resolveBusinessPlan is not defined
+    at ChatbotController.getBusinessPlanDetails (file:///E:/Whatsapp%20API%20automation/backend/controllers/chatbotController.js:48:18)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ChatbotController.seedFlows (file:///E:/Whatsapp%20API%20automation/backend/controllers/chatbotController.js:230:24) 
+2026-04-27 14:49:41 [error]: ReferenceError: resolveBusinessPlan is not defined
+    at ChatbotController.getBusinessPlanDetails (file:///E:/Whatsapp%20API%20automation/backend/controllers/chatbotController.js:48:18)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async ChatbotController.seedFlows (file:///E:/Whatsapp%20API%20automation/backend/controllers/chatbotController.js:230:24) 
+2026-04-27 17:27:19 [error]: 500 - Image file format avif not allowed - /api/products - POST - ::1 {"body":{"name":"Rice","mrp":"50","offerPercentage":"4","offerPrice":"48","unitType":"unit","category":"1","redirectUrl":"","isActive":"true","specifications":"[]"},"params":{},"query":{}}

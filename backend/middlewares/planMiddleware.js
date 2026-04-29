@@ -12,6 +12,12 @@ const USAGE_FIELD_MAP = {
   maxMessages: 'messagesUsed',
 };
 
+const FEATURE_ALIASES = {
+  allowAdvancedAnalytics: 'advancedAnalytics',
+  allowCampaigns: 'campaigns',
+  allowAutomation: 'automation',
+};
+
 /**
  * Enforce flow limits per plan
  * Counts only active, non-system flows
@@ -44,31 +50,46 @@ export const checkFlowLimit = async (req, res, next) => {
 };
 
 export const checkPlanFeature = (feature) => {
+  return async (req, res, next) => {
+    try {
+      const businessId = req.businessId || req.user?.businessId;
+      const business = businessId
+        ? await Business.findById(businessId).select('plan subscription.plan subscription.status').lean()
+        : null;
 
-  return (req, res, next) => {
-    const plan = req.user.plan || 'FREE';
-    const status = req.user.subscriptionStatus || 'ACTIVE';
-    const config = PLAN_CONFIG[plan];
+      const plan = resolveBusinessPlan(business) || req.user?.plan || 'FREE';
+      const status = business?.subscription?.status || req.user?.subscriptionStatus || 'ACTIVE';
+      const config = PLAN_CONFIG[plan];
+      const normalizedFeature = FEATURE_ALIASES[feature] || feature;
 
-    if (!config) {
-      return res.status(403).json({ message: 'Plan configuration not found' });
+      if (!config) {
+        return res.status(403).json({ message: 'Plan configuration not found' });
+      }
+
+      if (status === 'EXPIRED' && normalizedFeature !== 'automation') {
+        return res.status(403).json({
+          message: `Your subscription is expired. Please renew to access this feature.`,
+          code: 'SUBSCRIPTION_EXPIRED',
+        });
+      }
+
+      const featureEnabled =
+        config?.features?.[normalizedFeature]?.enabled ??
+        config?.[normalizedFeature] ??
+        config?.[feature];
+
+      if (!featureEnabled) {
+        return res.status(403).json({
+          message: `Your current plan (${plan}) does not support this feature. Please upgrade.`,
+          code: 'FEATURE_LOCKED'
+        });
+      }
+
+      next();
+    } catch (error) {
+      logger.error('Plan feature check failed:', error);
+      res.status(500).json({ message: 'Failed to verify plan feature access' });
     }
-
-    if (status === 'EXPIRED' && feature !== 'allowAutomation') { // Allow basic automation even if expired? Or fallback to FREE?
-       // If expired, the cron script should have downgraded them to FREE.
-       // But if for some reason status is EXPIRED, we treat it as FREE but maybe more restricted.
-    }
-
-    const featureEnabled = config?.features?.[feature]?.enabled ?? config?.[feature];
-
-    if (!featureEnabled) {
-      return res.status(403).json({
-        message: `Your current plan (${plan}) does not support this feature. Please upgrade.`,
-        code: 'FEATURE_LOCKED'
-      });
-    }
-
-    next();
   };
 };
 

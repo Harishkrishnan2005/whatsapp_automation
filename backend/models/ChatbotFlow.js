@@ -41,6 +41,24 @@ const chatbotFlowSchema = new mongoose.Schema({
     type: String,
     default: 'NONE',
   },
+  maxRetries: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  retryResponse: {
+    type: String,
+    default: '',
+  },
+  fallbackResponse: {
+    type: String,
+    default: '',
+  },
+  fallbackNextStep: {
+    type: String,
+    default: '',
+    trim: true,
+  },
   isActive: {
     type: Boolean,
     default: true,

@@ -10,7 +10,11 @@ class ProductController {
       
       // Parse numbers as they come as strings from FormData
       if (productData.price) productData.price = parseFloat(productData.price);
-      if (productData.stock) productData.stock = parseInt(productData.stock, 10);
+      if (productData.stock !== undefined) productData.stock = parseInt(productData.stock, 10);
+      if (productData.mrp !== undefined) productData.mrp = parseFloat(productData.mrp);
+      if (productData.offerPercentage !== undefined) productData.offerPercentage = parseFloat(productData.offerPercentage);
+      if (productData.offerPrice !== undefined) productData.offerPrice = parseFloat(productData.offerPrice);
+      if (productData.rating !== undefined) productData.rating = parseFloat(productData.rating);
       
       // Parse specifications if sent as JSON string
       if (typeof productData.specifications === 'string') {
@@ -53,7 +57,11 @@ class ProductController {
       }
 
       if (productData.price) productData.price = parseFloat(productData.price);
-      if (productData.stock) productData.stock = parseInt(productData.stock, 10);
+      if (productData.stock !== undefined) productData.stock = parseInt(productData.stock, 10);
+      if (productData.mrp !== undefined) productData.mrp = parseFloat(productData.mrp);
+      if (productData.offerPercentage !== undefined) productData.offerPercentage = parseFloat(productData.offerPercentage);
+      if (productData.offerPrice !== undefined) productData.offerPrice = parseFloat(productData.offerPrice);
+      if (productData.rating !== undefined) productData.rating = parseFloat(productData.rating);
 
       // Parse specifications if sent as JSON string
       if (typeof productData.specifications === 'string') {

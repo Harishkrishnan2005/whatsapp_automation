@@ -143,7 +143,7 @@ function AppShell() {
               path="/chat"
               element={
                 <ProtectedRoute requiredRole={user.role}>
-                  <Chat />
+                  <SimulationChat />
                 </ProtectedRoute>
               }
             />
@@ -209,7 +209,7 @@ function AppShell() {
               path="/admin/chat-management"
               element={
                 <ProtectedRoute requiredRole="admin">
-                  {isEcommerce ? <ChatManagement /> : <Navigate to="/dashboard" />}
+                  <Chat />
                 </ProtectedRoute>
               }
             />
@@ -217,7 +217,7 @@ function AppShell() {
               path="/admin/simulation-chat"
               element={
                 <ProtectedRoute requiredRole="admin">
-                  <SimulationChat />
+                  <Navigate to="/chat" replace />
                 </ProtectedRoute>
               }
             />
@@ -254,13 +254,14 @@ function AppShell() {
               }
             />
             <Route
-              path="/pricing"
+              path="/admin/pricing"
               element={
                 <ProtectedRoute requiredRole="admin">
                   <Pricing />
                 </ProtectedRoute>
               }
             />
+            <Route path="/pricing" element={<Navigate to="/admin/pricing" replace />} />
 
             {/* Staff Routes - Protected */}
             <Route

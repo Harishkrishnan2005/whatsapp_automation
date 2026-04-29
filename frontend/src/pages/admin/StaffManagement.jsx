@@ -55,7 +55,7 @@ const StaffManagement = () => {
 
   const fetchSubscription = async () => {
     try {
-      const response = await api.get('/subscription/status');
+      const response = await api.get('/admin/billing/subscription/status');
       setUsage((prev) => ({ ...prev, maxUsers: response.data?.limits?.maxUsers ?? null }));
     } catch (error) {
       console.error('Error fetching subscription:', error);

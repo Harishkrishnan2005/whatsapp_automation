@@ -1,9 +1,9 @@
 import AuthService from '../services/authService.js';
-import seedTemplates from '../scripts/seedTemplates.js';
+import messageTemplateService from '../services/messageTemplateService.js';
 
 const seedDatabase = async () => {
   await AuthService.seedSuperAdmin();
-  await seedTemplates();
+  await messageTemplateService.seedDefaultTemplates();
 };
 
 export default seedDatabase;

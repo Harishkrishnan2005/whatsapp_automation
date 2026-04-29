@@ -16,6 +16,20 @@ const messageSchema = new mongoose.Schema({
     enum: ['incoming', 'outgoing'],
     required: true,
   },
+  messageType: {
+    type: String,
+    enum: ['TEXT', 'SYSTEM', 'TEMPLATE'],
+    default: 'TEXT',
+  },
+  templateName: {
+    type: String,
+    trim: true,
+    default: null,
+  },
+  templateVariables: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null,
+  },
   senderType: {
     type: String,
     enum: ['customer', 'chatbot', 'staff', 'admin'],
@@ -67,8 +81,8 @@ const messageSchema = new mongoose.Schema({
     refPath: 'receiverModel',
     required: true
   },
-  senderModel: { type: String, enum: ['Customer', 'User'], required: true },
-  receiverModel: { type: String, enum: ['Customer', 'User'], required: true },
+  senderModel: { type: String, enum: ['Customer', 'User', 'Business'], required: true },
+  receiverModel: { type: String, enum: ['Customer', 'User', 'Business'], required: true },
   content: { type: String, required: true },
   conversationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Conversation', required: true }
 }, {

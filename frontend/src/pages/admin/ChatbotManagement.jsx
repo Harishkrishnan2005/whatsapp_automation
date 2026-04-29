@@ -196,7 +196,7 @@ const ChatbotManagement = () => {
           </div>
           {isLimited && (
             <button 
-              onClick={() => window.location.assign('/pricing')}
+              onClick={() => window.location.assign('/admin/pricing')}
               className="h-12 px-6 rounded-2xl bg-slate-900 text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-slate-900/20 hover:bg-black transition-all"
             >
               Unlock Advanced

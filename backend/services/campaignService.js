@@ -5,6 +5,7 @@ import Product from '../models/Product.js';
 import WhatsAppService from './whatsappService.js';
 import buildTenantScope from '../utils/tenantScope.js';
 import usageService from './usageService.js';
+import chatService from './chatService.js';
 
 class CampaignService {
   /**
@@ -72,14 +73,22 @@ class CampaignService {
           }
 
           // Log in Messages collection
+          const conversation = await chatService.getOrCreateConversation(businessId, customer._id, customer.phone);
           await Message.create({
             businessId,
             tenantId: businessId,
             customerId: customer._id,
+            content: campaign.message,
             message: campaign.message,
             type: 'outgoing',
             senderType: 'admin',
-            campaignId: campaign._id
+            sender: businessId,
+            senderModel: 'Business',
+            receiver: customer._id,
+            receiverModel: 'Customer',
+            conversationId: conversation._id,
+            campaignId: campaign._id,
+            status: 'sent'
           });
 
           successCount++;

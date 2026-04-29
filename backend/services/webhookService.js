@@ -22,7 +22,12 @@ class WebhookService {
 
     let customer = await Customer.findOne({ phone, businessId: resolvedBusinessId });
     if (!customer) {
-      customer = await Customer.create({ phone, chatState: 'ASK_NAME', businessId: resolvedBusinessId });
+      customer = await Customer.create({ 
+        phone, 
+        chatState: 'ASK_NAME', 
+        businessId: resolvedBusinessId,
+        tenantId: resolvedBusinessId
+      });
     }
 
     const incomingText = String(message ?? '').trim();
@@ -32,22 +37,45 @@ class WebhookService {
       };
     }
 
+    // Ensure conversation exists for tracking
+    const chatService = (await import('./chatService.js')).default;
+    const conversation = await chatService.getOrCreateConversation(resolvedBusinessId, customer._id, phone);
+
     // Save incoming message
     await Message.create({
       customerId: customer._id,
+      businessId: resolvedBusinessId,
+      tenantId: resolvedBusinessId,
+      content: incomingText,
       message: incomingText,
       type: 'incoming',
-      businessId: resolvedBusinessId,
+      senderType: 'customer',
+      sender: customer._id,
+      senderModel: 'Customer',
+      receiver: resolvedBusinessId,
+      receiverModel: 'Business',
+      conversationId: conversation._id,
+      status: 'delivered'
     });
 
     const result = await ChatbotEngine.chatbotEngine({ phone, message: incomingText, businessId: resolvedBusinessId });
 
+    // Save outgoing message
     await Message.create({
       customerId: customer._id,
-      message: result.text,
-      type: 'outgoing',
-      campaignId: customer.lastCampaignId || null,
       businessId: resolvedBusinessId,
+      tenantId: resolvedBusinessId,
+      content: result.text || result.response,
+      message: result.text || result.response,
+      type: 'outgoing',
+      senderType: 'chatbot',
+      sender: resolvedBusinessId,
+      senderModel: 'Business',
+      receiver: customer._id,
+      receiverModel: 'Customer',
+      conversationId: conversation._id,
+      campaignId: customer.lastCampaignId || null,
+      status: 'sent'
     });
 
     return result;

@@ -7,6 +7,91 @@ import buildTenantScope from '../utils/tenantScope.js';
 import { buildCreatedAtFilter, buildSearchRegex } from '../utils/queryFilters.js';
 
 class CustomerService {
+  normalizePhone(phone) {
+    return String(phone || '').trim();
+  }
+
+  resolveBusinessId(businessId) {
+    return businessId?._id || businessId;
+  }
+
+  buildStrictCustomerLookup(phone, businessId) {
+    return {
+      phone: this.normalizePhone(phone),
+      tenantId: this.resolveBusinessId(businessId),
+    };
+  }
+
+  async getOrCreateCustomerByPhone(phone, businessId, seedData = {}) {
+    const normalizedPhone = this.normalizePhone(phone);
+    const resolvedBusinessId = this.resolveBusinessId(businessId);
+
+    if (!normalizedPhone || !resolvedBusinessId) {
+      throw new Error('phone and businessId are required');
+    }
+
+    let customer = await Customer.findOne(this.buildStrictCustomerLookup(normalizedPhone, resolvedBusinessId));
+
+    if (!customer) {
+      customer = await Customer.create({
+        phone: normalizedPhone,
+        businessId: resolvedBusinessId,
+        tenantId: resolvedBusinessId,
+        lastInteraction: new Date(),
+        lastActivity: new Date(),
+        ...seedData,
+      });
+      return customer;
+    }
+
+    let modified = false;
+
+    if (!customer.businessId) {
+      customer.businessId = resolvedBusinessId;
+      modified = true;
+    }
+
+    if (!customer.tenantId) {
+      customer.tenantId = resolvedBusinessId;
+      modified = true;
+    }
+
+    if (seedData.name && !customer.name) {
+      customer.name = seedData.name;
+      modified = true;
+    }
+
+    if (modified) {
+      await customer.save();
+    }
+
+    return customer;
+  }
+
+  async touchCustomer(customer, extraUpdates = {}) {
+    if (!customer) {
+      throw new Error('customer is required');
+    }
+
+    Object.assign(customer, extraUpdates);
+    customer.lastInteraction = new Date();
+    customer.lastActivity = new Date();
+    await customer.save();
+    return customer;
+  }
+
+  async saveCustomerField(customer, field, value) {
+    if (!customer) {
+      throw new Error('customer is required');
+    }
+
+    customer[field] = value;
+    customer.lastInteraction = new Date();
+    customer.lastActivity = new Date();
+    await customer.save();
+    return customer;
+  }
+
   buildEnrichedCustomers(customers, statusMap, orderRows, appointmentRows, sessionRows) {
     const orderSummaryMap = new Map();
     const appointmentSummaryMap = new Map();

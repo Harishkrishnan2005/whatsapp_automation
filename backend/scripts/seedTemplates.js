@@ -351,23 +351,30 @@ const SEED_TEMPLATES = [
 /**
  * Seed templates to the database
  */
-async function seedTemplates() {
+async function seedTemplates(tenantId) {
   try {
-    // Check if templates already exist
-    const existingTemplates = await Template.find({});
-    
-    if (existingTemplates.length > 0) {
-      logger.info(`Templates already seeded (${existingTemplates.length} templates found)`);
+    if (!tenantId) {
+      logger.info('Skipping template seed because no tenantId was provided');
       return;
     }
 
-    // Create all templates
-    const created = await Template.insertMany(
-      SEED_TEMPLATES.map(t => ({
-        ...t,
+    const existingTemplates = await Template.find({ tenantId }).select('name').lean();
+    const existingTemplateNames = new Set(existingTemplates.map((template) => template.name));
+
+    const templatesToCreate = SEED_TEMPLATES
+      .filter((template) => !existingTemplateNames.has(template.name))
+      .map((template) => ({
+        ...template,
+        tenantId,
         isActive: true,
-      }))
-    );
+      }));
+
+    if (templatesToCreate.length === 0) {
+      logger.info(`Templates already seeded for tenant ${tenantId} (${existingTemplates.length} templates found)`);
+      return;
+    }
+
+    const created = await Template.insertMany(templatesToCreate);
 
     logger.info(`✅ Seeded ${created.length} templates successfully`);
   } catch (error) {

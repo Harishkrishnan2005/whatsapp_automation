@@ -42,10 +42,12 @@ const Sidebar = ({ open, onClose, isHovered, setIsHovered }) => {
       title: 'Management',
       items: user?.role === 'admin' ? (
         businessType === 'BOOKING' ? [
+          { path: '/admin/chat-management', label: 'Chat Hub', icon: FiMessageCircle },
           { path: '/admin/appointments', label: 'Schedule', icon: FiCalendar },
           { path: '/customers', label: 'Customers', icon: FiUsers },
           { path: '/admin/chatbot', label: 'Bot Engine', icon: FiGrid },
         ] : [
+          { path: '/admin/chat-management', label: 'Chat Hub', icon: FiMessageCircle },
           { path: '/orders', label: 'Orders', icon: FiShoppingCart },
           { path: '/products', label: 'Inventory', icon: FiPackage },
           { path: '/customers', label: 'Customers', icon: FiUsers },

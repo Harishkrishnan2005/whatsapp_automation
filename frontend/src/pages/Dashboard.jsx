@@ -43,7 +43,7 @@ const Dashboard = () => {
     try {
       const [dbRes, subRes] = await Promise.all([
         api.get('/dashboard/admin'),
-        api.get('/subscription/status')
+        api.get('/admin/billing/subscription/status')
       ]);
       setDashboardData({ ...dbRes.data, subscription: subRes.data });
     } catch (error) {
@@ -211,7 +211,7 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <button 
-                  onClick={() => window.location.assign('/pricing')}
+                  onClick={() => window.location.assign('/admin/pricing')}
                   className="w-full py-2.5 bg-white border border-slate-200 rounded-xl text-[10px] font-black text-slate-600 uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all shadow-sm"
                 >
                   Upgrade Hub

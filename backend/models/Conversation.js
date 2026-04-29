@@ -60,13 +60,7 @@ const conversationSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
-  messages: [{
-    senderId: { type: mongoose.Schema.Types.ObjectId, refPath: 'messages.senderModel' },
-    senderModel: { type: String, enum: ['Customer', 'User'] },
-    content: { type: String, required: true },
-    timestamp: { type: Date, default: Date.now },
-    status: { type: String, enum: ['sent', 'delivered', 'read'], default: 'sent' }
-  }]
+  messages: [conversationMessageSchema]
 }, { 
   timestamps: true,
   collection: COLLECTIONS.CONVERSATIONS,

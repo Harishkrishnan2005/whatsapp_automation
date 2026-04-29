@@ -13,13 +13,14 @@ const usageSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  flowsCreated: {
+  flowsUsed: {
     type: Number,
     default: 0
   },
-  resetDate: {
+  lastResetDate: {
     type: Date,
-    required: true
+    required: true,
+    default: Date.now
   }
 }, {
   timestamps: true,

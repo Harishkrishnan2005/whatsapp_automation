@@ -37,9 +37,10 @@ class TemplateController {
    */
   static async getTemplateDetails(req, res) {
     try {
+      const { businessId } = req.user;
       const { templateName } = req.params;
 
-      const template = await templateService.getTemplateDetails(templateName);
+      const template = await templateService.getTemplateDetails(businessId, templateName);
 
       return res.json({
         success: true,

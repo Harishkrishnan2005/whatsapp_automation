@@ -1,0 +1,87 @@
+export const FEATURE_LIST = [
+  { key: 'automatedFlows', label: 'Automated Flows' },
+  { key: 'monthlyMessages', label: 'Monthly Messages' },
+  { key: 'staffUsers', label: 'Staff Users' },
+  { key: 'templates', label: 'Templates' },
+  { key: 'customTemplates', label: 'Custom Templates' },
+  { key: 'campaigns', label: 'Campaigns' },
+  { key: 'automationLevel', label: 'Automation Level' },
+  { key: 'analytics', label: 'Analytics' },
+  { key: 'supportSystem', label: 'Support System' },
+  { key: 'prioritySupport', label: 'Priority Support' },
+];
+
+export const plans = [
+  {
+    name: 'FREE',
+    price: '₹0',
+    features: {
+      automatedFlows: '1',
+      monthlyMessages: '100',
+      staffUsers: '2',
+      templates: false,
+      customTemplates: false,
+      campaigns: false,
+      automationLevel: 'Basic',
+      analytics: false,
+      supportSystem: false,
+      prioritySupport: false,
+    },
+  },
+  {
+    name: 'BASIC',
+    price: '₹999',
+    features: {
+      automatedFlows: '5',
+      monthlyMessages: '1000',
+      staffUsers: '5',
+      templates: { included: true, text: 'Default' },
+      customTemplates: false,
+      campaigns: false,
+      automationLevel: 'Medium',
+      analytics: false,
+      supportSystem: true,
+      prioritySupport: false,
+    },
+  },
+  {
+    name: 'PRO',
+    price: '₹2499',
+    highlight: true,
+    features: {
+      automatedFlows: '15',
+      monthlyMessages: '10000',
+      staffUsers: '20',
+      templates: true,
+      customTemplates: true,
+      campaigns: true,
+      automationLevel: 'Full',
+      analytics: true,
+      supportSystem: true,
+      prioritySupport: false,
+    },
+  },
+  {
+    name: 'ENTERPRISE',
+    price: '₹4999',
+    features: {
+      automatedFlows: 'Unlimited',
+      monthlyMessages: 'Unlimited',
+      staffUsers: 'Unlimited',
+      templates: true,
+      customTemplates: true,
+      campaigns: true,
+      automationLevel: 'Advanced',
+      analytics: true,
+      supportSystem: true,
+      prioritySupport: true,
+    },
+  },
+];
+
+export const PLAN_LEVELS = {
+  FREE: 0,
+  BASIC: 1,
+  PRO: 2,
+  ENTERPRISE: 3,
+};

@@ -5,6 +5,7 @@ import Business from '../models/Business.js';
 import Subscription from '../models/Subscription.js';
 import buildTenantScope from '../utils/tenantScope.js';
 import chatbotSeederService from './chatbotSeederService.js';
+import seedTemplates from '../scripts/seedTemplates.js';
 import { resolveBusinessPlan } from '../config/plans.js';
 
 const ADMIN_PERMISSIONS = [
@@ -18,6 +19,10 @@ const ADMIN_PERMISSIONS = [
 ];
 
 class AuthService {
+  normalizeEmail(email) {
+    return String(email || '').trim().toLowerCase();
+  }
+
   async generateEmployeeId(dateOfJoining) {
     const joiningDate = dateOfJoining ? new Date(dateOfJoining) : new Date();
     const year = joiningDate.getFullYear();
@@ -76,42 +81,53 @@ class AuthService {
       businessType = 'E_COMMERCE',
     } = payload;
 
+    const normalizedEmail = this.normalizeEmail(email);
     const category = businessType === 'BOOKING' ? 'booking' : 'ecommerce';
 
-    const exists = await User.findOne({ email });
+    const exists = await User.findOne({ email: normalizedEmail });
     if (exists) {
       throw new Error('User already exists');
     }
 
-    const business = await Business.create({
-      name: businessName || `${name}'s Business`,
-      email,
-      plan: 'FREE',
-      'subscription.plan': 'FREE',
-      businessType,
-      category,
-    });
+    let business = await Business.findOne({ email: normalizedEmail });
+    if (!business) {
+      business = await Business.create({
+        name: businessName || `${name}'s Business`,
+        email: normalizedEmail,
+        plan: 'FREE',
+        'subscription.plan': 'FREE',
+        businessType,
+        category,
+      });
+    }
 
     // Create initial FREE subscription record for analytics
-    await Subscription.create({
+    const existingFreeSubscription = await Subscription.findOne({
       businessId: business._id,
       plan: 'FREE',
-      price: 0,
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 365 * 10 * 24 * 60 * 60 * 1000), // 10 years for free
-      paymentStatus: 'PAID',
-      razorpayOrderId: `FREE_INIT_${Date.now()}`
     });
+    if (!existingFreeSubscription) {
+      await Subscription.create({
+        businessId: business._id,
+        plan: 'FREE',
+        amount: 0,
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 365 * 10 * 24 * 60 * 60 * 1000),
+        paymentId: `FREE_INIT_${Date.now()}`,
+      });
+    }
 
     // Automatically seed chatbot flows based on category
     if (category) {
       await chatbotSeederService.seedForCategory(business._id, category);
     }
 
+    await seedTemplates(business._id);
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const admin = await User.create({
       name,
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       role: 'admin',
       permissions: ADMIN_PERMISSIONS,
@@ -124,7 +140,9 @@ class AuthService {
   }
 
   async login(email, password, role = null) {
-    const query = { email };
+    const normalizedEmail = this.normalizeEmail(email);
+    console.log('LOGIN EMAIL:', normalizedEmail);
+    const query = { email: normalizedEmail };
     if (role) {
       query.role = role;
     }
@@ -133,6 +151,7 @@ class AuthService {
     if (!user) {
       throw new Error('Invalid credentials');
     }
+    console.log('DB EMAIL:', user.email);
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
@@ -218,7 +237,8 @@ class AuthService {
       isActive = true,
     } = staffPayload;
 
-    const staffExists = await User.findOne({ email });
+    const normalizedEmail = this.normalizeEmail(email);
+    const staffExists = await User.findOne({ email: normalizedEmail });
     if (staffExists) {
       throw new Error('User already exists');
     }
@@ -238,7 +258,7 @@ class AuthService {
     const employeeId = await this.generateEmployeeId(dateOfJoining);
     const hashedPassword = await bcrypt.hash(password, 10);
     const staff = await User.create({
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
       name,
       employeeId,

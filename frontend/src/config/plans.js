@@ -1,38 +1,38 @@
 export const PLAN_CONFIG = {
   FREE: {
     maxFlows: 1,
-    maxMessages: 100,
-    maxUsers: 2,
-    allowCampaigns: false,
-    allowAutomation: true,
-    allowAdvancedAnalytics: false,
+    monthlyMessages: 100,
+    staffLimit: 2,
+    templates: false,
+    customTemplates: false,
+    campaigns: false,
     price: 0
   },
   BASIC: {
     maxFlows: 5,
-    maxMessages: 1000,
-    maxUsers: 5,
-    allowCampaigns: false,
-    allowAutomation: true,
-    allowAdvancedAnalytics: false,
+    monthlyMessages: 1000,
+    staffLimit: 5,
+    templates: "DEFAULT",
+    customTemplates: false,
+    campaigns: false,
     price: 999
   },
   PRO: {
     maxFlows: 15,
-    maxMessages: 10000,
-    maxUsers: 20,
-    allowCampaigns: true,
-    allowAutomation: true,
-    allowAdvancedAnalytics: true,
+    monthlyMessages: 10000,
+    staffLimit: 20,
+    templates: "CUSTOM",
+    customTemplates: true,
+    campaigns: true,
     price: 2499
   },
   ENTERPRISE: {
     maxFlows: Infinity,
-    maxMessages: Infinity,
-    maxUsers: Infinity,
-    allowCampaigns: true,
-    allowAutomation: true,
-    allowAdvancedAnalytics: true,
+    monthlyMessages: Infinity,
+    staffLimit: Infinity,
+    templates: "UNLIMITED",
+    customTemplates: true,
+    campaigns: true,
     price: 4999
   }
 };

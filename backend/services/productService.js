@@ -4,6 +4,9 @@ import { buildCreatedAtFilter, buildSearchRegex } from '../utils/queryFilters.js
 
 class ProductService {
   async createProduct(data) {
+    if (data.businessId && !data.tenantId) {
+      data.tenantId = data.businessId;
+    }
     return await Product.create(data);
   }
 
@@ -33,23 +36,23 @@ class ProductService {
   }
 
   async getProductById(businessId, id) {
-    return await Product.findOne({ _id: id, businessId });
+    return await Product.findOne({ _id: id, ...buildTenantScope(businessId) });
   }
 
   async getProductByName(businessId, name) {
     return await Product.findOne({
       name: new RegExp(`^${name.trim().replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}$`, 'i'),
       isActive: true,
-      businessId,
+      ...buildTenantScope(businessId),
     });
   }
 
   async updateProduct(businessId, id, data) {
-    return await Product.findOneAndUpdate({ _id: id, businessId }, data, { new: true });
+    return await Product.findOneAndUpdate({ _id: id, ...buildTenantScope(businessId) }, data, { new: true });
   }
 
-  async deleteProduct(businessId, id, data) {
-    return await Product.findOneAndDelete({ _id: id, businessId });
+  async deleteProduct(businessId, id) {
+    return await Product.findOneAndDelete({ _id: id, ...buildTenantScope(businessId) });
   }
 }
 

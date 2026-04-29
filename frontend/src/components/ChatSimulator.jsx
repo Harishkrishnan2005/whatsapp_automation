@@ -9,7 +9,7 @@ import '../styles/chat-simulator.css';
 const ChatSimulator = ({ businessId }) => {
   const [phone, setPhone] = useState('+1234567890');
   const [messages, setMessages] = useState([
-    { type: 'bot', text: 'Hi! 👋 How can I help you?' }
+    { type: 'bot', text: '[TEXT] Hi! How can I help you?' }
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,7 +19,6 @@ const ChatSimulator = ({ businessId }) => {
   const sendMessage = async () => {
     if (!inputMessage.trim()) return;
 
-    // Add user message
     setMessages((prev) => [
       ...prev,
       { type: 'user', text: inputMessage }
@@ -28,31 +27,35 @@ const ChatSimulator = ({ businessId }) => {
     try {
       setLoading(true);
 
-      // Send to chatbot engine
-      const response = await apiClient.post('/api/chat/simulate', {
+      const response = await apiClient.post('/api/chatbot/send', {
         businessId,
         phone,
         message: inputMessage,
       });
 
-      const { response: botResponse, sessionData } = response.data?.data || {};
+      const payload = response.data || {};
+      const botResponse = payload.response || payload.text;
+      const messageType = payload.messageType || 'TEXT';
+      const templateName = payload.templateName || '';
 
-      // Add bot response
       if (botResponse) {
+        const formattedBotResponse = messageType === 'TEMPLATE'
+          ? `[TEMPLATE] ${templateName || botResponse}`
+          : `[TEXT] ${botResponse}`;
+
         setMessages((prev) => [
           ...prev,
-          { type: 'bot', text: botResponse }
+          { type: 'bot', text: formattedBotResponse }
         ]);
       }
 
-      // Store session info
-      if (sessionData) {
-        setSessionInfo(sessionData);
+      if (payload.session) {
+        setSessionInfo(payload.session);
       }
     } catch (error) {
       setMessages((prev) => [
         ...prev,
-        { type: 'bot', text: '❌ Error: ' + (error.response?.data?.message || 'Something went wrong') }
+        { type: 'bot', text: '[TEXT] Error: ' + (error.response?.data?.message || 'Something went wrong') }
       ]);
     } finally {
       setLoading(false);
@@ -61,25 +64,24 @@ const ChatSimulator = ({ businessId }) => {
   };
 
   const resetChat = () => {
-    setMessages([{ type: 'bot', text: 'Chat reset. Hi! 👋 How can I help you?' }]);
+    setMessages([{ type: 'bot', text: '[TEXT] Chat reset. Hi! How can I help you?' }]);
     setSessionInfo(null);
   };
 
   return (
     <div className="chat-simulator">
       <div className="simulator-header">
-        <h2>🤖 Chat Simulator</h2>
+        <h2>Chat Simulator</h2>
         <p>Test your chatbot flows in real-time</p>
       </div>
 
       <div className="simulator-container">
-        {/* Chat Display */}
         <div className="chat-messages">
           {messages.map((msg, idx) => (
             <div key={idx} className={`message message-${msg.type}`}>
               <div className="message-content">
-                {msg.type === 'bot' && <span className="bot-icon">🤖</span>}
-                {msg.type === 'user' && <span className="user-icon">👤</span>}
+                {msg.type === 'bot' && <span className="bot-icon">BOT</span>}
+                {msg.type === 'user' && <span className="user-icon">YOU</span>}
                 <p>{msg.text}</p>
               </div>
             </div>
@@ -87,7 +89,7 @@ const ChatSimulator = ({ businessId }) => {
           {loading && (
             <div className="message message-bot">
               <div className="message-content">
-                <span className="bot-icon">🤖</span>
+                <span className="bot-icon">BOT</span>
                 <div className="typing-indicator">
                   <span></span><span></span><span></span>
                 </div>
@@ -96,7 +98,6 @@ const ChatSimulator = ({ businessId }) => {
           )}
         </div>
 
-        {/* Input Area */}
         <div className="simulator-footer">
           <div className="phone-input">
             <label>Test Phone:</label>
@@ -137,29 +138,28 @@ const ChatSimulator = ({ businessId }) => {
               onClick={() => setShowSessionInfo(!showSessionInfo)}
               className="btn btn-secondary"
             >
-              📊 Session Info
+              Session Info
             </button>
           </div>
         </div>
       </div>
 
-      {/* Session Info Panel */}
       {showSessionInfo && sessionInfo && (
         <div className="session-info-panel">
-          <h3>📋 Session Information</h3>
+          <h3>Session Information</h3>
           <div className="session-data">
             <div className="data-row">
               <span className="key">Current Step:</span>
               <span className="value">{sessionInfo.currentStep}</span>
             </div>
             <div className="data-row">
-              <span className="key">Awaiting Field:</span>
-              <span className="value">{sessionInfo.awaitingField || 'None'}</span>
+              <span className="key">Context Keys:</span>
+              <span className="value">{(sessionInfo.contextKeys || []).join(', ') || 'None'}</span>
             </div>
             <div className="data-row">
-              <span className="key">Collected Data:</span>
+              <span className="key">Context:</span>
               <span className="value">
-                <pre>{JSON.stringify(sessionInfo.collectedData, null, 2)}</pre>
+                <pre>{JSON.stringify(sessionInfo.context || {}, null, 2)}</pre>
               </span>
             </div>
           </div>

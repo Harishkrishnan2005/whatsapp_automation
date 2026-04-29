@@ -1,11 +1,14 @@
-import ChatbotFlow from '../models/ChatbotFlow.js';
+import Flow from '../models/Flow.js';
 import Conversation from '../models/Conversation.js';
 import logger from '../utils/logger.js';
 
 import Business from '../models/Business.js';
 import ChatbotEngine from '../services/chatbotEngine.js';
 import chatbotSeederService from '../services/chatbotSeederService.js';
+import { checkPlanLimits } from '../utils/featureGuard.js';
+import Usage from '../models/Usage.js';
 import { getBusinessPlanConfig, resolveBusinessPlan } from '../config/plans.js';
+import { resolveFlowTemplateConfig } from '../utils/flowTemplateConfig.js';
 
 class ChatbotController {
   constructor() {
@@ -19,16 +22,31 @@ class ChatbotController {
   }
 
   getPayload(body = {}) {
-    return {
-      triggerKeywords: Array.isArray(body.triggerKeywords) ? body.triggerKeywords : [],
-      responseTemplate: body.responseTemplate || body.reply,
+    const triggers = Array.isArray(body.trigger)
+      ? body.trigger
+      : Array.isArray(body.triggerKeywords)
+        ? body.triggerKeywords
+        : body.trigger
+          ? [body.trigger]
+          : [];
+
+    return resolveFlowTemplateConfig({
+      trigger: triggers,
+      reply: body.reply || body.responseTemplate || '',
       step: body.step,
       nextStep: body.nextStep,
       action: body.action || 'NONE',
+      responseType: body.responseType || 'TEXT',
+      templateName: body.templateName || '',
+      variableMapping: body.variableMapping || {},
+      maxRetries: Number.isInteger(body.maxRetries) ? body.maxRetries : Number(body.maxRetries) || 0,
+      retryResponse: body.retryResponse || '',
+      fallbackResponse: body.fallbackResponse || '',
+      fallbackNextStep: body.fallbackNextStep || '',
       category: body.category,
       isActive: body.isActive ?? true,
       isSystem: body.isSystem ?? false,
-    };
+    });
   }
 
   async getBusinessPlanDetails(businessId) {
@@ -53,29 +71,28 @@ class ChatbotController {
         return res.status(400).json({ message: 'Business is not mapped to this account. Please login again.' });
       }
 
-      const { business, config } = await this.getBusinessPlanDetails(businessId);
-      let category = (business?.category || business?.businessType || 'ecommerce').toLowerCase();
-      if (category === 'e_commerce') category = 'ecommerce';
-
-      const count = await ChatbotFlow.countDocuments({
-        businessId,
-        isActive: true,
-        isSystem: false,
-      });
-
-      if (config.maxFlows !== Infinity && count >= config.maxFlows) {
+      const { canCreateFlow, plan } = await checkPlanLimits(businessId);
+      
+      if (!(await canCreateFlow())) {
         return res.status(403).json({
           code: 'FLOW_LIMIT_REACHED',
-          message: 'Upgrade your plan to add more flows'
+          message: `Upgrade your ${plan} plan to add more flows`
         });
       }
 
-      const flow = await ChatbotFlow.create({
+      const flow = await Flow.create({
         ...this.getPayload(req.body),
         businessId,
-        category: req.body.category || category,
-        isSystem: false, // User created flows are never system flows
+        tenantId: businessId,
+        category: req.body.category,
       });
+
+      // Update flows used count
+      await Usage.findOneAndUpdate(
+        { businessId },
+        { $inc: { flowsUsed: 1 } },
+        { upsert: true }
+      );
 
       res.status(201).json(flow);
     } catch (error) {
@@ -91,38 +108,27 @@ class ChatbotController {
         return res.status(400).json({ message: 'Business context missing.' });
       }
 
-      const { plan, config } = await this.getBusinessPlanDetails(businessId);
+      const { plan } = await checkPlanLimits(businessId);
+      const sub = await (await import('../services/subscriptionService.js')).default.getActiveSubscription(businessId);
+      const config = (await import('../config/plans.js')).PLAN_CONFIG[plan];
 
-      // Show only user-created, non-system flows for settings UI
-      const allFlows = await ChatbotFlow.find({ 
+      const allFlows = await Flow.find({ 
         businessId, 
-        isSystem: false 
       }).sort({ createdAt: -1 });
 
-      const activeCount = allFlows.filter(f => f.isActive).length;
-      const allowedFlows = config.maxFlows === Infinity
-        ? allFlows
-        : allFlows.slice(0, config.maxFlows);
-      const remaining = config.maxFlows === Infinity ? Infinity : Math.max(0, config.maxFlows - activeCount);
-      const modeMessages = {
-        starter: 'Starter automation enabled',
-        template: 'Basic features enabled',
-        smart: 'Smart automation enabled',
-        advanced: 'Advanced automation enabled',
-      };
+      const used = allFlows.length;
+      const remaining = config.maxFlows === Infinity ? Infinity : Math.max(0, config.maxFlows - used);
 
       res.json({
-        flows: allowedFlows,
+        flows: allFlows,
         metadata: {
           total: config.maxFlows,
-          used: activeCount,
+          used,
           limit: config.maxFlows,
           remaining,
-          mode: config.mode,
           plan,
-          message: config.mode === 'template'
-            ? 'Basic features enabled'
-            : modeMessages[config.mode] || 'Upgrade for advanced automation'
+          expiryDate: sub.endDate,
+          message: `Your ${plan} plan limits: ${used}/${config.maxFlows} flows used.`
         }
       });
     } catch (error) {
@@ -135,8 +141,8 @@ class ChatbotController {
       const businessId = req.businessId;
       const payload = this.getPayload(req.body);
 
-      const flow = await ChatbotFlow.findOneAndUpdate(
-        { _id: req.params.id, businessId, isSystem: false },
+      const flow = await Flow.findOneAndUpdate(
+        { _id: req.params.id, businessId },
         payload,
         { new: true, runValidators: true }
       );
@@ -150,12 +156,18 @@ class ChatbotController {
   async deleteFlow(req, res) {
     try {
       const businessId = req.businessId;
-      const flow = await ChatbotFlow.findOneAndDelete({ 
+      const flow = await Flow.findOneAndDelete({ 
         _id: req.params.id, 
         businessId,
-        isSystem: false 
       });
-      if (!flow) return res.status(404).json({ message: 'Flow not found or immutable' });
+      if (!flow) return res.status(404).json({ message: 'Flow not found' });
+
+      // Update flows used count
+      await Usage.findOneAndUpdate(
+        { businessId },
+        { $inc: { flowsUsed: -1 } },
+        { upsert: true }
+      );
 
       res.json({ message: 'Flow deleted' });
     } catch (error) {
@@ -215,8 +227,11 @@ class ChatbotController {
         text: botResult?.text,
         products: botResult?.products || [],
         type: botResult?.type || 'text',
+        messageType: botResult?.messageType || 'TEXT',
+        templateName: botResult?.templateName || null,
         payment: botResult?.payment || null,
         nextStep: botResult?.nextStep,
+        session: botResult?.session || null,
         plan
       });
     } catch (error) {

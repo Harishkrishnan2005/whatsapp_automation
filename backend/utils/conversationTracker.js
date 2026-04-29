@@ -7,12 +7,13 @@ class ConversationTracker {
     try {
       const normalizedPhone = String(phone || '').trim();
       const normalizedText = String(text || '').trim();
+      const resolvedBusinessId = businessId?._id || businessId;
       if (!normalizedPhone || !businessId) return;
       if (!normalizedText) return;
 
       const fallbackCustomer = options.customerId
         ? null
-        : await Customer.findOne({ phone: normalizedPhone, businessId }).select('_id assignedTo').lean();
+        : await Customer.findOne({ phone: normalizedPhone, businessId: resolvedBusinessId }).select('_id assignedTo').lean();
 
       const resolvedCustomerId = options.customerId || fallbackCustomer?._id || null;
       const resolvedAssignedStaffId =
@@ -26,25 +27,67 @@ class ConversationTracker {
         timestamp: new Date()
       };
 
-      // Upsert conversation and push message
-      await Conversation.findOneAndUpdate(
-        { phone: normalizedPhone, businessId },
-        { 
-          $setOnInsert: {
+      const conversationLookup = {
+        phone: normalizedPhone,
+        $or: [
+          { tenantId: resolvedBusinessId },
+          { businessId: resolvedBusinessId },
+        ],
+      };
+
+      let conversation = await Conversation.findOne(conversationLookup).lean();
+
+      if (!conversation) {
+        try {
+          conversation = await Conversation.create({
             phone: normalizedPhone,
-            businessId,
-          },
-          $set: {
+            businessId: resolvedBusinessId,
+            tenantId: resolvedBusinessId,
             customerId: resolvedCustomerId,
             assignedStaffId: resolvedAssignedStaffId,
             lastMessage: normalizedText,
             lastMessageAt: message.timestamp,
-            updatedAt: new Date(),
             status: 'active',
-          },
+            messages: [message],
+          });
+          return;
+        } catch (error) {
+          if (error?.code !== 11000) {
+            throw error;
+          }
+
+          conversation = await Conversation.findOne(conversationLookup).lean();
+        }
+      }
+
+      if (!conversation) {
+        return;
+      }
+
+      const setUpdates = {
+        customerId: resolvedCustomerId,
+        assignedStaffId: resolvedAssignedStaffId,
+        lastMessage: normalizedText,
+        lastMessageAt: message.timestamp,
+        updatedAt: new Date(),
+        status: 'active',
+      };
+
+      if (!conversation.tenantId) {
+        setUpdates.tenantId = resolvedBusinessId;
+      }
+
+      if (!conversation.businessId) {
+        setUpdates.businessId = resolvedBusinessId;
+      }
+
+      await Conversation.findByIdAndUpdate(
+        conversation._id,
+        {
+          $set: setUpdates,
           $push: { messages: message },
         },
-        { upsert: true, new: true }
+        { new: true }
       );
     } catch (error) {
       logger.error('[ConversationTracker] Error adding message:', error);

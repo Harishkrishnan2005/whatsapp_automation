@@ -1,69 +1,71 @@
 import mongoose from 'mongoose';
 import COLLECTIONS from '../config/mongoCollections.js';
 
-/**
- * Session Schema for Multi-Tenant Chatbot
- * 
- * Production Features:
- * - Unique index on (phone, businessId) for multi-tenant isolation
- * - TTL index on updatedAt (optional: 24 hours auto-cleanup)
- * - Context storage for dynamic conversation state
- * - Last message tracking for debugging
- * - Timestamps for audit trail
- */
-
-const sessionSchema = new mongoose.Schema({
-  phone: {
-    type: String,
-    required: true,
-    trim: true,
-    lowercase: true,
+const sessionContextSchema = new mongoose.Schema(
+  {
+    name: { type: String, default: '' },
+    age: { type: Number, default: null },
+    address: { type: String, default: '' },
+    selectedProduct: { type: String, default: '' },
+    orderId: { type: String, default: '' },
   },
-  businessId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Business',
-    required: true,
-    index: true,
-  },
-  currentStep: {
-    type: String,
-    default: 'start',
-  },
-  collectedData: {
-    type: mongoose.Schema.Types.Mixed,
-    default: {},
-  },
-  lastInteractionAt: {
-    type: Date,
-    default: Date.now,
-  },
-}, {
-  timestamps: true,
-  collection: COLLECTIONS.SESSIONS,
-});
-
-// =====================
-// INDEXES (Production)
-// =====================
-
-// Unique compound index: (phone, businessId) for multi-tenant isolation
-sessionSchema.index(
-  { phone: 1, businessId: 1 },
-  { unique: true, name: 'phone_businessId_unique' }
+  { _id: false, strict: false }
 );
 
-// TTL Index: Auto-delete expired sessions after 24 hours of inactivity
-// MongoDB will automatically remove documents where updatedAt < current_time - 24 hours
-sessionSchema.index(
-  { updatedAt: 1 },
+const sessionSchema = new mongoose.Schema(
   {
-    expireAfterSeconds: 86400, // 24 hours in seconds
-    name: 'session_ttl_24h',
+    phone: {
+      type: String,
+      required: true,
+      trim: true,
+      index: true,
+    },
+    businessId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Business',
+      required: true,
+      index: true,
+    },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Business',
+      required: true,
+      index: true,
+    },
+    customerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Customer',
+      required: true,
+      index: true,
+    },
+    currentStep: {
+      type: String,
+      default: 'start',
+    },
+    context: {
+      type: sessionContextSchema,
+      default: () => ({}),
+    },
+    lastMessage: {
+      type: String,
+      default: '',
+    },
+  },
+  {
+    timestamps: true,
+    collection: COLLECTIONS.SESSIONS || 'sessions',
   }
 );
 
-// Performance indexes
-sessionSchema.index({ businessId: 1, step: 1 }, { name: 'businessId_step' });
-sessionSchema.index({ phone: 1 }, { name: 'phone' });
+sessionSchema.virtual('step')
+  .get(function stepGetter() {
+    return this.currentStep;
+  })
+  .set(function stepSetter(value) {
+    this.currentStep = value;
+  });
+
+sessionSchema.index({ tenantId: 1, phone: 1 }, { unique: true });
+sessionSchema.index({ tenantId: 1, customerId: 1 });
 
 export default mongoose.model('Session', sessionSchema);

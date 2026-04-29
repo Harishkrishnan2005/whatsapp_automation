@@ -43,6 +43,11 @@ const chatSessionSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    retryCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     // Accumulated form data across conversation turns
     collectedData: {
       type: mongoose.Schema.Types.Mixed,

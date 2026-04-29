@@ -3,12 +3,17 @@ import Template from '../models/Template.js';
 import Business from '../models/Business.js';
 import { PLAN_CONFIG } from '../config/plans.js';
 import logger from '../utils/logger.js';
+import seedTemplates from '../scripts/seedTemplates.js';
 
 /**
  * TemplateService
  * Handles template selection and auto-creation of flows
  */
 class TemplateService {
+  async ensureTemplatesForBusiness(businessId) {
+    await seedTemplates(businessId);
+  }
+
   /**
    * Get all available templates for a business based on their plan
    */
@@ -22,7 +27,10 @@ class TemplateService {
       const plan = PLAN_CONFIG[business.subscription.plan];
       const availableTemplateNames = plan?.availableTemplates || [];
 
+      await this.ensureTemplatesForBusiness(businessId);
+
       const templates = await Template.find({
+        name: { $in: availableTemplateNames },
         tenantId: businessId,
         isActive: true,
       });
@@ -52,6 +60,8 @@ class TemplateService {
       if (!availableTemplates.includes(templateName)) {
         throw new Error(`Template "${templateName}" not available for your plan`);
       }
+
+      await this.ensureTemplatesForBusiness(businessId);
 
       // Get template
       const template = await Template.findOne({
@@ -114,10 +124,13 @@ class TemplateService {
   /**
    * Get template details with flow information
    */
-  async getTemplateDetails(templateName) {
+  async getTemplateDetails(businessId, templateName) {
     try {
+      await this.ensureTemplatesForBusiness(businessId);
+
       const template = await Template.findOne({
         name: templateName,
+        tenantId: businessId,
         isActive: true,
       });
 

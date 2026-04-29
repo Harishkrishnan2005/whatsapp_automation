@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+      import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FiArrowRight,
@@ -8,9 +8,9 @@ import {
   FiMessageCircle,
   FiUsers,
 } from 'react-icons/fi';
-import PricingSection from '../components/PricingSection';
 import SignupModal from '../components/SignupModal';
 import ContactForm from '../components/ContactForm';
+import PricingPlans from '../components/PricingPlans';
 
 const features = [
   {
@@ -205,7 +205,14 @@ const HomePage = () => {
           </div>
         </section>
 
-        <PricingSection onChoosePlan={openPlan} />
+        <section id="pricing" className="px-4 py-20 sm:px-6 lg:px-8">
+          <PricingPlans
+            currentPlan="FREE"
+            onPlanAction={openPlan}
+            title="Choose Your Plan"
+            description="Start with a free workspace and move up as your automation grows."
+          />
+        </section>
         <ContactForm />
       </main>
 

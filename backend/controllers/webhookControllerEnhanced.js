@@ -126,6 +126,7 @@ class WebhookController {
           customer = await Customer.create({
             phone: normalizedPhone,
             businessId: resolvedBusinessId,
+            tenantId: resolvedBusinessId,
             name: '', // Will be filled by chatbot flow
             status: 'new',
             chatState: 'ASK_NAME',
@@ -204,7 +205,7 @@ class WebhookController {
             resolvedBusinessId
           );
           responsePayload.sessionInfo = {
-            step: session.step,
+            step: session.currentStep,
             context: session.context,
             updatedAt: session.updatedAt,
           };
@@ -283,7 +284,7 @@ class WebhookController {
         success: true,
         session: {
           phone: session.phone,
-          step: session.step,
+          step: session.currentStep,
           context: session.context,
           lastMessage: session.lastMessage,
           updatedAt: session.updatedAt,
@@ -343,7 +344,7 @@ class WebhookController {
         message: 'Session reset successfully',
         session: {
           phone: session.phone,
-          step: session.step,
+          step: session.currentStep,
         },
       });
     } catch (error) {

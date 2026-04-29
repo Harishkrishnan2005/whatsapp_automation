@@ -141,7 +141,12 @@ class WebhookController {
   async getOrCreateCustomer(phone, businessId, name = '') {
     let customer = await Customer.findOne({ phone, businessId });
     if (!customer) {
-      customer = await Customer.create({ phone, businessId, name });
+      customer = await Customer.create({ 
+        phone, 
+        businessId, 
+        tenantId: businessId, // Ensure multi-tenant isolation
+        name 
+      });
     } else if (name && !customer.name) {
       customer.name = name;
       await customer.save();
