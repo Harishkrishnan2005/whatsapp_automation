@@ -1,10 +1,10 @@
 import Flow from '../models/Flow.js';
-import ChatSession from '../models/ChatSession.js';
 import actionHandler from './actionHandler.js';
 import chatService from './chatService.js';
 import customerService from './customerService.js';
 import messageService from './messageService.js';
-import messageTemplateService from './messageTemplateService.js';
+import chatSessionService from './chatSessionService.js';
+import templateEngine from './templateEngine.js';
 import SessionService from './sessionService.js';
 import logger from '../utils/logger.js';
 import { checkPlanLimits } from '../utils/featureGuard.js';
@@ -69,25 +69,6 @@ class ChatbotEngine {
     return flow ? resolveFlowTemplateConfig(flow) : null;
   }
 
-  async findTriggerMatchedFlow({ businessId, userInput, currentStep }) {
-    const normalizedInput = String(userInput || '').trim().toLowerCase();
-    const normalizedStep = this.normalizeStep(currentStep);
-
-    let matchedFlow = await Flow.findOne({
-      businessId,
-      step: normalizedStep,
-      trigger: normalizedInput,
-    }).sort({ order: 1, createdAt: 1 });
-
-    if (!matchedFlow) {
-      matchedFlow = await Flow.findOne({
-        businessId,
-        trigger: normalizedInput,
-      }).sort({ order: 1, createdAt: 1 });
-    }
-
-    return matchedFlow;
-  }
 
   interpretStepInput({ message, session }) {
     const normalizedStep = this.normalizeStep(session.currentStep);
@@ -105,12 +86,15 @@ class ChatbotEngine {
     if (!Number.isNaN(numericInput)) {
       const product = products[numericInput - 1];
       if (product) {
+        console.log('[ChatbotEngine] Interpreted product selection:', product.name);
+        console.log('[ChatbotEngine] Session context before update:', JSON.stringify(session.context, null, 2));
         session.context = {
           ...(session.context || {}),
           selectedProduct: product.name,
           selectedProductId: String(product.id || product._id || ''),
         };
         session.markModified('context');
+        console.log('[ChatbotEngine] Session context after update:', JSON.stringify(session.context, null, 2));
         return {
           handled: true,
           effectiveUserInput: product.name,
@@ -149,25 +133,26 @@ class ChatbotEngine {
     const normalizedStep = this.normalizeStep(currentStep);
     const normalizedInput = String(userInput || '').trim().toLowerCase();
 
-    let matchedFlow = await Flow.findOne({
-      businessId,
-      step: normalizedStep,
-      trigger: normalizedInput,
-    }).sort({ order: 1, createdAt: 1 });
+    let matchedFlow = null;
 
-    if (!matchedFlow) {
+    if (normalizedStep === 'START') {
       matchedFlow = await Flow.findOne({
         businessId,
         step: normalizedStep,
-        trigger: '*',
+        trigger: normalizedInput,
       }).sort({ order: 1, createdAt: 1 });
-    }
 
-    if (!matchedFlow) {
+      if (!matchedFlow) {
+        matchedFlow = await Flow.findOne({
+          businessId,
+          step: normalizedStep,
+          trigger: '*',
+        }).sort({ order: 1, createdAt: 1 });
+      }
+    } else {
       matchedFlow = await Flow.findOne({
         businessId,
-        step: '*',
-        trigger: normalizedInput,
+        step: normalizedStep,
       }).sort({ order: 1, createdAt: 1 });
     }
 
@@ -193,32 +178,24 @@ class ChatbotEngine {
   }
 
   async syncLegacyChatSession(phone, businessId, customer, session) {
-    const normalizedPhone = String(phone || '').trim();
-    const resolvedBusinessId = businessId?._id || businessId;
+    const chatSession = await chatSessionService.getOrCreateChatSession({
+      phone,
+      businessId,
+      customerId: customer?._id || null,
+      currentStep: session.currentStep,
+    });
 
-    await ChatSession.findOneAndUpdate(
-      { phone: normalizedPhone, tenantId: resolvedBusinessId },
-      {
-        $set: {
-          phone: normalizedPhone,
-          businessId: resolvedBusinessId,
-          tenantId: resolvedBusinessId,
-          customerId: customer._id,
-          currentStep: session.currentStep,
-          context: session.context || {},
-          collectedData: {
-            ...(session.context || {}),
-          },
-          lastInteractionAt: new Date(),
-          mode: 'BOT',
-        },
+    await chatSessionService.syncFlowState(chatSession, {
+      phone,
+      customerId: customer?._id || null,
+      currentStep: session.currentStep,
+      currentNode: session.currentStep,
+      context: session.context || {},
+      collectedData: {
+        ...(session.context || {}),
       },
-      {
-        new: true,
-        upsert: true,
-        setDefaultsOnInsert: true,
-      }
-    );
+      mode: 'BOT',
+    });
   }
 
   async handleAddressReuseChoice({ userInput, customer, session }) {
@@ -284,11 +261,8 @@ class ChatbotEngine {
     phone,
     plan,
     session,
+    chatSessionState,
   }) {
-    console.log('FLOW:', matchedFlow.step);
-    console.log('FLOW TYPE:', matchedFlow.responseType);
-    console.log('TEMPLATE USED:', matchedFlow.templateName);
-
     const responseType = String(matchedFlow.responseType || 'TEXT').toUpperCase();
     const normalizedStep = this.normalizeStep(matchedFlow.step);
     const resolvedTemplateName = normalizedStep === 'START' &&
@@ -300,7 +274,35 @@ class ChatbotEngine {
       ? { name: 'customer.name' }
       : matchedFlow.variableMapping;
 
+    logger.info('[ChatbotEngine] Outgoing message decision', {
+      businessId: String(businessId || ''),
+      step: matchedFlow.step,
+      responseType,
+      templateName: resolvedTemplateName || null,
+      sessionActive: Boolean(chatSessionState?.sessionActive),
+    });
+
     if (responseType === 'TEXT' || !resolvedTemplateName) {
+      if (!chatSessionState?.sessionActive) {
+        logger.warn('[ChatbotEngine] Blocking plain text outside 24-hour window', {
+          businessId: String(businessId || ''),
+          step: matchedFlow.step,
+          responseType,
+          sessionActive: false,
+        });
+
+        return messageService.sendMessage({
+          type: 'TEXT',
+          to: phone,
+          content: templateEngine.FALLBACK_MESSAGE,
+          businessId,
+          customer,
+          phone,
+          planName: plan,
+          products: actionResult.data?.products || [],
+        });
+      }
+
       let replyText = actionResult.reply || actionResult.text || matchedFlow.reply;
       replyText = SessionService.interpolateTemplate(replyText, session);
       replyText = await this.maybePromptForReusableData({
@@ -322,49 +324,40 @@ class ChatbotEngine {
       });
     }
 
-    const templateVariables = messageTemplateService.resolveTemplateData(
-      resolvedVariableMapping,
-      {
-        customer: customer?.toObject ? customer.toObject() : customer,
-        context: session.context || {},
-        session: session.context || {},
-        actionData: {
-          ...(actionResult.data || {}),
-          ...actionResult,
-        },
-        business: business?.toObject ? business.toObject() : business,
-      }
-    );
+    const templateContext = {
+      customer: customer?.toObject ? customer.toObject() : customer,
+      context: session.context || {},
+      session: {
+        ...(session.context || {}),
+        currentStep: session.currentStep,
+      },
+      actionData: {
+        ...(actionResult.data || {}),
+        ...actionResult,
+      },
+      business: business?.toObject ? business.toObject() : business,
+    };
 
-    const resolvedTemplate = await messageTemplateService.findTemplate({
+    const templateMessage = await templateEngine.sendTemplate({
       businessId,
       templateName: resolvedTemplateName,
+      variableMapping: resolvedVariableMapping,
+      context: templateContext,
       planName: plan,
-      enforceAccess: true,
-    });
-
-    if (!resolvedTemplate) {
-      throw new Error(`Template "${resolvedTemplateName}" not found`);
-    }
-
-    const renderedMessage = messageTemplateService.renderTemplate(
-      resolvedTemplate,
-      templateVariables
-    );
-
-    return messageService.sendMessage({
-      type: 'TEMPLATE',
-      to: phone,
-      templateName: resolvedTemplateName,
-      variables: templateVariables,
-      resolvedTemplate,
-      renderedContent: renderedMessage,
-      businessId,
       customer,
       phone,
-      planName: plan,
       products: actionResult.data?.products || [],
     });
+
+    logger.info('[ChatbotEngine] Template message sent', {
+      businessId: String(businessId || ''),
+      sessionActive: Boolean(chatSessionState?.sessionActive),
+      responseType,
+      templateName: templateMessage.templateName || resolvedTemplateName,
+      mappedVariables: templateMessage.mappedVariables || {},
+    });
+
+    return templateMessage;
   }
 
   async handleRestartMessage({
@@ -375,6 +368,7 @@ class ChatbotEngine {
     businessId,
     phone,
     plan,
+    chatSessionState,
   }) {
     const normalizedCategory = this.normalizeCategory(business);
 
@@ -402,6 +396,7 @@ class ChatbotEngine {
         phone,
         plan,
         session,
+        chatSessionState,
       });
 
       return {
@@ -509,6 +504,19 @@ class ChatbotEngine {
         status: 'new',
       });
       const business = await Business.findById(businessId).select('name category business_type businessType').lean();
+      const chatSession = await chatSessionService.getOrCreateChatSession({
+        phone: normalizedPhone,
+        businessId,
+        customerId: customer._id,
+      });
+      const sessionWindowBeforeMessage = chatSessionService.getWindowState(chatSession);
+
+      logger.info('[ChatbotEngine] Session window before processing', {
+        businessId: String(businessId || ''),
+        phone: normalizedPhone,
+        sessionActive: sessionWindowBeforeMessage.sessionActive,
+        lastMessageAt: sessionWindowBeforeMessage.lastMessageAt,
+      });
 
       await customerService.touchCustomer(customer);
 
@@ -534,6 +542,15 @@ class ChatbotEngine {
         type: 'incoming',
         senderType: 'customer',
       });
+      await chatSessionService.markIncomingCustomerMessage(chatSession);
+      const sessionWindow = chatSessionService.getWindowState(chatSession);
+
+      logger.info('[ChatbotEngine] Session window after inbound customer message', {
+        businessId: String(businessId || ''),
+        phone: normalizedPhone,
+        sessionActive: sessionWindow.sessionActive,
+        lastMessageAt: sessionWindow.lastMessageAt,
+      });
 
       if (this.shouldRestartSession(userInput)) {
         const restartResponse = await this.handleRestartMessage({
@@ -544,6 +561,7 @@ class ChatbotEngine {
           businessId,
           phone: normalizedPhone,
           plan,
+          chatSessionState: sessionWindow,
         });
 
         if (restartResponse) {
@@ -561,6 +579,7 @@ class ChatbotEngine {
               currentStep: session.currentStep,
               context: session.context,
               contextKeys: Object.keys(session.context || {}),
+              sessionActive: sessionWindow.sessionActive,
             },
           };
         }
@@ -611,16 +630,6 @@ class ChatbotEngine {
         session,
       });
       effectiveUserInput = interpretedInput.effectiveUserInput;
-
-      const triggerMatchedFlow = await this.findTriggerMatchedFlow({
-        businessId,
-        userInput: effectiveUserInput,
-        currentStep: session.currentStep,
-      });
-
-      if (triggerMatchedFlow?.step) {
-        session.currentStep = this.normalizeStep(triggerMatchedFlow.step);
-      }
 
       const matchedFlow = await this.findFlowForStep({
         businessId,
@@ -705,6 +714,7 @@ class ChatbotEngine {
         phone: normalizedPhone,
         plan,
         session,
+        chatSessionState: sessionWindow,
       });
 
       await Usage.findOneAndUpdate(
@@ -732,6 +742,7 @@ class ChatbotEngine {
           currentStep: session.currentStep,
           context: session.context,
           contextKeys: Object.keys(session.context || {}),
+          sessionActive: sessionWindow.sessionActive,
         },
         type: outgoingMessage.type,
         messageType: outgoingMessage.messageType,

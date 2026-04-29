@@ -67,6 +67,16 @@ const chatSessionSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    lastMessageAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+    sessionActive: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     isCompleted: {
       type: Boolean,
       default: false,
@@ -92,5 +102,6 @@ const chatSessionSchema = new mongoose.Schema(
 
 
 chatSessionSchema.index({ tenantId: 1, phone: 1 }, { unique: true });
+chatSessionSchema.index({ tenantId: 1, customerId: 1 });
 
 export default mongoose.model('ChatSession', chatSessionSchema);

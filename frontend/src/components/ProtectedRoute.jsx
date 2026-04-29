@@ -1,8 +1,8 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { PLAN_CONFIG } from '../config/plans.js';
+import { canAccess } from '../utils/accessControl.js';
 
-const ProtectedRoute = ({ children, requiredRole, allowedBusinessTypes, requiredFeature }) => {
+const ProtectedRoute = ({ children, requiredRole, allowedRoles, staffRoles, allowedBusinessTypes, requiredFeature }) => {
   const { user, loginType } = useAuth();
 
   // Check if user is authenticated
@@ -11,25 +11,25 @@ const ProtectedRoute = ({ children, requiredRole, allowedBusinessTypes, required
   }
 
   // Check if user role matches required role
-  if (requiredRole && user.role !== requiredRole) {
+  const acceptedRoles = allowedRoles || (requiredRole ? [requiredRole] : []);
+  if (acceptedRoles.length > 0 && !acceptedRoles.includes(user.role)) {
     // Redirect to appropriate dashboard based on their actual role
     if (user.role === 'super_admin') {
       return <Navigate to="/superadmin/dashboard" />;
     } else if (user.role === 'admin') {
       return <Navigate to="/dashboard" />;
     } else if (user.role === 'staff') {
-      return <Navigate to="/chat" />;
+      return <Navigate to="/staff/dashboard" />;
     }
     return <Navigate to="/" />;
   }
 
-  // Check if feature is allowed for user's plan
-  if (requiredFeature && user.role === 'admin') {
-    const plan = user.plan || 'FREE';
-    const config = PLAN_CONFIG[plan];
-    if (config && !config[requiredFeature]) {
-      return <Navigate to="/admin/pricing" state={{ featureLocked: requiredFeature }} />;
-    }
+  if (Array.isArray(staffRoles) && staffRoles.length > 0 && user.role === 'staff' && !staffRoles.includes(user.staffRole)) {
+    return <Navigate to="/staff/dashboard" />;
+  }
+
+  if (requiredFeature && !canAccess(user, requiredFeature)) {
+    return <Navigate to={user.role === 'staff' ? '/staff/dashboard' : '/admin/pricing'} state={{ featureLocked: requiredFeature }} />;
   }
 
   if (Array.isArray(allowedBusinessTypes) && allowedBusinessTypes.length > 0) {

@@ -43,7 +43,7 @@ const supportTicketSchema = new mongoose.Schema(
       {
         sender: {
           type: String,
-          enum: ['admin', 'super_admin', 'bot', 'customer'],
+          enum: ['admin', 'super_admin', 'staff', 'bot', 'customer'],
           required: true,
         },
         message: {
@@ -65,5 +65,6 @@ const supportTicketSchema = new mongoose.Schema(
 
 supportTicketSchema.index({ tenantId: 1, status: 1 });
 supportTicketSchema.index({ tenantId: 1, customerId: 1 });
+supportTicketSchema.index({ tenantId: 1, assignedTo: 1, status: 1 });
 
 export default mongoose.model('SupportTicket', supportTicketSchema);

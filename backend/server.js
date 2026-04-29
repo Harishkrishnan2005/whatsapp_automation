@@ -59,6 +59,7 @@ import staffDashboardRoutes from './routes/staff/dashboard.routes.js';
 import staffConversationsRoutes from './routes/staff/conversations.routes.js';
 import staffAppointmentsRoutes from './routes/staff/appointments.routes.js';
 import staffOrdersRoutes from './routes/staff/orders.routes.js';
+import staffCampaignsRoutes from './routes/staff/campaigns.routes.js';
 import publicChatRoutes from './routes/public/chat.routes.js';
 import publicCartRoutes from './routes/public/cart.routes.js';
 import publicOrderRoutes from './routes/public/order.routes.js';
@@ -69,6 +70,7 @@ import { apiLimiter, authLimiter, webhookLimiter } from './middlewares/rateLimit
 
 // Import utils
 import seedDatabase from './utils/seed.js';
+import ensureStaffEmailUniqueIndex from './utils/ensureStaffEmailUniqueIndex.js';
 import { checkExpirations } from './scripts/expiryCron.js';
 import usageService from './services/usageService.js';
 
@@ -104,6 +106,7 @@ async function connectMongo() {
   try {
     await mongoose.connect(primaryUri, options);
     logger.info('MongoDB connected successfully');
+    await ensureStaffEmailUniqueIndex(logger);
     seedDatabase(); 
     return;
   } catch (err) {
@@ -134,6 +137,7 @@ app.use('/api/staff/dashboard', staffDashboardRoutes);
 app.use('/api/staff/conversations', staffConversationsRoutes);
 app.use('/api/staff/appointments', staffAppointmentsRoutes);
 app.use('/api/staff/orders', staffOrdersRoutes);
+app.use('/api/staff/campaigns', staffCampaignsRoutes);
 app.use('/api/admin', authenticateToken, adminRoutes);
 app.use('/api/staff', authenticateToken, staffRoutes);
 app.use('/api/public/chat', publicChatRoutes);

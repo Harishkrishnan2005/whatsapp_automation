@@ -479,7 +479,13 @@ class ChatbotActions {
       session.collectedData.total = price.toFixed(2);
     }
     
-    session.context = { ...(session.context || {}), ...session.collectedData };
+    session.context = { 
+      ...(session.context || {}), 
+      ...session.collectedData,
+      selectedProduct: product.name,
+      selectedProductId: String(product._id)
+    };
+    console.log('[ChatbotActions] SELECT_PRODUCT updated session context:', JSON.stringify(session.context, null, 2));
     session.markModified('collectedData');
     session.markModified('context');
 
@@ -528,14 +534,18 @@ class ChatbotActions {
     session.markModified('collectedData');
     session.markModified('context');
 
-    if (!session.collectedData.productId) {
+    console.log('[ChatbotActions] SAVE_QUANTITY session context:', JSON.stringify(session.context, null, 2));
+
+    const finalProductId = session.context?.selectedProductId || session.collectedData?.productId;
+
+    if (!finalProductId) {
       return { success: false, text: 'No product selected. Please choose a product first.' };
     }
 
     return this.ADD_TO_CART({
       session,
       payload: {
-        productId: session.collectedData.productId,
+        productId: finalProductId,
         quantity: qty
       }
     });

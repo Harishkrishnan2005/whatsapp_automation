@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (email, password, type) => {
+  const login = async (email, password, type, extra = {}) => {
     const normalizedEmail = String(email || '').trim().toLowerCase();
     let endpoint = '/auth/login';
     if (type === 'super_admin') {
@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
       endpoint = '/auth/staff/login';
     }
 
-    const response = await api.post(endpoint, { email: normalizedEmail, password });
+    const response = await api.post(endpoint, { email: normalizedEmail, password, ...extra });
     const { accessToken, token, user: userData } = response.data;
     const resolvedToken = accessToken || token;
 

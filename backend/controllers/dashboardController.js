@@ -8,6 +8,9 @@ import ChatAssignment from '../models/ChatAssignment.js';
 import Business from '../models/Business.js';
 import AnalyticsService from '../services/analyticsService.js';
 import buildTenantScope from '../utils/tenantScope.js';
+import SupportTicket from '../models/SupportTicket.js';
+import Feedback from '../models/Feedback.js';
+import Conversation from '../models/Conversation.js';
 
 class DashboardController {
   async safeQuery(fn, fallbackValue, label) {
@@ -87,14 +90,22 @@ class DashboardController {
       todayEnd.setDate(todayEnd.getDate() + 1);
 
       const [
-        totalAssigned,
+        assignedChats,
+        assignedOrders,
+        assignedTickets,
+        assignedFeedback,
         todaysBookings,
         upcomingBookings,
         completedBookings,
         recentChats,
-        recentBookings
+        recentBookings,
+        recentOrders,
+        recentTickets,
       ] = await Promise.all([
-        this.safeQuery(() => Appointment.countDocuments({ assignedTo: userId, ...tenantScope }), 0, 'totalAssigned'),
+        this.safeQuery(() => Conversation.countDocuments({ assignedTo: userId, status: { $ne: 'closed' }, ...tenantScope }), 0, 'assignedChats'),
+        this.safeQuery(() => Order.countDocuments({ assignedTo: userId, ...tenantScope }), 0, 'assignedOrders'),
+        this.safeQuery(() => SupportTicket.countDocuments({ assignedTo: userId, status: { $ne: 'RESOLVED' }, ...tenantScope }), 0, 'assignedTickets'),
+        this.safeQuery(() => Feedback.countDocuments({ assignedTo: userId, status: { $ne: 'RESPONDED' }, ...tenantScope }), 0, 'assignedFeedback'),
         this.safeQuery(() => Appointment.countDocuments({
           ...tenantScope,
           assignedTo: userId,
@@ -118,16 +129,30 @@ class DashboardController {
         this.safeQuery(() => Appointment.find({ assignedTo: userId, ...tenantScope })
           .populate('customerId', 'name')
           .sort({ date: 1 })
-          .limit(5).lean(), [], 'recentBookings')
+          .limit(5).lean(), [], 'recentBookings'),
+        this.safeQuery(() => Order.find({ assignedTo: userId, ...tenantScope })
+          .populate('customerId', 'name phone')
+          .sort({ createdAt: -1 })
+          .limit(5).lean(), [], 'recentOrders'),
+        this.safeQuery(() => SupportTicket.find({ assignedTo: userId, ...tenantScope })
+          .populate('customerId', 'name phone')
+          .sort({ updatedAt: -1 })
+          .limit(5).lean(), [], 'recentTickets')
       ]);
 
       res.json({
-        totalAssigned,
+        totalAssigned: assignedChats + assignedOrders + assignedTickets + assignedFeedback,
+        assignedChats,
+        assignedOrders,
+        assignedTickets,
+        assignedFeedback,
         todaysBookings,
         upcomingBookings,
         completedBookings,
         recentChats,
-        recentBookings
+        recentBookings,
+        recentOrders,
+        recentTickets,
       });
     } catch (error) {
       console.error('Dashboard getStaffDashboard failed:', error);

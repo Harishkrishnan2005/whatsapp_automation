@@ -70,7 +70,7 @@ const ChatManagement = () => {
 
   const fetchStaffMembers = async () => {
     try {
-      const response = await api.get('/auth/staff');
+      const response = await api.get('/admin/staff');
       setStaffMembers(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Failed to fetch staff members:', error);

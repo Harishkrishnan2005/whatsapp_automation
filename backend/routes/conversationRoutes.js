@@ -3,9 +3,12 @@ import Conversation from '../models/Conversation.js';
 import Customer from '../models/Customer.js';
 import ConversationService from '../services/conversationService.js';
 import { businessContext } from '../middlewares/bussinessContext.js';
+import ChatAssignmentService from '../services/chatAssignmentService.js';
+import { requireChatAccess } from '../middlewares/staffRbac.js';
 
 const router = express.Router();
 router.use(businessContext);
+router.use(requireChatAccess);
 
 router.get('/', async (req, res) => {
   try {
@@ -73,6 +76,25 @@ router.put('/id/:id/close', async (req, res) => {
   }
 });
 
+router.put('/id/:id/assign', async (req, res) => {
+  try {
+    if (!['admin', 'super_admin'].includes(req.user?.role)) {
+      return res.status(403).json({ message: 'Only admins can assign conversations' });
+    }
+
+    const conversation = await ConversationService.getConversationById(req.params.id, req.user, req.businessId);
+    const customerId = conversation.customerId?._id || conversation.customerId;
+    if (!customerId) {
+      return res.status(400).json({ message: 'Conversation is not linked to a customer' });
+    }
+
+    const assignment = await ChatAssignmentService.assignChat(customerId, req.body.assignedTo, req.businessId);
+    res.json(assignment);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 // Legacy phone-based lookup kept for simulation tooling.
 router.get('/:phone', async (req, res) => {
   try {
@@ -80,12 +102,12 @@ router.get('/:phone', async (req, res) => {
     const baseQuery = { phone, businessId: req.businessId };
 
     if (req.user?.role === 'staff') {
-      baseQuery.assignedStaffId = req.user.id || req.user._id;
+      baseQuery.assignedTo = req.user.id || req.user._id;
     }
 
     const conversation = await Conversation.findOne(baseQuery)
       .populate('customerId', 'name phone assignedTo')
-      .populate('assignedStaffId', 'name email')
+      .populate('assignedTo', 'name email staffRole status')
       .lean();
 
     if (!conversation) {

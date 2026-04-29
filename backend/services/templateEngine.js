@@ -1,59 +1,164 @@
-import Template from '../models/Template.js';
+import messageService from './messageService.js';
+import messageTemplateService from './messageTemplateService.js';
 import logger from '../utils/logger.js';
 
 class TemplateEngine {
-  /**
-   * Determine if we should send a template or plain text
-   * @param {Object} session - The current chat session
-   * @param {String} fallbackText - The default text to send
-   * @returns {Object} { type: 'text'|'template', content: String, templateName?: String }
-   */
-  async getResponse(session, fallbackText) {
-    const now = new Date();
-    const lastInteraction = session.lastInteractionAt ? new Date(session.lastInteractionAt) : null;
-    
-    // 24-hour rule: If last interaction was more than 24 hours ago, we MUST use a template for WhatsApp
-    const isOutsideWindow = !lastInteraction || (now - lastInteraction) > (24 * 60 * 60 * 1000);
+  FALLBACK_MESSAGE = 'Please try again or contact support';
 
-    if (isOutsideWindow) {
-      logger.info(`[TemplateEngine] Session ${session.phone} outside 24h window. Fetching approved template.`);
-      
-      // Fetch the primary approved template for this business
-      const template = await Template.findOne({
-        tenantId: session.businessId,
-        status: 'approved'
-      }).sort({ createdAt: -1 }).lean();
+  resolveVariable(path, context = {}) {
+    return messageTemplateService.resolveVariable(path, context);
+  }
 
-      if (template) {
-        return {
-          type: 'template',
-          content: template.body,
-          templateName: template.name,
-          isOutsideWindow: true
-        };
-      }
-      
-      // If no template found, return a generic warning or the fallback
-      return {
-        type: 'text',
-        content: "It's been a while! How can we help you today?",
-        isOutsideWindow: true
+  mapVariables(template, variableMapping = {}, context = {}) {
+    const resolvedVariables = {};
+    const mappedVariables = {};
+    const templateVariables = Array.isArray(template?.variables) ? template.variables : [];
+
+    Object.entries(variableMapping || {}).forEach(([slot, path]) => {
+      const value = this.resolveVariable(path, context);
+      const numericSlot = Number.parseInt(slot, 10);
+      const variableName = Number.isInteger(numericSlot) && numericSlot > 0
+        ? templateVariables[numericSlot - 1]
+        : slot;
+
+      mappedVariables[slot] = {
+        path,
+        value: value ?? null,
       };
-    }
 
-    // Inside window, send regular text
+      if (variableName) {
+        resolvedVariables[variableName] = value ?? '';
+      }
+    });
+
     return {
-      type: 'text',
-      content: fallbackText,
-      isOutsideWindow: false
+      resolvedVariables,
+      mappedVariables,
     };
   }
 
-  /**
-   * Replace placeholders in templates
-   */
-  interpolate(text, data = {}) {
-    return text.replace(/{{(\w+)}}/g, (match, key) => data[key] || match);
+  async prepareTemplate({ businessId, templateName, variableMapping = {}, context = {}, planName = null }) {
+    let resolvedTemplate = null;
+
+    try {
+      resolvedTemplate = await messageTemplateService.findTemplate({
+        businessId,
+        templateName,
+        planName,
+        enforceAccess: true,
+      });
+    } catch (error) {
+      logger.warn('[TemplateEngine] Template access blocked or template lookup failed', {
+        businessId: String(businessId || ''),
+        templateName,
+        error: error.message,
+      });
+
+      return {
+        ok: false,
+        fallbackText: this.FALLBACK_MESSAGE,
+        templateName,
+        mappedVariables: {},
+        error: error.message,
+      };
+    }
+
+    if (!resolvedTemplate) {
+      return {
+        ok: false,
+        fallbackText: this.FALLBACK_MESSAGE,
+        templateName,
+        mappedVariables: {},
+      };
+    }
+
+    const { resolvedVariables, mappedVariables } = this.mapVariables(
+      resolvedTemplate,
+      variableMapping,
+      context
+    );
+
+    const renderedMessage = messageTemplateService.renderTemplate(
+      resolvedTemplate,
+      resolvedVariables
+    );
+
+    return {
+      ok: true,
+      resolvedTemplate,
+      renderedMessage,
+      resolvedVariables,
+      mappedVariables,
+      templateName: resolvedTemplate.name,
+    };
+  }
+
+  async sendTemplate({
+    businessId,
+    templateName,
+    variableMapping = {},
+    context = {},
+    planName = null,
+    customer,
+    phone,
+    senderType = 'chatbot',
+    products = [],
+  }) {
+    const preparedTemplate = await this.prepareTemplate({
+      businessId,
+      templateName,
+      variableMapping,
+      context,
+      planName,
+    });
+
+    logger.info('[TemplateEngine] Template dispatch prepared', {
+      businessId: String(businessId || ''),
+      templateName: preparedTemplate.templateName || templateName,
+      mappedVariables: preparedTemplate.mappedVariables || {},
+      fallbackUsed: !preparedTemplate.ok,
+    });
+
+    if (!preparedTemplate.ok) {
+      const fallbackMessage = await messageService.sendMessage({
+        type: 'TEXT',
+        to: phone,
+        content: preparedTemplate.fallbackText,
+        businessId,
+        customer,
+        phone,
+        senderType,
+        planName,
+        products,
+      });
+
+      return {
+        ...fallbackMessage,
+        fallbackUsed: true,
+        mappedVariables: preparedTemplate.mappedVariables || {},
+      };
+    }
+
+    const outgoingMessage = await messageService.sendMessage({
+      type: 'TEMPLATE',
+      to: phone,
+      templateName: preparedTemplate.resolvedTemplate.name,
+      variables: preparedTemplate.resolvedVariables,
+      resolvedTemplate: preparedTemplate.resolvedTemplate,
+      renderedContent: preparedTemplate.renderedMessage,
+      businessId,
+      customer,
+      phone,
+      senderType,
+      planName,
+      products,
+    });
+
+    return {
+      ...outgoingMessage,
+      mappedVariables: preparedTemplate.mappedVariables,
+      fallbackUsed: false,
+    };
   }
 }
 

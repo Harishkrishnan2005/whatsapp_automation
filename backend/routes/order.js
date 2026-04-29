@@ -3,12 +3,14 @@ import OrderController from '../controllers/orderController.js';
 import { authenticateToken, isAdmin } from '../middlewares/authorization.js';
 import { checkBusinessType } from '../middlewares/businessType.js';
 import { businessContext } from '../middlewares/bussinessContext.js';
+import { requireSalesAccess } from '../middlewares/staffRbac.js';
 
 const router = express.Router();
 
 router.use(authenticateToken);
 router.use(businessContext);
 router.use(checkBusinessType('E_COMMERCE'));
+router.use(requireSalesAccess);
 
 router.get('/', OrderController.getOrders);
 router.post('/', OrderController.createOrder);

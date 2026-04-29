@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import COLLECTIONS from '../config/mongoCollections.js';
 
 export const BUSINESS_TYPES = ['E_COMMERCE', 'BOOKING'];
+export const STAFF_ROLES = ['SUPPORT', 'SALES', 'MARKETING', 'MANAGER'];
+export const STAFF_STATUSES = ['ACTIVE', 'INACTIVE'];
 
 const userSchema = new mongoose.Schema(
   {
@@ -13,7 +15,6 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
       lowercase: true,
     },
@@ -25,6 +26,18 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ['super_admin', 'admin', 'staff'],
       default: 'staff',
+    },
+    staffRole: {
+      type: String,
+      enum: STAFF_ROLES,
+      default: null,
+      index: true,
+    },
+    status: {
+      type: String,
+      enum: STAFF_STATUSES,
+      default: 'ACTIVE',
+      index: true,
     },
     businessId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -106,5 +119,36 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.index({ businessId: 1, role: 1 });
+userSchema.index({ businessId: 1, role: 1, staffRole: 1, status: 1 });
+userSchema.index(
+  { email: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      role: 'staff',
+      email: { $type: 'string' },
+    },
+  }
+);
+
+userSchema.pre('validate', function syncStaffStatus(next) {
+  if (this.role !== 'staff') {
+    this.staffRole = null;
+    this.status = this.status || 'ACTIVE';
+    this.isActive = this.isActive !== false;
+    return next();
+  }
+
+  if (!this.staffRole) {
+    this.staffRole = 'SUPPORT';
+  }
+
+  if (!this.status) {
+    this.status = this.isActive === false ? 'INACTIVE' : 'ACTIVE';
+  }
+
+  this.isActive = this.status === 'ACTIVE';
+  next();
+});
 
 export default mongoose.model('User', userSchema);

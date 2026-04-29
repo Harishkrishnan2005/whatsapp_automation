@@ -2,25 +2,30 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiUserPlus, FiUsers, FiX, FiCheck, FiEdit2, FiTrash2, FiShield } from 'react-icons/fi';
 import api from '../../utils/api';
+import { PLAN_CONFIG, STAFF_ROLE_MIN_PLAN, getAllowedStaffRolesForPlan } from '../../config/plans.js';
+import { useAuth } from '../../context/AuthContext';
 
 const initialFormData = {
   name: '',
   email: '',
   password: '',
   phone: '',
+  staffRole: 'SUPPORT',
+  status: 'ACTIVE',
   gender: 'Male',
   dateOfBirth: '',
   dateOfJoining: '',
   address: '',
   isActive: true,
-  permissions: ['handle_chats', 'view_analytics'],
+  permissions: [],
 };
 
-const permissionOptions = [
-  { id: 'handle_chats', label: 'Handle Chats' },
-  { id: 'view_analytics', label: 'View Analytics' },
-  { id: 'manage_appointments', label: 'Manage Appointments' },
-];
+const ALL_ROLE_OPTIONS = ['SUPPORT', 'SALES', 'MARKETING', 'MANAGER'];
+
+const fieldLabelClass = 'px-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-600';
+const fieldInputClass = 'w-full rounded-2xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-semibold text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.05)] outline-none transition-all placeholder:font-semibold placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10';
+const fieldInputCompactClass = 'w-full rounded-2xl border border-slate-300 bg-white px-4 py-3.5 text-sm font-semibold text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.05)] outline-none transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10';
+const readOnlyFieldClass = 'w-full rounded-2xl border border-slate-200 bg-slate-100 px-5 py-3.5 text-[10px] font-black tracking-[0.18em] text-slate-600 cursor-not-allowed';
 
 const toInputDate = (value) => {
   if (!value) return '';
@@ -29,6 +34,7 @@ const toInputDate = (value) => {
 };
 
 const StaffManagement = () => {
+  const { user } = useAuth();
   const [staff, setStaff] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState(initialFormData);
@@ -36,7 +42,7 @@ const StaffManagement = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
-  const [usage, setUsage] = useState({ staffCount: 0, maxUsers: null });
+  const [usage, setUsage] = useState({ staffCount: 0, maxUsers: null, plan: user?.plan || 'FREE' });
 
   useEffect(() => {
     fetchStaff();
@@ -45,9 +51,10 @@ const StaffManagement = () => {
 
   const fetchStaff = async () => {
     try {
-      const response = await api.get('/auth/staff');
-      setStaff(response.data || []);
-      setUsage((prev) => ({ ...prev, staffCount: response.data?.length || 0 }));
+      const response = await api.get('/admin/staff');
+      const rows = response.data || [];
+      setStaff(rows);
+      setUsage((prev) => ({ ...prev, staffCount: rows.length || 0 }));
     } catch (error) {
       console.error('Error fetching staff:', error);
     }
@@ -56,11 +63,26 @@ const StaffManagement = () => {
   const fetchSubscription = async () => {
     try {
       const response = await api.get('/admin/billing/subscription/status');
-      setUsage((prev) => ({ ...prev, maxUsers: response.data?.limits?.maxUsers ?? null }));
+      setUsage((prev) => ({
+        ...prev,
+        maxUsers: response.data?.limits?.maxUsers ?? null,
+        plan: response.data?.plan || user?.plan || 'FREE',
+      }));
     } catch (error) {
       console.error('Error fetching subscription:', error);
     }
   };
+
+  const activePlan = usage.plan || user?.plan || 'FREE';
+  const allowedRoleOptions = getAllowedStaffRolesForPlan(activePlan);
+  const selectableRoleOptions = editingStaffId && formData.staffRole && !allowedRoleOptions.includes(formData.staffRole)
+    ? [formData.staffRole, ...allowedRoleOptions]
+    : allowedRoleOptions;
+  const lockedRoles = ALL_ROLE_OPTIONS.filter((role) => !allowedRoleOptions.includes(role));
+  const upgradeHints = lockedRoles.map((role) => ({
+    role,
+    requiredPlan: STAFF_ROLE_MIN_PLAN[role] || 'ENTERPRISE',
+  }));
 
   const resetForm = () => {
     setFormData(initialFormData);
@@ -70,6 +92,11 @@ const StaffManagement = () => {
 
   const openCreateForm = () => {
     setFormSuccess('');
+    if (allowedRoleOptions.length === 0) {
+      setFormError('Upgrade to BASIC to enable staff roles.');
+      setShowForm(false);
+      return;
+    }
     if (showForm && !editingStaffId) {
       setShowForm(false);
       resetForm();
@@ -77,6 +104,10 @@ const StaffManagement = () => {
     }
 
     resetForm();
+    setFormData(() => ({
+      ...initialFormData,
+      staffRole: allowedRoleOptions[0] || 'SUPPORT',
+    }));
     setShowForm(true);
   };
 
@@ -89,6 +120,8 @@ const StaffManagement = () => {
       email: member.email || '',
       password: '',
       phone: member.phone || '',
+      staffRole: member.staffRole || 'SUPPORT',
+      status: member.status || (member.isActive ? 'ACTIVE' : 'INACTIVE'),
       gender: member.gender || 'Male',
       dateOfBirth: toInputDate(member.dateOfBirth),
       dateOfJoining: toInputDate(member.dateOfJoining),
@@ -108,15 +141,10 @@ const StaffManagement = () => {
   };
 
   const toggleActive = () => {
-    setFormData((prev) => ({ ...prev, isActive: !prev.isActive }));
-  };
-
-  const togglePermission = (permissionId) => {
     setFormData((prev) => ({
       ...prev,
-      permissions: prev.permissions.includes(permissionId)
-        ? prev.permissions.filter((permission) => permission !== permissionId)
-        : [...prev.permissions, permissionId],
+      isActive: !prev.isActive,
+      status: prev.isActive ? 'INACTIVE' : 'ACTIVE',
     }));
   };
 
@@ -128,12 +156,23 @@ const StaffManagement = () => {
 
     const payload = {
       ...formData,
+      name: String(formData.name || '').trim(),
+      email: String(formData.email || '').trim().toLowerCase(),
+      phone: String(formData.phone || '').trim(),
+      address: String(formData.address || '').trim(),
       dateOfBirth: formData.dateOfBirth || '',
       dateOfJoining: formData.dateOfJoining || '',
+      status: formData.status || (formData.isActive ? 'ACTIVE' : 'INACTIVE'),
     };
 
     if (!editingStaffId && !payload.password) {
       setFormError('Password is required for new staff members.');
+      setIsSaving(false);
+      return;
+    }
+
+    if (!editingStaffId && allowedRoleOptions.length === 0) {
+      setFormError('Upgrade to BASIC to enable staff roles.');
       setIsSaving(false);
       return;
     }
@@ -144,10 +183,10 @@ const StaffManagement = () => {
 
     try {
       if (editingStaffId) {
-        await api.put(`/auth/staff/${editingStaffId}`, payload);
+        await api.put(`/admin/staff/${editingStaffId}`, payload);
         setFormSuccess('Personnel record updated successfully.');
       } else {
-        await api.post('/auth/staff', payload);
+        await api.post('/admin/staff', payload);
         setFormSuccess('Personnel record established successfully.');
       }
 
@@ -156,7 +195,16 @@ const StaffManagement = () => {
       resetForm();
     } catch (error) {
       console.error('Error saving staff:', error);
-      setFormError(error?.response?.data?.message || 'Failed to sync record.');
+      const validationErrors = Array.isArray(error?.response?.data?.errors)
+        ? error.response.data.errors
+            .map((item) => item?.message)
+            .filter(Boolean)
+        : [];
+      setFormError(
+        validationErrors.length > 0
+          ? validationErrors.join(' | ')
+          : (error?.response?.data?.message || 'Failed to sync record.')
+      );
     } finally {
       setIsSaving(false);
     }
@@ -165,7 +213,7 @@ const StaffManagement = () => {
   const deleteStaff = async (id) => {
     if (!confirm('Permanent deletion of this operative record?')) return;
     try {
-      await api.delete(`/auth/staff/${id}`);
+      await api.delete(`/admin/staff/${id}`);
       await fetchStaff();
       if (editingStaffId === id) {
         setShowForm(false);
@@ -208,11 +256,12 @@ const StaffManagement = () => {
           </div>
           <button
             onClick={openCreateForm}
+            disabled={allowedRoleOptions.length === 0}
             className={`h-14 px-8 rounded-2xl flex items-center gap-3 transition-all duration-500 ${
               showForm && !editingStaffId 
                 ? 'bg-rose-500 text-white shadow-xl shadow-rose-500/20' 
                 : 'bg-slate-900 text-white shadow-xl shadow-slate-900/20 hover:bg-black'
-            }`}
+            } disabled:cursor-not-allowed disabled:opacity-50`}
           >
             {showForm && !editingStaffId ? <FiX className="h-5 w-5" /> : <FiUserPlus className="h-5 w-5" />}
             <span className="text-[10px] font-black uppercase tracking-widest">{showForm && !editingStaffId ? 'Abort' : 'Register Operative'}</span>
@@ -224,7 +273,7 @@ const StaffManagement = () => {
         {[
           { label: 'Total Operatives', val: staff.length, icon: FiUsers, col: 'blue' },
           { label: 'Active Signals', val: staff.filter(s => s.isActive).length, icon: FiCheck, col: 'emerald' },
-          { label: 'Tier Level', val: 'Elite', icon: FiShield, col: 'indigo' },
+          { label: 'Managers', val: staff.filter(s => s.staffRole === 'MANAGER').length, icon: FiShield, col: 'indigo' },
         ].map((s, i) => (
           <motion.div 
             key={i} 
@@ -250,7 +299,7 @@ const StaffManagement = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="p-5 rounded-[1.5rem] bg-blue-50 border border-blue-100 text-[10px] font-black uppercase tracking-[0.2em] text-blue-600 flex items-center justify-between"
+            className="flex items-center justify-between rounded-[1.5rem] border border-blue-200 bg-blue-50 px-5 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-blue-700 shadow-sm"
           >
             <span>{formSuccess}</span>
             <FiCheck className="h-4 w-4" />
@@ -267,7 +316,7 @@ const StaffManagement = () => {
             onSubmit={handleSubmit}
             className="saas-card p-12"
           >
-            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full -mr-32 -mt-32 opacity-30 blur-3xl" />
+            <div className="absolute top-0 right-0 h-64 w-64 rounded-full bg-blue-100 -mr-32 -mt-32 opacity-60 blur-3xl" />
 
             <div className="flex items-center justify-between mb-10 gap-4">
               <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
@@ -281,7 +330,7 @@ const StaffManagement = () => {
                     setShowForm(false);
                     resetForm();
                   }}
-                  className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900"
+                  className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-slate-900"
                 >
                   Close Editor
                 </button>
@@ -289,7 +338,7 @@ const StaffManagement = () => {
             </div>
 
             {formError && (
-              <div className="mb-10 p-5 rounded-2xl bg-rose-50 border border-rose-100 text-[10px] font-black uppercase tracking-widest text-rose-600">
+              <div className="mb-10 rounded-[1.75rem] border border-amber-300 bg-gradient-to-r from-amber-50 via-orange-50 to-rose-50 px-5 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-amber-900 shadow-[0_10px_30px_rgba(245,158,11,0.12)]">
                 {formError}
               </div>
             )}
@@ -297,26 +346,26 @@ const StaffManagement = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Full Name</label>
+                  <label className={fieldLabelClass}>Full Name</label>
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
                     placeholder="Enter staff name"
-                    className="w-full rounded-xl border-slate-200 bg-slate-50 px-5 py-3.5 text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
+                    className={fieldInputClass}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Email Address</label>
+                  <label className={fieldLabelClass}>Email Address</label>
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
                     placeholder="staff@business.com"
-                    className="w-full rounded-xl border-slate-200 bg-slate-50 px-5 py-3.5 text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
+                    className={fieldInputClass}
                     required
                   />
                 </div>
@@ -324,7 +373,7 @@ const StaffManagement = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+                  <label className={fieldLabelClass}>
                     Password {editingStaffId ? '(leave blank to keep current)' : ''}
                   </label>
                   <input
@@ -333,101 +382,90 @@ const StaffManagement = () => {
                     value={formData.password}
                     onChange={handleInputChange}
                     placeholder={editingStaffId ? 'Optional update' : 'Enter password'}
-                    className="w-full rounded-xl border-slate-200 bg-slate-50 px-5 py-3.5 text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
+                    className={fieldInputClass}
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">User Type</label>
-                  <input type="text" value="STAFF MEMBER" className="w-full rounded-xl border-slate-100 bg-slate-50 px-5 py-3.5 text-[10px] font-black text-slate-400 tracking-widest cursor-not-allowed" readOnly />
+                  <label className={fieldLabelClass}>User Type</label>
+                  <input type="text" value="STAFF MEMBER" className={readOnlyFieldClass} readOnly />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Phone Number</label>
+                  <label className={fieldLabelClass}>Phone Number</label>
                   <input
                     type="tel"
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
                     placeholder="Enter phone number"
-                    className="w-full rounded-xl border-slate-200 bg-slate-50 px-5 py-3.5 text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
+                    className={fieldInputClass}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Gender</label>
+                    <label className={fieldLabelClass}>Staff Role</label>
                     <select
-                      name="gender"
-                      value={formData.gender}
+                      name="staffRole"
+                      value={formData.staffRole}
                       onChange={handleInputChange}
-                      className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3.5 text-xs font-bold text-slate-600 outline-none focus:bg-white transition-all cursor-pointer"
+                      className={`${fieldInputCompactClass} cursor-pointer`}
                     >
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
+                      {selectableRoleOptions.map((role) => <option key={role} value={role}>{role}</option>)}
                     </select>
+                    {editingStaffId && formData.staffRole && !allowedRoleOptions.includes(formData.staffRole) && (
+                      <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-amber-800">
+                        Upgrade to {STAFF_ROLE_MIN_PLAN[formData.staffRole] || 'ENTERPRISE'} to keep using {formData.staffRole} role
+                      </p>
+                    )}
+                    {upgradeHints.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {upgradeHints.map((hint) => (
+                          <p key={hint.role} className="rounded-2xl border border-orange-200 bg-orange-50 px-3 py-2 text-[10px] font-black uppercase tracking-[0.14em] text-orange-800">
+                            Upgrade to {hint.requiredPlan} to enable {hint.role} role
+                          </p>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Joining Date</label>
+                    <label className={fieldLabelClass}>Joining Date</label>
                     <input
                       type="date"
                       name="dateOfJoining"
                       value={formData.dateOfJoining}
                       onChange={handleInputChange}
-                      className="w-full rounded-xl border-slate-200 bg-slate-50 px-4 py-3.5 text-xs font-bold text-slate-600 outline-none focus:bg-white transition-all"
+                      className={fieldInputCompactClass}
                     />
                   </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Date of Birth</label>
+                <label className={fieldLabelClass}>Date of Birth</label>
                 <input
                   type="date"
                   name="dateOfBirth"
                   value={formData.dateOfBirth}
                   onChange={handleInputChange}
-                  className="w-full rounded-xl border-slate-200 bg-slate-50 px-5 py-3.5 text-sm font-bold text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all"
+                  className={fieldInputClass}
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Address</label>
+                <label className={fieldLabelClass}>Address</label>
                 <textarea
                   name="address"
                   value={formData.address}
                   onChange={handleInputChange}
                   placeholder="Enter full address"
-                  className="w-full rounded-xl border-slate-200 bg-slate-50 px-5 py-3.5 text-sm font-medium text-slate-700 outline-none focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all resize-none"
+                  className="w-full resize-none rounded-2xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-medium text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.05)] outline-none transition-all placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
                   rows="3"
                 />
               </div>
 
-              <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Permissions</label>
-                <div className="grid gap-3 md:grid-cols-3">
-                  {permissionOptions.map((permission) => {
-                    const selected = formData.permissions.includes(permission.id);
-                    return (
-                      <button
-                        key={permission.id}
-                        type="button"
-                        onClick={() => togglePermission(permission.id)}
-                        className={`rounded-2xl border px-4 py-4 text-[10px] font-black uppercase tracking-widest transition-all ${
-                          selected
-                            ? 'border-blue-200 bg-blue-50 text-blue-600'
-                            : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-700'
-                        }`}
-                      >
-                        {permission.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-6 pt-4 border-t border-slate-50">
+              <div className="flex items-center gap-6 pt-4 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={toggleActive}
@@ -436,8 +474,11 @@ const StaffManagement = () => {
                   <div className={`h-6 w-11 rounded-full transition-all duration-300 flex items-center px-1 ${formData.isActive ? 'bg-blue-600' : 'bg-slate-200'}`}>
                     <div className={`h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-300 ${formData.isActive ? 'translate-x-5' : 'translate-x-0'}`} />
                   </div>
-                  <span className="text-[10px] font-black text-slate-400 group-hover:text-slate-900 transition-colors uppercase tracking-[0.2em] select-none">Account Active</span>
+                  <span className="select-none text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 transition-colors group-hover:text-slate-900">Account Active</span>
                 </button>
+                <div className="rounded-2xl border border-slate-300 bg-slate-100 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-700">
+                  Status: {formData.status}
+                </div>
 
                 <button
                   type="submit"
@@ -469,7 +510,7 @@ const StaffManagement = () => {
               <tr className="border-b border-slate-100 bg-slate-50/30">
                 <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Staff Member</th>
                 <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Staff ID</th>
-                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Permissions</th>
+                <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Role</th>
                 <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
                 <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
               </tr>
@@ -493,23 +534,15 @@ const StaffManagement = () => {
                     <p className="text-sm font-black text-slate-900 tracking-tighter bg-slate-50 w-fit px-3 py-1 rounded-lg border border-slate-100 uppercase">{member.employeeId || member._id.slice(-6)}</p>
                   </td>
                   <td className="px-10 py-7">
-                    <div className="flex flex-wrap gap-2">
-                      {(member.permissions || []).length === 0 ? (
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">No permissions</span>
-                      ) : (
-                        member.permissions.map((permission) => (
-                          <span key={permission} className="px-3 py-1 rounded-lg bg-slate-50 border border-slate-100 text-[9px] font-black text-slate-500 uppercase tracking-widest">
-                            {permission.replaceAll('_', ' ')}
-                          </span>
-                        ))
-                      )}
-                    </div>
+                    <span className="px-3 py-1 rounded-lg bg-slate-50 border border-slate-100 text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                      {member.staffRole || 'SUPPORT'}
+                    </span>
                   </td>
                   <td className="px-10 py-7">
                     <div className="flex items-center gap-3">
-                      <div className={`h-2.5 w-2.5 rounded-full ring-4 ring-white shadow-sm ${member.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${member.isActive ? 'text-emerald-600' : 'text-slate-400'}`}>
-                        {member.isActive ? 'Active' : 'Hidden'}
+                      <div className={`h-2.5 w-2.5 rounded-full ring-4 ring-white shadow-sm ${(member.status || (member.isActive ? 'ACTIVE' : 'INACTIVE')) === 'ACTIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${(member.status || (member.isActive ? 'ACTIVE' : 'INACTIVE')) === 'ACTIVE' ? 'text-emerald-600' : 'text-slate-400'}`}>
+                        {member.status || (member.isActive ? 'ACTIVE' : 'INACTIVE')}
                       </span>
                     </div>
                   </td>

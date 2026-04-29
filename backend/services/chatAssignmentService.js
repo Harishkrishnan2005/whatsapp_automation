@@ -30,10 +30,12 @@ class ChatAssignmentService {
         $setOnInsert: {
           phone: String(customer.phone || '').trim(),
           businessId,
+          tenantId: businessId,
           customerId,
         },
         $set: {
           customerId,
+          assignedTo: staffId,
           assignedStaffId: staffId,
           status: 'active',
           updatedAt: new Date(),
@@ -79,14 +81,14 @@ class ChatAssignmentService {
   async getAssignedChats(staffId, page = 1, limit = 10, businessId) {
     const skip = (page - 1) * limit;
     const tenantScope = buildTenantScope(businessId);
-    const chats = await Conversation.find({ assignedStaffId: staffId, status: { $ne: 'closed' }, ...tenantScope })
+    const chats = await Conversation.find({ assignedTo: staffId, status: { $ne: 'closed' }, ...tenantScope })
       .populate('customerId', 'name phone')
-      .populate('assignedStaffId', 'name email')
+      .populate('assignedTo', 'name email staffRole status')
       .skip(skip)
       .limit(limit)
       .sort({ updatedAt: -1 })
       .lean();
-    const total = await Conversation.countDocuments({ assignedStaffId: staffId, status: { $ne: 'closed' }, ...tenantScope });
+    const total = await Conversation.countDocuments({ assignedTo: staffId, status: { $ne: 'closed' }, ...tenantScope });
     return { chats, total, page, limit };
   }
 
@@ -96,7 +98,7 @@ class ChatAssignmentService {
     const tenantScope = buildTenantScope(businessId);
     const chats = await Conversation.find({ status: { $ne: 'closed' }, ...tenantScope })
       .populate('customerId', 'name phone')
-      .populate('assignedStaffId', 'name email')
+      .populate('assignedTo', 'name email staffRole status')
       .skip(skip)
       .limit(limit)
       .sort({ updatedAt: -1 })
@@ -122,6 +124,7 @@ class ChatAssignmentService {
         {
           $set: {
             customerId: updatedAssignment.customerId._id,
+            assignedTo: newStaffId,
             assignedStaffId: newStaffId,
             status: 'active',
             updatedAt: new Date(),

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AdminLogin from './pages/AdminLogin';
@@ -15,6 +15,7 @@ import Campaigns from './pages/Campaigns';
 import Analytics from './pages/Analytics';
 import Products from './pages/Products';
 import Sidebar from './components/Sidebar';
+import { FEATURES } from './utils/accessControl';
 
 // Admin pages
 import StaffManagement from './pages/admin/StaffManagement';
@@ -31,6 +32,8 @@ import StaffBookings from './pages/staff/StaffBookings';
 import StaffDashboard from './pages/staff/StaffDashboard';
 import StaffOrders from './pages/staff/StaffOrders';
 import StaffNotes from './pages/staff/StaffNotes';
+import StaffTickets from './pages/staff/StaffTickets';
+import StaffCampaigns from './pages/staff/StaffCampaigns';
 
 // Super Admin pages
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
@@ -135,22 +138,22 @@ function AppShell() {
               path="/dashboard"
               element={
                 <ProtectedRoute requiredRole={user.role}>
-                  {isSuperAdmin ? <Navigate to="/superadmin/dashboard" /> : user.role === 'admin' ? <Dashboard /> : <StaffDashboard />}
+                  {isSuperAdmin ? <Navigate to="/superadmin/dashboard" /> : user.role === 'admin' ? <Dashboard /> : <Navigate to="/staff/dashboard" />}
                 </ProtectedRoute>
               }
             />
             <Route
               path="/chat"
               element={
-                <ProtectedRoute requiredRole={user.role}>
-                  <SimulationChat />
+                <ProtectedRoute allowedRoles={['admin', 'staff']} requiredFeature={FEATURES.CHAT}>
+                  {user.role === 'admin' ? <SimulationChat /> : <Navigate to="/staff/chats" replace />}
                 </ProtectedRoute>
               }
             />
             <Route
               path="/customers"
               element={
-                <ProtectedRoute requiredRole="admin">
+                <ProtectedRoute requiredRole="admin" requiredFeature={FEATURES.CUSTOMERS}>
                   <Customers />
                 </ProtectedRoute>
               }
@@ -158,7 +161,7 @@ function AppShell() {
             <Route
               path="/orders"
               element={
-                <ProtectedRoute requiredRole="admin">
+                <ProtectedRoute requiredRole="admin" requiredFeature={FEATURES.ORDERS}>
                   {isEcommerce ? <Orders /> : <Navigate to="/dashboard" />}
                 </ProtectedRoute>
               }
@@ -166,7 +169,7 @@ function AppShell() {
             <Route
               path="/campaigns"
               element={
-                <ProtectedRoute requiredRole="admin" requiredFeature="allowCampaigns">
+                <ProtectedRoute requiredRole="admin" requiredFeature={FEATURES.CAMPAIGN}>
                   {isEcommerce ? <Campaigns /> : <Navigate to="/dashboard" />}
                 </ProtectedRoute>
               }
@@ -209,7 +212,7 @@ function AppShell() {
               path="/admin/chat-management"
               element={
                 <ProtectedRoute requiredRole="admin">
-                  <Chat />
+                  <ChatManagement />
                 </ProtectedRoute>
               }
             />
@@ -232,7 +235,7 @@ function AppShell() {
             <Route
               path="/admin/advanced-analytics"
               element={
-                <ProtectedRoute requiredRole="admin" requiredFeature="allowAdvancedAnalytics">
+                <ProtectedRoute requiredRole="admin">
                   <AdvancedAnalytics />
                 </ProtectedRoute>
               }
@@ -240,7 +243,7 @@ function AppShell() {
             <Route
               path="/admin/support"
               element={
-                <ProtectedRoute requiredRole="admin">
+                <ProtectedRoute requiredRole="admin" requiredFeature={FEATURES.SUPPORT}>
                   <SupportTickets />
                 </ProtectedRoute>
               }
@@ -265,9 +268,17 @@ function AppShell() {
 
             {/* Staff Routes - Protected */}
             <Route
-              path="/staff/chat"
+              path="/staff/dashboard"
               element={
                 <ProtectedRoute requiredRole="staff">
+                  <StaffDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/staff/chats"
+              element={
+                <ProtectedRoute requiredRole="staff" staffRoles={['SUPPORT', 'SALES', 'MANAGER']} requiredFeature={FEATURES.CHAT}>
                   <StaffChat />
                 </ProtectedRoute>
               }
@@ -283,8 +294,24 @@ function AppShell() {
             <Route
               path="/staff/orders"
               element={
-                <ProtectedRoute requiredRole="staff">
+                <ProtectedRoute requiredRole="staff" staffRoles={['SALES', 'MANAGER']} requiredFeature={FEATURES.ORDERS}>
                   {isEcommerce ? <StaffOrders /> : <Navigate to="/dashboard" />}
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/staff/tickets"
+              element={
+                <ProtectedRoute requiredRole="staff" staffRoles={['SUPPORT', 'MANAGER']} requiredFeature={FEATURES.SUPPORT}>
+                  <StaffTickets />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/staff/campaigns"
+              element={
+                <ProtectedRoute requiredRole="staff" staffRoles={['MARKETING', 'MANAGER']} requiredFeature={FEATURES.CAMPAIGN}>
+                  {isEcommerce ? <StaffCampaigns /> : <Navigate to="/staff/dashboard" />}
                 </ProtectedRoute>
               }
             />
@@ -296,6 +323,7 @@ function AppShell() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/staff/chat" element={<Navigate to="/staff/chats" replace />} />
 
             {/* Super Admin Routes - Protected */}
             <Route

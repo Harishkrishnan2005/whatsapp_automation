@@ -98,7 +98,7 @@ class MessageTemplateService {
     );
   }
 
-  getValueAtPath(source, path) {
+  resolveVariable(path, context = {}) {
     const normalizedPath = String(path || '').trim();
     if (!normalizedPath) return undefined;
 
@@ -107,7 +107,11 @@ class MessageTemplateService {
         return accumulator[key];
       }
       return undefined;
-    }, source);
+    }, context);
+  }
+
+  getValueAtPath(source, path) {
+    return this.resolveVariable(path, source);
   }
 
   resolveTemplateData(variableMapping = {}, sources = {}) {

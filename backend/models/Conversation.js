@@ -35,6 +35,11 @@ const conversationSchema = new mongoose.Schema({
     ref: 'User',
     default: null,
   },
+  assignedTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
   businessId: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Business', 
@@ -70,6 +75,19 @@ const conversationSchema = new mongoose.Schema({
 conversationSchema.index({ phone: 1, tenantId: 1 }, { unique: true });
 conversationSchema.index({ tenantId: 1, updatedAt: -1 });
 conversationSchema.index({ tenantId: 1, assignedStaffId: 1, updatedAt: -1 });
+conversationSchema.index({ tenantId: 1, assignedTo: 1, updatedAt: -1 });
 conversationSchema.index({ tenantId: 1, customerId: 1 });
+
+conversationSchema.pre('validate', function syncAssignmentFields(next) {
+  if (this.assignedTo && !this.assignedStaffId) {
+    this.assignedStaffId = this.assignedTo;
+  }
+
+  if (this.assignedStaffId && !this.assignedTo) {
+    this.assignedTo = this.assignedStaffId;
+  }
+
+  next();
+});
 
 export default mongoose.model('Conversation', conversationSchema);

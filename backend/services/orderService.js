@@ -583,6 +583,16 @@ class OrderService {
   }
 
   async assignOrder(businessId, orderId, staffId) {
+    const staff = await User.findOne({
+      _id: staffId,
+      role: 'staff',
+      ...buildTenantScope(businessId),
+    }).select('_id status');
+
+    if (!staff || staff.status === 'INACTIVE') {
+      throw new Error('Assignable staff member not found');
+    }
+
     return await Order.findOneAndUpdate(
       { _id: orderId, ...buildTenantScope(businessId) },
       { assignedTo: staffId },

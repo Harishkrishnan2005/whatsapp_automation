@@ -116,7 +116,7 @@ class AuthController {
 
   async getStaffUsers(req, res) {
     try {
-      const scopeBusinessId = req.user?.role === 'admin' ? req.user.businessId : req.user.businessId;
+      const scopeBusinessId = req.user?.businessId;
       const staff = await AuthService.getStaffUsers(scopeBusinessId);
       res.json(staff);
     } catch (error) {

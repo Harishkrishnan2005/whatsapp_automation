@@ -6,7 +6,8 @@ import Subscription from '../models/Subscription.js';
 import buildTenantScope from '../utils/tenantScope.js';
 import chatbotSeederService from './chatbotSeederService.js';
 import seedTemplates from '../scripts/seedTemplates.js';
-import { resolveBusinessPlan } from '../config/plans.js';
+import { getRequiredPlanForStaffRole, isStaffRoleAllowedInPlan, resolveBusinessPlan } from '../config/plans.js';
+import { normalizeStaffRole } from '../utils/staffAccess.js';
 
 const ADMIN_PERMISSIONS = [
   'manage_customers',
@@ -47,6 +48,9 @@ class AuthService {
       role: user.role,
       name: user.name,
       permissions: user.permissions,
+      staffRole: user.staffRole || null,
+      status: user.status || (user.isActive === false ? 'INACTIVE' : 'ACTIVE'),
+      isActive: user.isActive !== false,
       businessId: tenantId,
       tenantId: tenantId,
       businessName: businessId?.name || user.businessName || null,
@@ -67,6 +71,8 @@ class AuthService {
       businessId: tenantId,
       tenantId: tenantId,
       businessType: user.businessType,
+      staffRole: user.staffRole || null,
+      status: user.status || (user.isActive === false ? 'INACTIVE' : 'ACTIVE'),
       plan,
       subscriptionStatus: businessId?.subscription?.status || 'ACTIVE',
     };
@@ -147,7 +153,17 @@ class AuthService {
       query.role = role;
     }
 
-    const user = await User.findOne(query).populate('businessId');
+    let user;
+    if (role === 'staff') {
+      const matchingStaffUsers = await User.find(query).populate('businessId');
+      if (matchingStaffUsers.length > 1) {
+        throw new Error('This staff email is linked to multiple businesses. Ask an admin to merge or rename the duplicate staff accounts.');
+      }
+      [user] = matchingStaffUsers;
+    } else {
+      user = await User.findOne(query).populate('businessId');
+    }
+
     if (!user) {
       throw new Error('Invalid credentials');
     }
@@ -156,6 +172,10 @@ class AuthService {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       throw new Error('Invalid credentials');
+    }
+
+    if (user.role === 'staff' && (user.status === 'INACTIVE' || user.isActive === false)) {
+      throw new Error('Staff account is inactive');
     }
 
     let resolvedBusinessId = user.businessId;
@@ -226,6 +246,7 @@ class AuthService {
       email,
       password,
       name,
+      staffRole = 'SUPPORT',
       permissions = [],
       phone,
       department,
@@ -235,13 +256,8 @@ class AuthService {
       dateOfJoining,
       address,
       isActive = true,
+      status,
     } = staffPayload;
-
-    const normalizedEmail = this.normalizeEmail(email);
-    const staffExists = await User.findOne({ email: normalizedEmail });
-    if (staffExists) {
-      throw new Error('User already exists');
-    }
 
     let resolvedBusinessId = businessId;
     let resolvedBusinessType = businessType;
@@ -253,6 +269,31 @@ class AuthService {
       }
       resolvedBusinessId = fallbackBusiness._id;
       resolvedBusinessType = fallbackBusiness.businessType || 'E_COMMERCE';
+    }
+
+    const normalizedEmail = this.normalizeEmail(email);
+    const staffExists = await User.findOne({
+      email: normalizedEmail,
+      role: 'staff',
+    });
+    if (staffExists) {
+      throw new Error('A staff member with this email already exists');
+    }
+
+    const normalizedStaffRole = normalizeStaffRole(staffRole);
+    if (!normalizedStaffRole) {
+      throw new Error('Invalid staff role');
+    }
+
+    const business = await Business.findById(resolvedBusinessId).select('plan subscription.plan').lean();
+    const currentPlan = resolveBusinessPlan(business);
+    if (!isStaffRoleAllowedInPlan(currentPlan, normalizedStaffRole)) {
+      throw new Error(`${normalizedStaffRole} role is not allowed in ${currentPlan} plan`);
+    }
+
+    const normalizedStatus = String(status || (isActive ? 'ACTIVE' : 'INACTIVE')).toUpperCase();
+    if (!['ACTIVE', 'INACTIVE'].includes(normalizedStatus)) {
+      throw new Error('Invalid staff status');
     }
 
     const employeeId = await this.generateEmployeeId(dateOfJoining);
@@ -270,8 +311,10 @@ class AuthService {
       dateOfJoining: dateOfJoining || null,
       address,
       role: 'staff',
+      staffRole: normalizedStaffRole,
       permissions,
-      isActive,
+      isActive: normalizedStatus === 'ACTIVE',
+      status: normalizedStatus,
       businessId: resolvedBusinessId,
       tenantId: resolvedBusinessId,
       businessType: resolvedBusinessType || 'E_COMMERCE',
@@ -282,6 +325,8 @@ class AuthService {
       email: staff.email,
       name: staff.name,
       role: staff.role,
+      staffRole: staff.staffRole,
+      status: staff.status,
       employeeId: staff.employeeId,
       businessType: staff.businessType,
     };
@@ -302,19 +347,47 @@ class AuthService {
       throw new Error('Staff member not found');
     }
 
+    const business = await Business.findById(staff.businessId).select('plan subscription.plan').lean();
+    const currentPlan = resolveBusinessPlan(business);
+
     if (updates.email && updates.email !== staff.email) {
-      const existingUser = await User.findOne({ email: updates.email, _id: { $ne: staffId } });
+      const normalizedEmail = this.normalizeEmail(updates.email);
+      const existingUser = await User.findOne({
+        email: normalizedEmail,
+        role: 'staff',
+        _id: { $ne: staffId },
+      });
       if (existingUser) {
-        throw new Error('User already exists');
+        throw new Error('A staff member with this email already exists');
       }
-      staff.email = updates.email;
+      staff.email = normalizedEmail;
     }
 
     if (typeof updates.name === 'string') staff.name = updates.name;
     if (typeof updates.phone === 'string') staff.phone = updates.phone;
+    if (updates.staffRole !== undefined) {
+      const normalizedStaffRole = normalizeStaffRole(updates.staffRole);
+      if (!normalizedStaffRole) {
+        throw new Error('Invalid staff role');
+      }
+      if (!isStaffRoleAllowedInPlan(currentPlan, normalizedStaffRole)) {
+        throw new Error(`${normalizedStaffRole} role is not allowed in ${currentPlan} plan`);
+      }
+      staff.staffRole = normalizedStaffRole;
+    }
     if (typeof updates.gender === 'string') staff.gender = updates.gender;
     if (typeof updates.address === 'string') staff.address = updates.address;
-    if (typeof updates.isActive === 'boolean') staff.isActive = updates.isActive;
+    if (typeof updates.status === 'string') {
+      const normalizedStatus = String(updates.status).trim().toUpperCase();
+      if (!['ACTIVE', 'INACTIVE'].includes(normalizedStatus)) {
+        throw new Error('Invalid staff status');
+      }
+      staff.status = normalizedStatus;
+      staff.isActive = normalizedStatus === 'ACTIVE';
+    } else if (typeof updates.isActive === 'boolean') {
+      staff.isActive = updates.isActive;
+      staff.status = updates.isActive ? 'ACTIVE' : 'INACTIVE';
+    }
     if (Array.isArray(updates.permissions)) staff.permissions = updates.permissions;
     if (Object.prototype.hasOwnProperty.call(updates, 'dateOfBirth')) {
       staff.dateOfBirth = updates.dateOfBirth ? new Date(updates.dateOfBirth) : null;

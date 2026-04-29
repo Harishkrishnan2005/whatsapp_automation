@@ -2604,3 +2604,147 @@
 2026-04-27 18:35:45 [info]: [ChatbotEngine] Processing message: "1" from 9043263671 
 2026-04-27 18:35:46 [info]: [ActionHandler] Executing action: SHOW_PRODUCTS for business: 69ef29c613add52cab753d92 
 2026-04-27 18:39:22 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 11:07:06 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 11:07:07 [info]: MongoDB connected successfully 
+2026-04-29 11:12:20 [info]: [SEEDER] Successfully seeded 7 ecommerce flows for business: 69f19a3b92e866117c8c503f (PRO) 
+2026-04-29 11:12:20 [info]: ✅ Seeded 5 templates successfully 
+2026-04-29 11:12:20 [info]: [SEEDER] Successfully seeded 7 ecommerce flows for business: 69f19a3b92e866117c8c503f (PRO) 
+2026-04-29 11:12:20 [info]: Templates already seeded for tenant 69f19a3b92e866117c8c503f (5 templates found) 
+2026-04-29 11:55:50 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 11:55:53 [info]: MongoDB connected successfully 
+2026-04-29 12:06:08 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 12:06:10 [info]: MongoDB connected successfully 
+2026-04-29 12:06:53 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 12:07:01 [info]: MongoDB connected successfully 
+2026-04-29 12:08:02 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 12:08:07 [info]: MongoDB connected successfully 
+2026-04-29 12:08:29 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 12:08:30 [info]: MongoDB connected successfully 
+2026-04-29 12:08:38 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 12:08:39 [info]: MongoDB connected successfully 
+2026-04-29 12:14:03 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 12:14:07 [info]: MongoDB connected successfully 
+2026-04-29 12:15:09 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 12:15:12 [info]: MongoDB connected successfully 
+2026-04-29 12:39:35 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 12:39:37 [info]: MongoDB connected successfully 
+2026-04-29 12:39:55 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 12:39:56 [info]: MongoDB connected successfully 
+2026-04-29 13:54:58 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 13:54:59 [info]: MongoDB connected successfully 
+2026-04-29 13:56:34 [warn]: Validation error: {"0":{"origin":"string","code":"too_small","minimum":6,"inclusive":true,"path":["password"],"message":"Password must be at least 6 characters"}}
+2026-04-29 13:59:19 [warn]: Validation error: {"0":{"origin":"string","code":"too_small","minimum":6,"inclusive":true,"path":["password"],"message":"Password must be at least 6 characters"}}
+2026-04-29 14:10:16 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:10:17 [info]: MongoDB connected successfully 
+2026-04-29 14:31:13 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:31:18 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:31:23 [info]: MongoDB connected successfully 
+2026-04-29 14:31:28 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:31:34 [info]: MongoDB connected successfully 
+2026-04-29 14:31:37 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:31:38 [info]: MongoDB connected successfully 
+2026-04-29 14:32:10 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:32:11 [info]: MongoDB connected successfully 
+2026-04-29 14:32:21 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:32:24 [info]: MongoDB connected successfully 
+2026-04-29 14:32:27 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:32:29 [info]: MongoDB connected successfully 
+2026-04-29 14:32:30 [info]: Dropping legacy staff email index businessId_1_email_1 
+2026-04-29 14:32:33 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:32:34 [info]: MongoDB connected successfully 
+2026-04-29 14:32:40 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:32:41 [info]: MongoDB connected successfully 
+2026-04-29 14:32:48 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:32:49 [info]: MongoDB connected successfully 
+2026-04-29 14:42:50 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:43:02 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:43:11 [info]: MongoDB connected successfully 
+2026-04-29 14:43:26 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:43:43 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:43:48 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:43:53 [info]: MongoDB connected successfully 
+2026-04-29 14:44:08 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:44:16 [info]: MongoDB connected successfully 
+2026-04-29 14:45:18 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:45:19 [info]: MongoDB connected successfully 
+2026-04-29 14:45:28 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:45:30 [info]: MongoDB connected successfully 
+2026-04-29 14:45:48 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:45:53 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:45:54 [info]: MongoDB connected successfully 
+2026-04-29 14:46:06 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:46:10 [info]: MongoDB connected successfully 
+2026-04-29 14:46:26 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:46:28 [info]: MongoDB connected successfully 
+2026-04-29 14:46:32 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:46:35 [info]: MongoDB connected successfully 
+2026-04-29 14:48:56 [info]: [ChatbotEngine] Processing message: "hi" from 9043263671 
+2026-04-29 14:49:03 [info]: [ChatbotEngine] Session window before processing {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":false,"lastMessageAt":null}
+2026-04-29 14:49:08 [info]: [ChatbotEngine] Session window after inbound customer message {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T09:19:08.783Z"}
+2026-04-29 14:49:08 [info]: [ActionHandler] Executing action: SHOW_PRODUCTS for business: 69ef29c613add52cab753d92 
+2026-04-29 14:49:20 [info]: [ChatbotEngine] Processing message: "1" from 9043263671 
+2026-04-29 14:49:26 [info]: [ChatbotEngine] Session window before processing {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T09:19:08.783Z"}
+2026-04-29 14:49:34 [info]: [ChatbotEngine] Session window after inbound customer message {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T09:19:33.515Z"}
+2026-04-29 14:49:35 [info]: [ActionHandler] Executing action: SHOW_PRODUCTS for business: 69ef29c613add52cab753d92 
+2026-04-29 14:49:37 [info]: [ChatbotEngine] Outgoing message decision {"businessId":"69ef29c613add52cab753d92","step":"MENU","responseType":"TEXT","templateName":null,"sessionActive":true}
+2026-04-29 14:49:49 [info]: [ChatbotEngine] Processing message: "Rice" from 9043263671 
+2026-04-29 14:49:51 [info]: [ChatbotEngine] Session window before processing {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T09:19:33.515Z"}
+2026-04-29 14:49:53 [info]: [ChatbotEngine] Session window after inbound customer message {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T09:19:53.551Z"}
+2026-04-29 14:49:55 [info]: [ActionHandler] Executing action: SELECT_PRODUCT for business: 69ef29c613add52cab753d92 
+2026-04-29 14:50:03 [info]: [ChatbotEngine] Outgoing message decision {"businessId":"69ef29c613add52cab753d92","step":"ASK_PRODUCT_NAME","responseType":"TEXT","templateName":null,"sessionActive":true}
+2026-04-29 14:50:27 [info]: [ChatbotEngine] Processing message: "1" from 9043263671 
+2026-04-29 14:50:38 [info]: [ChatbotEngine] Session window before processing {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T09:19:53.551Z"}
+2026-04-29 14:50:41 [info]: [ChatbotEngine] Session window after inbound customer message {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T09:20:41.335Z"}
+2026-04-29 14:50:41 [info]: [ActionHandler] Executing action: SHOW_PRODUCTS for business: 69ef29c613add52cab753d92 
+2026-04-29 14:50:41 [info]: [ChatbotEngine] Outgoing message decision {"businessId":"69ef29c613add52cab753d92","step":"MENU","responseType":"TEXT","templateName":null,"sessionActive":true}
+2026-04-29 14:57:48 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 14:58:03 [info]: MongoDB connected successfully 
+2026-04-29 15:09:16 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 15:09:47 [error]: MongooseServerSelectionError: Could not connect to any servers in your MongoDB Atlas cluster. One common reason is that you're trying to access the database from an IP that isn't whitelisted. Make sure your current IP address is on your Atlas cluster's IP whitelist: https://www.mongodb.com/docs/atlas/security-whitelist/
+    at _handleConnectionErrors (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\connection.js:816:11)
+    at NativeConnection.openUri (E:\Whatsapp API automation\backend\node_modules\mongoose\lib\connection.js:791:11)
+    at async connectMongo (file:///E:/Whatsapp%20API%20automation/backend/server.js:107:5) {"reason":{"type":"ReplicaSetNoPrimary","servers":{},"stale":false,"compatible":true,"heartbeatFrequencyMS":10000,"localThresholdMS":15,"setName":"atlas-o2tr69-shard-0","maxElectionId":null,"maxSetVersion":null,"commonWireVersion":0,"logicalSessionTimeoutMinutes":null}}
+2026-04-29 15:11:01 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 15:11:42 [info]: MongoDB connected successfully 
+2026-04-29 15:21:23 [info]: [ChatbotEngine] Processing message: "hi" from 9043263671 
+2026-04-29 15:21:25 [info]: [ChatbotEngine] Session window before processing {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T09:20:41.335Z"}
+2026-04-29 15:21:27 [info]: [ChatbotEngine] Session window after inbound customer message {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T09:51:27.690Z"}
+2026-04-29 15:21:27 [info]: [ActionHandler] Executing action: SHOW_PRODUCTS for business: 69ef29c613add52cab753d92 
+2026-04-29 15:21:34 [info]: [ChatbotEngine] Processing message: "1" from 9043263671 
+2026-04-29 15:21:36 [info]: [ChatbotEngine] Session window before processing {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T09:51:27.690Z"}
+2026-04-29 15:21:38 [info]: [ChatbotEngine] Session window after inbound customer message {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T09:51:38.735Z"}
+2026-04-29 15:21:39 [info]: [ActionHandler] Executing action: SELECT_PRODUCT for business: 69ef29c613add52cab753d92 
+2026-04-29 15:21:52 [info]: [ChatbotEngine] Processing message: "Rice" from 9043263671 
+2026-04-29 15:21:53 [info]: [ChatbotEngine] Session window before processing {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T09:51:38.735Z"}
+2026-04-29 15:21:55 [info]: [ChatbotEngine] Session window after inbound customer message {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T09:51:55.396Z"}
+2026-04-29 15:21:55 [info]: [ActionHandler] Executing action: SELECT_PRODUCT for business: 69ef29c613add52cab753d92 
+2026-04-29 15:21:56 [info]: [ChatbotEngine] Outgoing message decision {"businessId":"69ef29c613add52cab753d92","step":"ASK_PRODUCT_NAME","responseType":"TEXT","templateName":null,"sessionActive":true}
+2026-04-29 15:22:06 [info]: [ChatbotEngine] Processing message: "1" from 9043263671 
+2026-04-29 15:22:08 [info]: [ChatbotEngine] Session window before processing {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T09:51:55.396Z"}
+2026-04-29 15:22:11 [info]: [ChatbotEngine] Session window after inbound customer message {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T09:52:11.543Z"}
+2026-04-29 15:22:11 [info]: [ActionHandler] Executing action: SAVE_QUANTITY for business: 69ef29c613add52cab753d92 
+2026-04-29 15:32:58 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 15:32:59 [info]: MongoDB connected successfully 
+2026-04-29 15:33:08 [info]: Server running on port 5000 in development mode (Real-time Enabled) 
+2026-04-29 15:33:08 [info]: MongoDB connected successfully 
+2026-04-29 15:33:38 [info]: [ChatbotEngine] Processing message: "hi" from 9043263671 
+2026-04-29 15:33:38 [info]: [ChatbotEngine] Session window before processing {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T09:52:11.543Z"}
+2026-04-29 15:33:38 [info]: [ChatbotEngine] Session window after inbound customer message {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T10:03:38.677Z"}
+2026-04-29 15:33:38 [info]: [ActionHandler] Executing action: SHOW_PRODUCTS for business: 69ef29c613add52cab753d92 
+2026-04-29 15:33:43 [info]: [ChatbotEngine] Processing message: "1" from 9043263671 
+2026-04-29 15:33:44 [info]: [ChatbotEngine] Session window before processing {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T10:03:38.677Z"}
+2026-04-29 15:33:46 [info]: [ChatbotEngine] Session window after inbound customer message {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T10:03:45.964Z"}
+2026-04-29 15:33:46 [info]: [ActionHandler] Executing action: SELECT_PRODUCT for business: 69ef29c613add52cab753d92 
+2026-04-29 15:33:53 [info]: [ChatbotEngine] Processing message: "1." from 9043263671 
+2026-04-29 15:33:54 [info]: [ChatbotEngine] Session window before processing {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T10:03:45.964Z"}
+2026-04-29 15:33:55 [info]: [ChatbotEngine] Session window after inbound customer message {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T10:03:55.514Z"}
+2026-04-29 15:33:55 [info]: [ActionHandler] Executing action: SELECT_PRODUCT for business: 69ef29c613add52cab753d92 
+2026-04-29 15:34:02 [info]: [ChatbotEngine] Processing message: "Rice" from 9043263671 
+2026-04-29 15:34:03 [info]: [ChatbotEngine] Session window before processing {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T10:03:55.514Z"}
+2026-04-29 15:34:04 [info]: [ChatbotEngine] Session window after inbound customer message {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T10:04:04.340Z"}
+2026-04-29 15:34:04 [info]: [ActionHandler] Executing action: SELECT_PRODUCT for business: 69ef29c613add52cab753d92 
+2026-04-29 15:34:04 [info]: [ChatbotEngine] Outgoing message decision {"businessId":"69ef29c613add52cab753d92","step":"ASK_PRODUCT_NAME","responseType":"TEXT","templateName":null,"sessionActive":true}
+2026-04-29 15:34:10 [info]: [ChatbotEngine] Processing message: "1" from 9043263671 
+2026-04-29 15:34:11 [info]: [ChatbotEngine] Session window before processing {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T10:04:04.340Z"}
+2026-04-29 15:34:11 [info]: [ChatbotEngine] Session window after inbound customer message {"businessId":"69ef29c613add52cab753d92","phone":"9043263671","sessionActive":true,"lastMessageAt":"2026-04-29T10:04:11.358Z"}
+2026-04-29 15:34:11 [info]: [ActionHandler] Executing action: SAVE_QUANTITY for business: 69ef29c613add52cab753d92 

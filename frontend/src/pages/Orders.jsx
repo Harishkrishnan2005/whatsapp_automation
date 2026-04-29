@@ -133,7 +133,7 @@ const Orders = () => {
 
   const fetchStaff = async () => {
     try {
-      const response = await api.get('/auth/staff');
+      const response = await api.get('/admin/staff');
       setStaffMembers(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching staff list:', error);

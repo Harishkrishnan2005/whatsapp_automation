@@ -18,7 +18,7 @@ const StaffLogin = () => {
     setLoading(true);
     try {
       await login(email, password, 'staff');
-      navigate('/chat');
+      navigate('/staff/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Login failed');
     } finally {

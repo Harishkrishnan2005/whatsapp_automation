@@ -11,7 +11,7 @@ class ConversationService {
     const userId = user?.id || user?._id;
 
     if (user?.role === 'staff') {
-      filter.assignedStaffId = userId;
+      filter.assignedTo = userId;
     }
 
     return filter;
@@ -25,7 +25,7 @@ class ConversationService {
 
     const conversations = await Conversation.find(query)
       .populate('customerId', 'name phone assignedTo')
-      .populate('assignedStaffId', 'name email')
+      .populate('assignedTo', 'name email staffRole status')
       .sort({ updatedAt: -1 })
       .lean();
 
@@ -52,7 +52,7 @@ class ConversationService {
       this.buildAccessFilter(user, businessId, { _id: conversationId })
     )
       .populate('customerId', 'name phone assignedTo')
-      .populate('assignedStaffId', 'name email');
+      .populate('assignedTo', 'name email staffRole status');
 
     if (!conversation) {
       throw new Error('Conversation not found or access denied');
@@ -116,7 +116,7 @@ class ConversationService {
       { new: true }
     )
       .populate('customerId', 'name phone assignedTo')
-      .populate('assignedStaffId', 'name email');
+      .populate('assignedTo', 'name email staffRole status');
 
     // 3. Real-time broadcast
     socketManager.emitToRoom(String(conversationId), 'receive_message', {

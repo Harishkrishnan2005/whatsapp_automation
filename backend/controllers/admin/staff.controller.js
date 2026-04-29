@@ -47,7 +47,7 @@ const AdminStaffController = {
       const [orders, appointments, conversations] = await Promise.all([
         Order.countDocuments({ ...scope, assignedTo: staffId }),
         Appointment.countDocuments({ ...scope, assignedTo: staffId }),
-        Conversation.countDocuments({ ...scope, assignedStaffId: staffId, status: { $ne: 'closed' } }),
+        Conversation.countDocuments({ ...scope, assignedTo: staffId, status: { $ne: 'closed' } }),
       ]);
 
       res.json({
